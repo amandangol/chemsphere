@@ -1,31 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../providers/drug_provider.dart';
+import '../../providers/molecular_structure_provider.dart';
 import '../../services/search_history_service.dart';
 import '../../widgets/custom_search_screen.dart';
-import 'drug_detail_screen.dart';
+import 'molecular_structure_screen.dart';
 
-class DrugSearchScreen extends StatefulWidget {
-  const DrugSearchScreen({Key? key}) : super(key: key);
+class MolecularSearchScreen extends StatefulWidget {
+  const MolecularSearchScreen({Key? key}) : super(key: key);
 
   @override
-  State<DrugSearchScreen> createState() => _DrugSearchScreenState();
+  State<MolecularSearchScreen> createState() => _MolecularSearchScreenState();
 }
 
-class _DrugSearchScreenState extends State<DrugSearchScreen> {
+class _MolecularSearchScreenState extends State<MolecularSearchScreen> {
   final SearchHistoryService _searchHistoryService = SearchHistoryService();
-  List<String> _quickSearchItems = [
-    'Aspirin',
-    'Ibuprofen',
-    'Paracetamol',
-    'Amoxicillin',
-    'Metformin',
-    'Atorvastatin',
-    'Omeprazole',
-    'Lisinopril',
-    'Levothyroxine',
-    'Metoprolol'
+  final List<String> _quickSearchItems = [
+    'Glucose',
+    'Benzene',
+    'Ethanol',
+    'Methane',
+    'Water',
+    'Carbon dioxide',
+    'Sodium chloride',
+    'Acetic acid',
+    'Ammonia',
+    'Sulfuric acid'
   ];
   List<String> _searchHistory = [];
 
@@ -36,8 +36,8 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
   }
 
   Future<void> _loadSearchHistory() async {
-    final history =
-        await _searchHistoryService.getSearchHistory(SearchType.drug);
+    final history = await _searchHistoryService
+        .getSearchHistory(SearchType.molecularStructure);
     setState(() {
       _searchHistory = history;
     });
@@ -45,40 +45,38 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<DrugProvider>(
+    return Consumer<MolecularStructureProvider>(
       builder: (context, provider, child) {
         return CustomSearchScreen(
-          title: 'Drug Search',
-          hintText: 'Enter drug name (e.g., "aspirin", "ibuprofen")',
-          searchIcon: Icons.medication_outlined,
+          title: 'Molecular Search',
+          hintText: 'Enter compound name (e.g., "glucose", "benzene")',
+          searchIcon: Icons.science_outlined,
           quickSearchItems: _quickSearchItems,
           historyItems: _searchHistory,
           isLoading: provider.isLoading,
           error: provider.error,
-          items: provider.drugs,
-          imageUrl:
-              'https://images.rawpixel.com/image_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvcm0zNzNiYXRjaDE1LTIxNy0wMS5qcGc.jpg',
+          items: provider.structure ?? [],
           onSearch: (query) async {
             if (query.isNotEmpty) {
               await _searchHistoryService.addToSearchHistory(
-                  query, SearchType.drug);
+                  query, SearchType.molecularStructure);
               await _loadSearchHistory();
-              provider.searchDrugs(query);
+              provider.searchByCompoundName(query);
             }
           },
           onClear: () {
-            provider.clearDrugs();
+            provider.clearStructures();
           },
-          onItemTap: (drug) {
-            provider.fetchDrugDetails(drug.cid);
+          onItemTap: (structure) {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const DrugDetailScreen(),
+                builder: (context) =>
+                    MolecularStructureScreen(structure: structure),
               ),
             );
           },
-          itemBuilder: (drug) => Card(
+          itemBuilder: (structure) => Card(
             margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -86,11 +84,11 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
             elevation: 2,
             child: InkWell(
               onTap: () {
-                provider.fetchDrugDetails(drug.cid);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const DrugDetailScreen(),
+                    builder: (context) =>
+                        MolecularStructureScreen(structure: structure),
                   ),
                 );
               },
@@ -108,7 +106,7 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          drug.molecularFormula
+                          structure.molecularFormula
                               .replaceAll(RegExp(r'[0-9]'), ''),
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
@@ -126,14 +124,14 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            drug.title,
+                            structure.title,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           Text(
-                            drug.molecularFormula,
+                            structure.molecularFormula,
                             style: GoogleFonts.poppins(
                               color: Theme.of(context)
                                   .colorScheme
@@ -142,7 +140,7 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                             ),
                           ),
                           Text(
-                            'CID: ${drug.cid}',
+                            'CID: ${structure.cid}',
                             style: GoogleFonts.poppins(
                               color: Theme.of(context)
                                   .colorScheme
@@ -165,8 +163,9 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
             ),
           ),
           emptyMessage: 'Ready to Explore',
-          emptySubMessage: 'Search for any drug to discover its properties',
-          emptyIcon: Icons.medication,
+          emptySubMessage:
+              'Search for any compound to view its molecular structure',
+          emptyIcon: Icons.science,
         );
       },
     );

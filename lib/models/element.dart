@@ -56,11 +56,25 @@ class Element {
   });
 
   factory Element.fromJson(Map<String, dynamic> json) {
+    // Handle atomic mass conversion
+    double parseAtomicMass(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      if (value is String) {
+        try {
+          return double.parse(value.replaceAll(RegExp(r'[^\d.]'), ''));
+        } catch (e) {
+          return 0.0;
+        }
+      }
+      return 0.0;
+    }
+
     return Element(
       number: json['number'] ?? 0,
       symbol: json['symbol'] ?? '',
       name: json['name'] ?? '',
-      atomicMass: (json['atomic_mass'] ?? 0).toDouble(),
+      atomicMass: parseAtomicMass(json['atomic_mass']),
       category: json['category'] ?? '',
       phase: json['phase'] ?? '',
       appearance: json['appearance'] ?? '',
@@ -90,5 +104,36 @@ class Element {
       ionizationEnergy: json['ionization_energy'] ?? '',
       yearDiscovered: json['year_discovered'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'number': number,
+      'symbol': symbol,
+      'name': name,
+      'atomic_mass': atomicMass,
+      'category': category,
+      'phase': phase,
+      'appearance': appearance,
+      'density': density,
+      'melt': melt,
+      'boil': boil,
+      'molar_heat': molarHeat,
+      'electron_configuration': electronConfiguration,
+      'electron_affinity': electronAffinity,
+      'electronegativity_pauling': electronegativityPauling,
+      'ionization_energies': ionizationEnergies,
+      'shells': shells,
+      'discovered_by': discoveredBy,
+      'named_by': namedBy,
+      'source': source,
+      'summary': summary,
+      'period': period,
+      'group': group,
+      'atomic_radius': atomicRadius,
+      'electronegativity': electronegativity,
+      'ionization_energy': ionizationEnergy,
+      'year_discovered': yearDiscovered,
+    };
   }
 }

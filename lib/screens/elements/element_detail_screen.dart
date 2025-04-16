@@ -434,7 +434,7 @@ class ElementDetailScreen extends StatelessWidget {
             child: Text(
               value.isEmpty ? 'N/A' : value,
               style: TextStyle(
-                color: value.isEmpty ? Colors.grey : Colors.white60,
+                color: value.isEmpty ? Colors.grey : Colors.black,
               ),
             ),
           ),

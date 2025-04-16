@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/element.dart';
 
@@ -8,13 +9,75 @@ class ElementProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   Element? _selectedElement;
+  Map<String, Element> _elementDetailsCache = {};
+  DateTime? _lastFetchTime;
+  static const cacheDuration = Duration(hours: 24); // Cache for 24 hours
 
   List<Element> get elements => _elements;
   bool get isLoading => _isLoading;
   String? get error => _error;
   Element? get selectedElement => _selectedElement;
 
-  Future<void> fetchElements() async {
+  // Check if cache is valid
+  bool get isCacheValid =>
+      _lastFetchTime != null &&
+      DateTime.now().difference(_lastFetchTime!) < cacheDuration;
+
+  Future<void> _saveToCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final elementsJson =
+          _elements.map((e) => json.encode(e.toJson())).toList();
+      await prefs.setStringList('cached_elements', elementsJson);
+      await prefs.setString(
+          'last_fetch_time', DateTime.now().toIso8601String());
+      print('Saved ${elementsJson.length} elements to cache');
+    } catch (e) {
+      print('Error saving to cache: $e');
+    }
+  }
+
+  Future<bool> _loadFromCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastFetchTimeStr = prefs.getString('last_fetch_time');
+      if (lastFetchTimeStr != null) {
+        _lastFetchTime = DateTime.parse(lastFetchTimeStr);
+      }
+
+      if (!isCacheValid) {
+        print('Cache is invalid or expired');
+        return false;
+      }
+
+      final elementsJson = prefs.getStringList('cached_elements');
+      if (elementsJson == null || elementsJson.isEmpty) {
+        print('No cached elements found');
+        return false;
+      }
+
+      _elements =
+          elementsJson.map((e) => Element.fromJson(json.decode(e))).toList();
+      print('Loaded ${_elements.length} elements from cache');
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('Error loading from cache: $e');
+      return false;
+    }
+  }
+
+  Future<void> fetchElements({bool forceRefresh = false}) async {
+    if (!forceRefresh && _elements.isNotEmpty) {
+      print('Using existing elements in memory');
+      return;
+    }
+
+    if (!forceRefresh && await _loadFromCache()) {
+      print('Using cached elements');
+      return;
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -28,17 +91,12 @@ class ElementProvider with ChangeNotifier {
         },
       );
 
-      print('Response status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
       if (response.statusCode != 200) {
         throw Exception(
             'Failed to fetch periodic table data. Status code: ${response.statusCode}');
       }
 
       final data = json.decode(response.body);
-      print('Parsed data: $data');
-
       if (data['status'] != 'ok') {
         throw Exception(data['error'] ?? 'Unknown error occurred');
       }
@@ -49,6 +107,8 @@ class ElementProvider with ChangeNotifier {
 
       _elements =
           (data['data'] as List).map((e) => Element.fromJson(e)).toList();
+      _lastFetchTime = DateTime.now();
+      await _saveToCache();
       print('Successfully loaded ${_elements.length} elements');
     } catch (e) {
       print('Error in fetchElements: $e');
@@ -60,6 +120,14 @@ class ElementProvider with ChangeNotifier {
   }
 
   Future<void> fetchElementDetails(String symbol) async {
+    // Check if element details are already in memory cache
+    if (_elementDetailsCache.containsKey(symbol)) {
+      print('Using cached details for $symbol');
+      _selectedElement = _elementDetailsCache[symbol];
+      notifyListeners();
+      return;
+    }
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -73,17 +141,12 @@ class ElementProvider with ChangeNotifier {
         },
       );
 
-      print('Response status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
       if (response.statusCode != 200) {
         throw Exception(
             'Failed to fetch element details. Status code: ${response.statusCode}');
       }
 
       final data = json.decode(response.body);
-      print('Parsed data: $data');
-
       if (data['status'] != 'ok') {
         throw Exception(data['error'] ?? 'Unknown error occurred');
       }
@@ -93,6 +156,9 @@ class ElementProvider with ChangeNotifier {
       }
 
       _selectedElement = Element.fromJson(data['data']);
+      // Cache the element details
+      _elementDetailsCache[symbol] = _selectedElement!;
+      print('Successfully cached details for $symbol');
     } catch (e) {
       print('Error in fetchElementDetails: $e');
       _error = e.toString();
@@ -104,6 +170,16 @@ class ElementProvider with ChangeNotifier {
 
   void clearSelectedElement() {
     _selectedElement = null;
+    notifyListeners();
+  }
+
+  void clearCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('cached_elements');
+    await prefs.remove('last_fetch_time');
+    _elementDetailsCache.clear();
+    _lastFetchTime = null;
+    _elements.clear();
     notifyListeners();
   }
 }

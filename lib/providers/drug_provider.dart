@@ -97,4 +97,9 @@ class DrugProvider with ChangeNotifier {
     _selectedDrug = null;
     notifyListeners();
   }
+
+  void clearDrugs() {
+    _drugs = [];
+    notifyListeners();
+  }
 }
