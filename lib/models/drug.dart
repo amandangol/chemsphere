@@ -38,13 +38,17 @@ class Drug {
       cid: json['CID'] ?? 0,
       title: json['Title'] ?? '',
       molecularFormula: json['MolecularFormula'] ?? '',
-      molecularWeight: (json['MolecularWeight'] ?? 0).toDouble(),
+      molecularWeight:
+          double.tryParse(json['MolecularWeight']?.toString() ?? '0') ?? 0.0,
       smiles: json['CanonicalSMILES'] ?? '',
-      xLogP: (json['XLogP'] ?? 0).toDouble(),
-      hBondDonorCount: json['HBondDonorCount'] ?? 0,
-      hBondAcceptorCount: json['HBondAcceptorCount'] ?? 0,
-      rotatableBondCount: json['RotatableBondCount'] ?? 0,
-      complexity: (json['Complexity'] ?? 0).toDouble(),
+      xLogP: double.tryParse(json['XLogP']?.toString() ?? '0') ?? 0.0,
+      hBondDonorCount:
+          int.tryParse(json['HBondDonorCount']?.toString() ?? '0') ?? 0,
+      hBondAcceptorCount:
+          int.tryParse(json['HBondAcceptorCount']?.toString() ?? '0') ?? 0,
+      rotatableBondCount:
+          int.tryParse(json['RotatableBondCount']?.toString() ?? '0') ?? 0,
+      complexity: double.tryParse(json['Complexity']?.toString() ?? '0') ?? 0.0,
       indication: json['indication'],
       mechanismOfAction: json['mechanismOfAction'],
       toxicity: json['toxicity'],

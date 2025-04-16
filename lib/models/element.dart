@@ -19,6 +19,12 @@ class Element {
   final String namedBy;
   final String source;
   final String summary;
+  final int period;
+  final int group;
+  final String atomicRadius;
+  final String electronegativity;
+  final String ionizationEnergy;
+  final String yearDiscovered;
 
   Element({
     required this.number,
@@ -41,6 +47,12 @@ class Element {
     required this.namedBy,
     required this.source,
     required this.summary,
+    required this.period,
+    required this.group,
+    required this.atomicRadius,
+    required this.electronegativity,
+    required this.ionizationEnergy,
+    required this.yearDiscovered,
   });
 
   factory Element.fromJson(Map<String, dynamic> json) {
@@ -71,6 +83,12 @@ class Element {
       namedBy: json['named_by'] ?? '',
       source: json['source'] ?? '',
       summary: json['summary'] ?? '',
+      period: json['period'] ?? 0,
+      group: json['group'] ?? 0,
+      atomicRadius: json['atomic_radius'] ?? '',
+      electronegativity: json['electronegativity'] ?? '',
+      ionizationEnergy: json['ionization_energy'] ?? '',
+      yearDiscovered: json['year_discovered'] ?? '',
     );
   }
 }

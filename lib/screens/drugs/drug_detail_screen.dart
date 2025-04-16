@@ -7,14 +7,35 @@ class DrugDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Drug Details'),
+        title: const Text(
+          'Drug Details',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 0,
       ),
       body: Consumer<DrugProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading drug details...',
+                    style: TextStyle(color: theme.colorScheme.primary),
+                  ),
+                ],
+              ),
+            );
           }
 
           if (provider.error != null) {
@@ -22,16 +43,29 @@ class DrugDetailScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Error: ${provider.error}',
-                    style: const TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center,
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: theme.colorScheme.error,
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
+                  Text(
+                    'Error: ${provider.error}',
+                    style: TextStyle(color: theme.colorScheme.error),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
                     onPressed: () => provider
                         .fetchDrugDetails(provider.selectedDrug?.cid ?? 0),
-                    child: const Text('Retry'),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -40,101 +74,326 @@ class DrugDetailScreen extends StatelessWidget {
 
           final drug = provider.selectedDrug;
           if (drug == null) {
-            return const Center(child: Text('No drug selected'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.medication_outlined,
+                    size: 64,
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No drug selected',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text(
-                          drug.molecularFormula,
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  theme.colorScheme.primaryContainer.withOpacity(0.3),
+                  theme.colorScheme.background,
+                ],
+              ),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Drug image header
+                  SizedBox(
+                    height: 240,
+                    width: double.infinity,
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: Hero(
+                            tag: 'drug_${drug.cid}',
+                            child: Image.network(
+                              'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${drug.cid}/PNG',
+                              width: 200,
+                              height: 200,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(Icons.image_not_supported,
+                                      size: 100,
+                                      color: theme.colorScheme.onSurface
+                                          .withOpacity(0.5)),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            height: 80,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  theme.colorScheme.surface.withOpacity(0.8),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Title section
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'CID: ${drug.cid}',
+                                style: TextStyle(
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          drug.title,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            drug.title,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Chip(
+                              label: Text('MW: ${drug.molecularWeight} g/mol'),
+                              backgroundColor: theme.colorScheme.surfaceVariant,
+                              labelStyle: TextStyle(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
+                            const SizedBox(width: 8),
+                            Chip(
+                              label: Text(drug.molecularFormula),
+                              backgroundColor:
+                                  theme.colorScheme.tertiaryContainer,
+                              labelStyle: TextStyle(
+                                color: theme.colorScheme.onTertiaryContainer,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Properties section
+                  _buildSection(
+                    context,
+                    title: 'Physical Properties',
+                    icon: Icons.science,
+                    content: Column(
+                      children: [
+                        _buildPropertyCard(
+                          context,
+                          title: 'Structure',
+                          content: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildProperty(
+                                      'Molecular Formula',
+                                      drug.molecularFormula,
+                                    ),
+                                    _buildProperty(
+                                      'SMILES',
+                                      drug.smiles,
+                                      isMultiLine: true,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          Text('CID: ${drug.cid}'),
-                          Text(
-                              'Molecular Weight: ${drug.molecularWeight} g/mol'),
+                        ),
+                        _buildPropertyCard(
+                          context,
+                          title: 'Physical & Chemical Properties',
+                          content: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildProperty(
+                                      'XLogP',
+                                      drug.xLogP.toString(),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _buildProperty(
+                                      'Complexity',
+                                      drug.complexity.toString(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildProperty(
+                                      'H-Bond Donors',
+                                      drug.hBondDonorCount.toString(),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _buildProperty(
+                                      'H-Bond Acceptors',
+                                      drug.hBondAcceptorCount.toString(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              _buildProperty(
+                                'Rotatable Bonds',
+                                drug.rotatableBondCount.toString(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Drug Information section
+                  if (drug.indication != null ||
+                      drug.mechanismOfAction != null ||
+                      drug.toxicity != null ||
+                      drug.metabolism != null ||
+                      drug.pharmacology != null)
+                    _buildSection(
+                      context,
+                      title: 'Drug Information',
+                      icon: Icons.medication,
+                      content: Column(
+                        children: [
+                          if (drug.indication != null)
+                            _buildPropertyCard(
+                              context,
+                              title: 'Indication',
+                              content: Text(drug.indication!),
+                            ),
+                          if (drug.mechanismOfAction != null)
+                            _buildPropertyCard(
+                              context,
+                              title: 'Mechanism of Action',
+                              content: Text(drug.mechanismOfAction!),
+                            ),
+                          if (drug.toxicity != null)
+                            _buildPropertyCard(
+                              context,
+                              title: 'Toxicity',
+                              content: Text(drug.toxicity!),
+                            ),
+                          if (drug.metabolism != null)
+                            _buildPropertyCard(
+                              context,
+                              title: 'Metabolism',
+                              content: Text(drug.metabolism!),
+                            ),
+                          if (drug.pharmacology != null)
+                            _buildPropertyCard(
+                              context,
+                              title: 'Pharmacology',
+                              content: Text(drug.pharmacology!),
+                            ),
                         ],
                       ),
                     ),
-                  ],
-                ),
 
-                const Divider(height: 32),
-
-                // Properties
-                _buildSectionTitle('Properties'),
-                _buildPropertyRow('Molecular Formula', drug.molecularFormula),
-                _buildPropertyRow('SMILES', drug.smiles),
-                _buildPropertyRow('XLogP', drug.xLogP.toString()),
-                _buildPropertyRow('Complexity', drug.complexity.toString()),
-                _buildPropertyRow(
-                    'H-Bond Donors', drug.hBondDonorCount.toString()),
-                _buildPropertyRow(
-                    'H-Bond Acceptors', drug.hBondAcceptorCount.toString()),
-                _buildPropertyRow(
-                    'Rotatable Bonds', drug.rotatableBondCount.toString()),
-
-                const Divider(height: 32),
-
-                // Drug Information
-                _buildSectionTitle('Drug Information'),
-                if (drug.indication != null)
-                  _buildPropertyRow('Indication', drug.indication!),
-                if (drug.mechanismOfAction != null)
-                  _buildPropertyRow(
-                      'Mechanism of Action', drug.mechanismOfAction!),
-                if (drug.toxicity != null)
-                  _buildPropertyRow('Toxicity', drug.toxicity!),
-                if (drug.metabolism != null)
-                  _buildPropertyRow('Metabolism', drug.metabolism!),
-                if (drug.pharmacology != null)
-                  _buildPropertyRow('Pharmacology', drug.pharmacology!),
-
-                const Divider(height: 32),
-
-                // Structure
-                _buildSectionTitle('Structure'),
-                Center(
-                  child: Image.network(
-                    'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${drug.cid}/PNG',
-                    width: 200,
-                    height: 200,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.image_not_supported, size: 100),
+                  // Actions section
+                  _buildSection(
+                    context,
+                    title: 'Actions',
+                    icon: Icons.menu_book,
+                    content: Column(
+                      children: [
+                        _buildActionButton(
+                          context,
+                          title: 'View on PubChem',
+                          icon: Icons.public,
+                          onTap: () {
+                            // Implement external URL launching
+                            // Launch URL: https://pubchem.ncbi.nlm.nih.gov/compound/${drug.cid}
+                          },
+                        ),
+                        _buildActionButton(
+                          context,
+                          title: 'Save to Favorites',
+                          icon: Icons.bookmark_border,
+                          onTap: () {
+                            // Implement save functionality
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content:
+                                    Text('${drug.title} saved to favorites'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
+                        _buildActionButton(
+                          context,
+                          title: 'Export Data',
+                          icon: Icons.download,
+                          onTap: () {
+                            // Implement export functionality
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Export functionality coming soon'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           );
         },
@@ -142,33 +401,151 @@ class DrugDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSection(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Widget content,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Card(
+        elevation: 1,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    icon,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 24),
+              content,
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildPropertyRow(String property, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
+  Widget _buildPropertyCard(
+    BuildContext context, {
+    required String title,
+    required Widget content,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      width: double.infinity,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 150,
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              '$property:',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
             ),
           ),
-          Expanded(
-            child: Text(value),
+          content,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProperty(String label, String value,
+      {bool isMultiLine = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isMultiLine ? 13 : 14,
+              fontWeight: isMultiLine ? FontWeight.normal : FontWeight.w500,
+            ),
+            maxLines: isMultiLine ? 3 : 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceVariant,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const Spacer(),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withOpacity(0.5),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
