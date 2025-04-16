@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../models/molecular_structure.dart';
+import '../../providers/bookmark_provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_cube/flutter_cube.dart';
@@ -62,6 +64,7 @@ class _MolecularStructureScreenState extends State<MolecularStructureScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bookmarkProvider = Provider.of<BookmarkProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -70,6 +73,38 @@ class _MolecularStructureScreenState extends State<MolecularStructureScreen> {
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         actions: [
+          IconButton(
+            icon: Icon(
+              bookmarkProvider.isBookmarked(
+                      widget.structure, BookmarkType.molecularStructure)
+                  ? Icons.bookmark
+                  : Icons.bookmark_border,
+            ),
+            onPressed: () {
+              if (bookmarkProvider.isBookmarked(
+                  widget.structure, BookmarkType.molecularStructure)) {
+                bookmarkProvider.removeBookmark(
+                    widget.structure, BookmarkType.molecularStructure);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                        '${widget.structure.title} removed from bookmarks'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              } else {
+                bookmarkProvider.addBookmark(
+                    widget.structure, BookmarkType.molecularStructure);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content:
+                        Text('${widget.structure.title} added to bookmarks'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+          ),
           ToggleButtons(
             children: const [
               Padding(

@@ -1,13 +1,79 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../providers/bookmark_provider.dart';
 import '../../providers/drug_provider.dart';
+import '../../models/drug.dart';
+import 'dart:convert';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class DrugDetailScreen extends StatelessWidget {
   const DrugDetailScreen({Key? key}) : super(key: key);
 
+  Future<void> _launchUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri)) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
+  Future<void> _exportDrugData(BuildContext context, Drug drug) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file =
+          File('${directory.path}/${drug.title.replaceAll(' ', '_')}.json');
+
+      final drugData = {
+        'title': drug.title,
+        'cid': drug.cid,
+        'molecularFormula': drug.molecularFormula,
+        'molecularWeight': drug.molecularWeight,
+        'smiles': drug.smiles,
+        'xLogP': drug.xLogP,
+        'hBondDonorCount': drug.hBondDonorCount,
+        'hBondAcceptorCount': drug.hBondAcceptorCount,
+        'rotatableBondCount': drug.rotatableBondCount,
+        'complexity': drug.complexity,
+        'indication': drug.indication,
+        'mechanismOfAction': drug.mechanismOfAction,
+        'toxicity': drug.toxicity,
+        'pharmacology': drug.pharmacology,
+        'metabolism': drug.metabolism,
+        'absorption': drug.absorption,
+        'halfLife': drug.halfLife,
+        'proteinBinding': drug.proteinBinding,
+        'routeOfElimination': drug.routeOfElimination,
+        'volumeOfDistribution': drug.volumeOfDistribution,
+        'clearance': drug.clearance,
+      };
+
+      await file.writeAsString(jsonEncode(drugData));
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Data exported to ${file.path}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error exporting data: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bookmarkProvider = Provider.of<BookmarkProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -17,6 +83,43 @@ class DrugDetailScreen extends StatelessWidget {
         ),
         centerTitle: true,
         elevation: 0,
+        actions: [
+          Consumer<DrugProvider>(
+            builder: (context, provider, child) {
+              final drug = provider.selectedDrug;
+              if (drug != null) {
+                return IconButton(
+                  icon: Icon(
+                    bookmarkProvider.isBookmarked(drug, BookmarkType.drug)
+                        ? Icons.bookmark
+                        : Icons.bookmark_border,
+                  ),
+                  onPressed: () {
+                    if (bookmarkProvider.isBookmarked(
+                        drug, BookmarkType.drug)) {
+                      bookmarkProvider.removeBookmark(drug, BookmarkType.drug);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${drug.title} removed from bookmarks'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    } else {
+                      bookmarkProvider.addBookmark(drug, BookmarkType.drug);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${drug.title} added to bookmarks'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
       ),
       body: Consumer<DrugProvider>(
         builder: (context, provider, child) {
@@ -138,7 +241,7 @@ class DrugDetailScreen extends StatelessWidget {
                           left: 0,
                           right: 0,
                           child: Container(
-                            height: 80,
+                            height: 20,
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
@@ -300,42 +403,95 @@ class DrugDetailScreen extends StatelessWidget {
                       drug.mechanismOfAction != null ||
                       drug.toxicity != null ||
                       drug.metabolism != null ||
-                      drug.pharmacology != null)
+                      drug.pharmacology != null ||
+                      drug.proteinBinding != null ||
+                      drug.absorption != null ||
+                      drug.halfLife != null ||
+                      drug.routeOfElimination != null ||
+                      drug.volumeOfDistribution != null ||
+                      drug.clearance != null)
                     _buildSection(
                       context,
                       title: 'Drug Information',
                       icon: Icons.medication,
                       content: Column(
                         children: [
-                          if (drug.indication != null)
+                          if (drug.indication != null &&
+                              drug.indication!.isNotEmpty)
                             _buildPropertyCard(
                               context,
                               title: 'Indication',
                               content: Text(drug.indication!),
                             ),
-                          if (drug.mechanismOfAction != null)
+                          if (drug.mechanismOfAction != null &&
+                              drug.mechanismOfAction!.isNotEmpty)
                             _buildPropertyCard(
                               context,
                               title: 'Mechanism of Action',
                               content: Text(drug.mechanismOfAction!),
                             ),
-                          if (drug.toxicity != null)
+                          if (drug.toxicity != null &&
+                              drug.toxicity!.isNotEmpty)
                             _buildPropertyCard(
                               context,
                               title: 'Toxicity',
                               content: Text(drug.toxicity!),
                             ),
-                          if (drug.metabolism != null)
+                          if (drug.pharmacology != null &&
+                              drug.pharmacology!.isNotEmpty)
+                            _buildPropertyCard(
+                              context,
+                              title: 'Pharmacology',
+                              content: Text(drug.pharmacology!),
+                            ),
+                          if (drug.metabolism != null &&
+                              drug.metabolism!.isNotEmpty)
                             _buildPropertyCard(
                               context,
                               title: 'Metabolism',
                               content: Text(drug.metabolism!),
                             ),
-                          if (drug.pharmacology != null)
+                          if (drug.absorption != null &&
+                              drug.absorption!.isNotEmpty)
                             _buildPropertyCard(
                               context,
-                              title: 'Pharmacology',
-                              content: Text(drug.pharmacology!),
+                              title: 'Absorption',
+                              content: Text(drug.absorption!),
+                            ),
+                          if (drug.halfLife != null &&
+                              drug.halfLife!.isNotEmpty)
+                            _buildPropertyCard(
+                              context,
+                              title: 'Half Life',
+                              content: Text(drug.halfLife!),
+                            ),
+                          if (drug.proteinBinding != null &&
+                              drug.proteinBinding!.isNotEmpty)
+                            _buildPropertyCard(
+                              context,
+                              title: 'Protein Binding',
+                              content: Text(drug.proteinBinding!),
+                            ),
+                          if (drug.routeOfElimination != null &&
+                              drug.routeOfElimination!.isNotEmpty)
+                            _buildPropertyCard(
+                              context,
+                              title: 'Route of Elimination',
+                              content: Text(drug.routeOfElimination!),
+                            ),
+                          if (drug.volumeOfDistribution != null &&
+                              drug.volumeOfDistribution!.isNotEmpty)
+                            _buildPropertyCard(
+                              context,
+                              title: 'Volume of Distribution',
+                              content: Text(drug.volumeOfDistribution!),
+                            ),
+                          if (drug.clearance != null &&
+                              drug.clearance!.isNotEmpty)
+                            _buildPropertyCard(
+                              context,
+                              title: 'Clearance',
+                              content: Text(drug.clearance!),
                             ),
                         ],
                       ),
@@ -352,40 +508,13 @@ class DrugDetailScreen extends StatelessWidget {
                           context,
                           title: 'View on PubChem',
                           icon: Icons.public,
-                          onTap: () {
-                            // Implement external URL launching
-                            // Launch URL: https://pubchem.ncbi.nlm.nih.gov/compound/${drug.cid}
-                          },
-                        ),
-                        _buildActionButton(
-                          context,
-                          title: 'Save to Favorites',
-                          icon: Icons.bookmark_border,
-                          onTap: () {
-                            // Implement save functionality
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content:
-                                    Text('${drug.title} saved to favorites'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
+                          onTap: () => _launchUrl(drug.pubChemUrl),
                         ),
                         _buildActionButton(
                           context,
                           title: 'Export Data',
                           icon: Icons.download,
-                          onTap: () {
-                            // Implement export functionality
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('Export functionality coming soon'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
+                          onTap: () => _exportDrugData(context, drug),
                         ),
                       ],
                     ),
@@ -466,7 +595,51 @@ class DrugDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-          content,
+          if (content is Text)
+            StatefulBuilder(
+              builder: (context, setState) {
+                final text = content.data!;
+                final isLongText = text.length > 100;
+                final showFullText = ValueNotifier<bool>(false);
+
+                return ValueListenableBuilder<bool>(
+                  valueListenable: showFullText,
+                  builder: (context, value, child) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          value || !isLongText
+                              ? text
+                              : '${text.substring(0, text.length > 200 ? 200 : text.length)}...',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        if (isLongText)
+                          TextButton(
+                            onPressed: () {
+                              showFullText.value = !showFullText.value;
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: const Size(50, 30),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              value ? 'Show Less' : 'View More',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                );
+              },
+            )
+          else
+            content,
         ],
       ),
     );

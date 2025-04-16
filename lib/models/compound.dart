@@ -18,13 +18,9 @@ class Compound {
   final String descriptionUrl;
   final List<String> synonyms;
   final Map<String, dynamic> physicalProperties;
-  final Map<String, dynamic> safetyData;
-  final List<String> classifications;
-  final List<String> uses;
   final String pubChemUrl;
 
   // New properties
-  final double exactMass;
   final double monoisotopicMass;
   final double tpsa;
   final int charge;
@@ -63,12 +59,8 @@ class Compound {
     this.descriptionUrl = '',
     this.synonyms = const [],
     this.physicalProperties = const {},
-    this.safetyData = const {},
-    this.classifications = const [],
-    this.uses = const [],
     this.pubChemUrl = '',
     // New properties with defaults
-    this.exactMass = 0.0,
     this.monoisotopicMass = 0.0,
     this.tpsa = 0.0,
     this.charge = 0,
@@ -107,22 +99,40 @@ class Compound {
       sourceCategoriesList = List<String>.from(sourceCategories);
     }
 
-    // Create physical properties map
+    // Create physical properties map with ALL properties for consistent access
     Map<String, dynamic> physicalProperties = {
-      'Molecular Weight': json['Molecular Weight']?.toString() ?? '0',
+      'Molecular Weight': json['MolecularWeight']?.toString() ?? '0',
       'XLogP': json['XLogP']?.toString() ?? '0',
       'TPSA': json['TPSA']?.toString() ?? '0',
       'Complexity': json['Complexity']?.toString() ?? '0',
+      'Monoisotopic Mass': json['Weight']?.toString() ?? '0',
       'Exact Mass': json['ExactMass']?.toString() ?? '0',
-      'Monoisotopic Mass': json['MonoisotopicMass']?.toString() ?? '0',
       'Charge': json['Charge']?.toString() ?? '0',
       'Heavy Atom Count': json['HeavyAtomCount']?.toString() ?? '0',
       'Isotope Atom Count': json['IsotopeAtomCount']?.toString() ?? '0',
+      'H Bond Donor Count': json['HBondDonorCount']?.toString() ?? '0',
+      'H Bond Acceptor Count': json['HBondAcceptorCount']?.toString() ?? '0',
+      'Rotatable Bond Count': json['RotatableBondCount']?.toString() ?? '0',
+      'Atom Stereo Count': json['AtomStereoCount']?.toString() ?? '0',
+      'Bond Stereo Count': json['BondStereoCount']?.toString() ?? '0',
+      'Defined Atom Stereo Count':
+          json['DefinedAtomStereoCount']?.toString() ?? '0',
+      'Undefined Atom Stereo Count':
+          json['UndefinedAtomStereoCount']?.toString() ?? '0',
+      'Defined Bond Stereo Count':
+          json['DefinedBondStereoCount']?.toString() ?? '0',
+      'Undefined Bond Stereo Count':
+          json['UndefinedBondStereoCount']?.toString() ?? '0',
+      'Covalent Unit Count': json['CovalentUnitCount']?.toString() ?? '0',
+      'Patent Count': json['PatentCount']?.toString() ?? '0',
+      'Patent Family Count': json['PatentFamilyCount']?.toString() ?? '0',
+      'Literature Count': json['LiteratureCount']?.toString() ?? '0',
       'SMILES': json['CanonicalSMILES'] ?? '',
       'InChI': json['InChI'] ?? '',
       'InChI Key': json['InChIKey'] ?? '',
       'IUPAC Name': json['IUPACName'] ?? '',
       'Molecular Formula': json['MolecularFormula'] ?? '',
+      'Title': json['Title'] ?? '',
     };
 
     print('Creating compound from JSON: $json');
@@ -130,9 +140,7 @@ class Compound {
 
     return Compound(
       cid: json['CID'] ?? 0,
-      title: json['Title'] ??
-          json['IUPACName'] ??
-          '', // Use IUPAC name as fallback
+      title: json['Title'] ?? json['IUPACName'] ?? '',
       molecularFormula: json['MolecularFormula'] ?? '',
       molecularWeight:
           double.tryParse(json['MolecularWeight']?.toString() ?? '0') ?? 0.0,
@@ -157,14 +165,10 @@ class Compound {
       descriptionUrl: json['DescriptionUrl'] ?? '',
       synonyms: List<String>.from(json['Synonyms'] ?? []),
       physicalProperties: physicalProperties,
-      safetyData: {},
-      classifications: [],
-      uses: [],
       pubChemUrl:
           'https://pubchem.ncbi.nlm.nih.gov/compound/${json['CID'] ?? 0}',
-      exactMass: double.tryParse(json['ExactMass']?.toString() ?? '0') ?? 0.0,
       monoisotopicMass:
-          double.tryParse(json['MonoisotopicMass']?.toString() ?? '0') ?? 0.0,
+          double.tryParse(json['Weight']?.toString() ?? '0') ?? 0.0,
       tpsa: double.tryParse(json['TPSA']?.toString() ?? '0') ?? 0.0,
       charge: int.tryParse(json['Charge']?.toString() ?? '0') ?? 0,
       isotopeAtomCount:

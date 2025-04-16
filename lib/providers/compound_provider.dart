@@ -1,73 +1,31 @@
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../models/compound.dart';
+import 'base_pubchem_provider.dart';
 
-class CompoundProvider with ChangeNotifier {
+class CompoundProvider extends BasePubChemProvider {
   List<Compound> _compounds = [];
-  bool _isLoading = false;
-  String? _error;
   Compound? _selectedCompound;
 
   List<Compound> get compounds => _compounds;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
   Compound? get selectedCompound => _selectedCompound;
 
   Future<void> searchCompounds(String query) async {
-    _isLoading = true;
-    _error = null;
+    setLoading(true);
+    clearError();
     notifyListeners();
 
     try {
       print('Starting compound search for query: $query');
 
-      // Step 1: Get CIDs using synonym search
-      final cidUrl = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/$query/cids/JSON');
-      print('Fetching CIDs from: $cidUrl');
-
-      final cidResponse = await http.get(cidUrl);
-      print('CID response status: ${cidResponse.statusCode}');
-
-      if (cidResponse.statusCode != 200) {
-        throw Exception('Failed to fetch compounds');
-      }
-
-      final cidData = json.decode(cidResponse.body);
-      print('CID data received: $cidData');
-
-      final List<dynamic> cids = cidData['IdentifierList']?['CID'] ?? [];
+      // Use base provider's method to fetch CIDs
+      final cids = await fetchCids(query);
       print('Found ${cids.length} CIDs: $cids');
 
-      if (cids.isEmpty) {
-        throw Exception('No compounds found for "$query".');
-      }
+      // Use base provider's method to fetch properties
+      final properties = await fetchBasicProperties(cids);
+      print('Found ${properties.length} compounds with properties');
 
-      // Limit to first 10
-      final limitedCids = cids.take(10).join(',');
-      print('Limited to first 10 CIDs: $limitedCids');
-
-      // Step 2: Fetch properties for the CIDs
-      final propertiesUrl = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$limitedCids/property/Title,MolecularFormula,MolecularWeight,CanonicalSMILES,XLogP,Complexity,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,HeavyAtomCount,AtomStereoCount,BondStereoCount,ExactMass,MonoisotopicMass,TPSA,Charge,IsotopeAtomCount,DefinedAtomStereoCount,UndefinedAtomStereoCount,DefinedBondStereoCount,UndefinedBondStereoCount,CovalentUnitCount,PatentCount,PatentFamilyCount,AnnotationTypes,AnnotationTypeCount,SourceCategories,LiteratureCount,InChI,InChIKey/JSON');
-      print('Fetching properties from: $propertiesUrl');
-
-      final propertiesResponse = await http.get(propertiesUrl);
-      print('Properties response status: ${propertiesResponse.statusCode}');
-
-      if (propertiesResponse.statusCode != 200) {
-        throw Exception('Failed to fetch compound properties');
-      }
-
-      final propertiesData = json.decode(propertiesResponse.body);
-      print('Properties data received: $propertiesData');
-
-      final List<dynamic> compoundData =
-          propertiesData['PropertyTable']?['Properties'] ?? [];
-      print('Found ${compoundData.length} compounds with properties');
-
-      _compounds = compoundData.map((e) {
+      _compounds = properties.map((e) {
         print('Processing compound data: $e');
         return Compound.fromJson(e);
       }).toList();
@@ -76,185 +34,153 @@ class CompoundProvider with ChangeNotifier {
     } catch (e, stackTrace) {
       print('Error during compound search: $e');
       print('Stack trace: $stackTrace');
-      _error = e.toString();
+      setError(e.toString());
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      setLoading(false);
     }
   }
 
   Future<void> fetchCompoundDetails(int cid) async {
     try {
-      _isLoading = true;
-      _error = null;
+      setLoading(true);
+      clearError();
       notifyListeners();
 
       print('Fetching details for CID: $cid');
 
-      // First fetch the detailed information
-      final response = await http.get(
-        Uri.parse(
-            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/JSON'),
+      // Use base provider's method to fetch detailed info
+      final data = await fetchDetailedInfo(cid);
+      print('\n=== Raw API Response ===');
+      print('Compound data: ${data['compound']}');
+      print('Record data: ${data['record']}');
+
+      // Extract properties from compound data
+      final compoundData = data['compound']['PC_Compounds']?[0];
+      final propertiesData = compoundData?['props'] ?? [];
+      final properties = _extractProperties(propertiesData);
+      print('\n=== Extracted Properties ===');
+      print('Properties: $properties');
+
+      // Extract title from record data
+      String title = '';
+      if (data['record'] != null) {
+        final sections = data['record']['Record']?['Section'] ?? [];
+        for (var section in sections) {
+          if (section['TOCHeading'] == 'Names and Identifiers') {
+            final subsections = section['Section'] ?? [];
+            for (var subsection in subsections) {
+              if (subsection['TOCHeading'] == 'Record Title') {
+                title = subsection['Information']?[0]['Value']
+                        ?['StringWithMarkup']?[0]['String'] ??
+                    '';
+                break;
+              }
+            }
+            if (title.isNotEmpty) break;
+          }
+        }
+      }
+
+      // If no title found in record, use properties title
+      if (title.isEmpty) {
+        title = properties['Title'] ?? properties['IUPACName'] ?? '';
+      }
+
+      // Use base provider's method to fetch description
+      final descriptionData = await fetchDescription(cid);
+      print('\n=== Description Data ===');
+      print('Description data: $descriptionData');
+
+      // Use base provider's method to fetch synonyms
+      final synonyms = await fetchSynonyms(cid);
+      print('\n=== Synonyms Data ===');
+      print('Synonyms data: $synonyms');
+
+      // Create the compound object
+      _selectedCompound = Compound(
+        cid: cid,
+        title: title,
+        molecularFormula: properties['MolecularFormula'] ?? '',
+        molecularWeight: double.tryParse(
+                properties['Molecular Weight']?.toString() ?? '0') ??
+            0.0,
+        smiles: properties['CanonicalSMILES'] ?? '',
+        xLogP: double.tryParse(properties['XLogP']?.toString() ?? '0') ?? 0.0,
+        hBondDonorCount:
+            int.tryParse(properties['HBondDonorCount']?.toString() ?? '0') ?? 0,
+        hBondAcceptorCount:
+            int.tryParse(properties['HBondAcceptorCount']?.toString() ?? '0') ??
+                0,
+        rotatableBondCount:
+            int.tryParse(properties['RotatableBondCount']?.toString() ?? '0') ??
+                0,
+        heavyAtomCount:
+            int.tryParse(properties['HeavyAtomCount']?.toString() ?? '0') ?? 0,
+        atomStereoCount:
+            int.tryParse(properties['AtomStereoCount']?.toString() ?? '0') ?? 0,
+        bondStereoCount:
+            int.tryParse(properties['BondStereoCount']?.toString() ?? '0') ?? 0,
+        complexity:
+            double.tryParse(properties['Complexity']?.toString() ?? '0') ?? 0.0,
+        iupacName: properties['IUPACName'] ?? '',
+        description: descriptionData['description'] ?? '',
+        descriptionSource: descriptionData['source'] ?? '',
+        descriptionUrl: descriptionData['url'] ?? '',
+        synonyms: synonyms,
+        physicalProperties: properties,
+        pubChemUrl: 'https://pubchem.ncbi.nlm.nih.gov/compound/$cid',
+        monoisotopicMass:
+            double.tryParse(properties['Weight']?.toString() ?? '0') ?? 0.0,
+        tpsa: double.tryParse(properties['TPSA']?.toString() ?? '0') ?? 0.0,
+        charge: int.tryParse(properties['Charge']?.toString() ?? '0') ?? 0,
+        isotopeAtomCount:
+            int.tryParse(properties['IsotopeAtomCount']?.toString() ?? '0') ??
+                0,
+        definedAtomStereoCount: int.tryParse(
+                properties['DefinedAtomStereoCount']?.toString() ?? '0') ??
+            0,
+        undefinedAtomStereoCount: int.tryParse(
+                properties['UndefinedAtomStereoCount']?.toString() ?? '0') ??
+            0,
+        definedBondStereoCount: int.tryParse(
+                properties['DefinedBondStereoCount']?.toString() ?? '0') ??
+            0,
+        undefinedBondStereoCount: int.tryParse(
+                properties['UndefinedBondStereoCount']?.toString() ?? '0') ??
+            0,
+        covalentUnitCount:
+            int.tryParse(properties['CovalentUnitCount']?.toString() ?? '0') ??
+                0,
+        patentCount:
+            int.tryParse(properties['PatentCount']?.toString() ?? '0') ?? 0,
+        patentFamilyCount:
+            int.tryParse(properties['PatentFamilyCount']?.toString() ?? '0') ??
+                0,
+        annotationTypes: List<String>.from(properties['AnnotationTypes'] ?? []),
+        annotationTypeCount: int.tryParse(
+                properties['AnnotationTypeCount']?.toString() ?? '0') ??
+            0,
+        sourceCategories:
+            List<String>.from(properties['SourceCategories'] ?? []),
+        literatureCount:
+            int.tryParse(properties['LiteratureCount']?.toString() ?? '0') ?? 0,
+        inchi: properties['InChI'] ?? '',
+        inchiKey: properties['InChIKey'] ?? '',
       );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        print('\n=== Raw API Response ===');
-        print('Compound data: $data');
-
-        final compoundData = data['PC_Compounds']?[0];
-        final propertiesData = compoundData?['props'] ?? [];
-        final properties = _extractProperties(propertiesData);
-        print('\n=== Extracted Properties ===');
-        print('Properties: $properties');
-
-        // Then fetch the description
-        final descriptionResponse = await http.get(
-          Uri.parse(
-              'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/description/JSON'),
-        );
-
-        String description = '';
-        String descriptionSource = '';
-        String descriptionUrl = '';
-
-        if (descriptionResponse.statusCode == 200) {
-          final descriptionData = json.decode(descriptionResponse.body);
-          print('\n=== Description Data ===');
-          print('Description data: $descriptionData');
-
-          final descriptions =
-              descriptionData['InformationList']?['Information'] ?? [];
-          if (descriptions.isNotEmpty) {
-            final info = descriptions[0];
-            description = info['Description'] ?? '';
-            descriptionSource = info['DescriptionSourceName'] ?? '';
-            descriptionUrl = info['DescriptionURL'] ?? '';
-          }
-        }
-
-        // Fetch synonyms
-        final synonymsResponse = await http.get(
-          Uri.parse(
-              'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/synonyms/JSON'),
-        );
-
-        List<String> synonyms = [];
-        if (synonymsResponse.statusCode == 200) {
-          final synonymsData = json.decode(synonymsResponse.body);
-          print('\n=== Synonyms Data ===');
-          print('Synonyms data: $synonymsData');
-
-          final synonymsList =
-              synonymsData['InformationList']?['Information'] ?? [];
-          if (synonymsList.isNotEmpty) {
-            synonyms = List<String>.from(synonymsList[0]['Synonym'] ?? []);
-          }
-        }
-
-        // Create the compound object
-        _selectedCompound = Compound(
-          cid: cid,
-          title: properties['Title'] ?? properties['IUPACName'] ?? '',
-          molecularFormula: properties['MolecularFormula'] ?? '',
-          molecularWeight: double.tryParse(
-                  properties['Molecular Weight']?.toString() ?? '0') ??
-              0.0,
-          smiles: properties['CanonicalSMILES'] ?? '',
-          xLogP: double.tryParse(properties['XLogP']?.toString() ?? '0') ?? 0.0,
-          hBondDonorCount:
-              int.tryParse(properties['HBondDonorCount']?.toString() ?? '0') ??
-                  0,
-          hBondAcceptorCount: int.tryParse(
-                  properties['HBondAcceptorCount']?.toString() ?? '0') ??
-              0,
-          rotatableBondCount: int.tryParse(
-                  properties['RotatableBondCount']?.toString() ?? '0') ??
-              0,
-          heavyAtomCount:
-              int.tryParse(properties['HeavyAtomCount']?.toString() ?? '0') ??
-                  0,
-          atomStereoCount:
-              int.tryParse(properties['AtomStereoCount']?.toString() ?? '0') ??
-                  0,
-          bondStereoCount:
-              int.tryParse(properties['BondStereoCount']?.toString() ?? '0') ??
-                  0,
-          complexity:
-              double.tryParse(properties['Complexity']?.toString() ?? '0') ??
-                  0.0,
-          iupacName: properties['IUPACName'] ?? '',
-          description: description,
-          descriptionSource: descriptionSource,
-          descriptionUrl: descriptionUrl,
-          synonyms: synonyms,
-          physicalProperties: properties,
-          safetyData: {},
-          classifications: [],
-          uses: [],
-          pubChemUrl: 'https://pubchem.ncbi.nlm.nih.gov/compound/$cid',
-          exactMass:
-              double.tryParse(properties['ExactMass']?.toString() ?? '0') ??
-                  0.0,
-          monoisotopicMass: double.tryParse(
-                  properties['MonoisotopicMass']?.toString() ?? '0') ??
-              0.0,
-          tpsa: double.tryParse(properties['TPSA']?.toString() ?? '0') ?? 0.0,
-          charge: int.tryParse(properties['Charge']?.toString() ?? '0') ?? 0,
-          isotopeAtomCount:
-              int.tryParse(properties['IsotopeAtomCount']?.toString() ?? '0') ??
-                  0,
-          definedAtomStereoCount: int.tryParse(
-                  properties['DefinedAtomStereoCount']?.toString() ?? '0') ??
-              0,
-          undefinedAtomStereoCount: int.tryParse(
-                  properties['UndefinedAtomStereoCount']?.toString() ?? '0') ??
-              0,
-          definedBondStereoCount: int.tryParse(
-                  properties['DefinedBondStereoCount']?.toString() ?? '0') ??
-              0,
-          undefinedBondStereoCount: int.tryParse(
-                  properties['UndefinedBondStereoCount']?.toString() ?? '0') ??
-              0,
-          covalentUnitCount: int.tryParse(
-                  properties['CovalentUnitCount']?.toString() ?? '0') ??
-              0,
-          patentCount:
-              int.tryParse(properties['PatentCount']?.toString() ?? '0') ?? 0,
-          patentFamilyCount: int.tryParse(
-                  properties['PatentFamilyCount']?.toString() ?? '0') ??
-              0,
-          annotationTypes:
-              List<String>.from(properties['AnnotationTypes'] ?? []),
-          annotationTypeCount: int.tryParse(
-                  properties['AnnotationTypeCount']?.toString() ?? '0') ??
-              0,
-          sourceCategories:
-              List<String>.from(properties['SourceCategories'] ?? []),
-          literatureCount:
-              int.tryParse(properties['LiteratureCount']?.toString() ?? '0') ??
-                  0,
-          inchi: properties['InChI'] ?? '',
-          inchiKey: properties['InChIKey'] ?? '',
-        );
-
-        print('\n=== Created Compound Object ===');
-        print('Title: ${_selectedCompound?.title}');
-        print('Molecular Formula: ${_selectedCompound?.molecularFormula}');
-        print('Molecular Weight: ${_selectedCompound?.molecularWeight}');
-        print('Description: ${_selectedCompound?.description}');
-        print('Description Source: ${_selectedCompound?.descriptionSource}');
-        print('Description URL: ${_selectedCompound?.descriptionUrl}');
-        print('Synonyms: ${_selectedCompound?.synonyms}');
-      } else {
-        throw Exception('Failed to load compound details');
-      }
+      print('\n=== Created Compound Object ===');
+      print('Title: ${_selectedCompound?.title}');
+      print('Molecular Formula: ${_selectedCompound?.molecularFormula}');
+      print('Molecular Weight: ${_selectedCompound?.molecularWeight}');
+      print('Description: ${_selectedCompound?.description}');
+      print('Description Source: ${_selectedCompound?.descriptionSource}');
+      print('Description URL: ${_selectedCompound?.descriptionUrl}');
+      print('Synonyms: ${_selectedCompound?.synonyms}');
     } catch (e) {
       print('Error in fetchCompoundDetails: $e');
-      _error = e.toString();
+      setError(e.toString());
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      setLoading(false);
     }
   }
 
@@ -306,8 +232,7 @@ class CompoundProvider with ChangeNotifier {
         properties['TPSA'] = value['fval'];
       } else if (label == 'IUPAC Name') {
         properties['IUPACName'] = value['sval'];
-        properties['Title'] =
-            value['sval']; // Use IUPAC name as title if available
+        properties['Title'] = value['sval'];
       } else if (label == 'Molecular Formula') {
         properties['MolecularFormula'] = value['sval'];
       } else if (label == 'SMILES') {
@@ -336,6 +261,17 @@ class CompoundProvider with ChangeNotifier {
         properties['CovalentUnitCount'] = value['ival'];
       } else if (label == 'Count' && name == 'Isotope Atom') {
         properties['IsotopeAtomCount'] = value['ival'];
+      } else if (label == 'Count' && name == 'Patent') {
+        properties['PatentCount'] = value['ival'];
+      } else if (label == 'Count' && name == 'Patent Family') {
+        properties['PatentFamilyCount'] = value['ival'];
+      } else if (label == 'Count' && name == 'Literature') {
+        properties['LiteratureCount'] = value['ival'];
+      } else if (label == 'Annotation Type') {
+        properties['AnnotationTypes'] = value['slist'];
+        properties['AnnotationTypeCount'] = value['slist']?.length ?? 0;
+      } else if (label == 'Source Category') {
+        properties['SourceCategories'] = value['slist'];
       }
     }
 
