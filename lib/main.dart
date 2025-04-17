@@ -1,3 +1,4 @@
+import 'package:chem_explore/providers/flashcard_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/compound_provider.dart';
@@ -39,6 +40,7 @@ class ChemistryExplorerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DrugProvider()),
         ChangeNotifierProvider(create: (_) => ReactionProvider()),
         ChangeNotifierProvider(create: (_) => BookmarkProvider()),
+        ChangeNotifierProvider(create: (_) => FlashcardProvider()),
       ],
       child: MaterialApp(
         title: 'ChemVerse',

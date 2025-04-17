@@ -9,6 +9,8 @@ import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import '../../widgets/molecule_3d_viewer.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../widgets/detail_widgets.dart';
 
 class DrugDetailScreen extends StatelessWidget {
   const DrugDetailScreen({Key? key}) : super(key: key);
@@ -344,7 +346,7 @@ class DrugDetailScreen extends StatelessWidget {
 
                       // Description section
                       if (drug.description.isNotEmpty)
-                        _buildSection(
+                        DetailWidgets.buildSection(
                           context,
                           title: 'Description',
                           icon: Icons.description,
@@ -353,7 +355,7 @@ class DrugDetailScreen extends StatelessWidget {
                             children: [
                               Text(
                                 drug.description,
-                                style: const TextStyle(
+                                style: GoogleFonts.poppins(
                                   height: 1.5,
                                 ),
                               ),
@@ -361,10 +363,34 @@ class DrugDetailScreen extends StatelessWidget {
                                 const SizedBox(height: 8),
                                 Text(
                                   'Source: ${drug.descriptionSource}',
-                                  style: TextStyle(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 12,
                                     color: theme.colorScheme.onSurface
                                         .withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                              if (drug.descriptionUrl.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                InkWell(
+                                  onTap: () => _launchUrl(drug.descriptionUrl),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.link,
+                                        size: 16,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'View Source',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          color: theme.colorScheme.primary,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -373,13 +399,13 @@ class DrugDetailScreen extends StatelessWidget {
                         ),
 
                       // Properties section
-                      _buildSection(
+                      DetailWidgets.buildSection(
                         context,
                         title: 'Physical Properties',
                         icon: Icons.science,
                         content: Column(
                           children: [
-                            _buildPropertyCard(
+                            DetailWidgets.buildPropertyCard(
                               context,
                               title: 'Structure',
                               content: Row(
@@ -389,11 +415,13 @@ class DrugDetailScreen extends StatelessWidget {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        _buildProperty(
+                                        DetailWidgets.buildProperty(
+                                          context,
                                           'Molecular Formula',
                                           drug.molecularFormula,
                                         ),
-                                        _buildProperty(
+                                        DetailWidgets.buildProperty(
+                                          context,
                                           'SMILES',
                                           drug.smiles,
                                           isMultiLine: true,
@@ -404,7 +432,7 @@ class DrugDetailScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            _buildPropertyCard(
+                            DetailWidgets.buildPropertyCard(
                               context,
                               title: 'Physical & Chemical Properties',
                               content: Column(
@@ -412,13 +440,15 @@ class DrugDetailScreen extends StatelessWidget {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'XLogP',
                                           drug.xLogP.toString(),
                                         ),
                                       ),
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'Complexity',
                                           drug.complexity.toString(),
                                         ),
@@ -428,20 +458,23 @@ class DrugDetailScreen extends StatelessWidget {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'H-Bond Donors',
                                           drug.hBondDonorCount.toString(),
                                         ),
                                       ),
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'H-Bond Acceptors',
                                           drug.hBondAcceptorCount.toString(),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  _buildProperty(
+                                  DetailWidgets.buildProperty(
+                                    context,
                                     'Rotatable Bonds',
                                     drug.rotatableBondCount.toString(),
                                   ),
@@ -464,79 +497,79 @@ class DrugDetailScreen extends StatelessWidget {
                           drug.routeOfElimination != null ||
                           drug.volumeOfDistribution != null ||
                           drug.clearance != null)
-                        _buildSection(
+                        DetailWidgets.buildSection(
                           context,
                           title: 'Drug Information',
                           icon: Icons.medication,
                           content: Column(
                             children: [
                               if (drug.indication!.isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Indication',
                                   content: Text(drug.indication!),
                                 ),
                               if (drug.mechanismOfAction!.isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Mechanism of Action',
                                   content: Text(drug.mechanismOfAction!),
                                 ),
                               if (drug.toxicity.isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Toxicity',
                                   content: Text(drug.toxicity!),
                                 ),
                               if (drug.pharmacology.isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Pharmacology',
                                   content: Text(drug.pharmacology!),
                                 ),
                               if (drug.metabolism!.isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Metabolism',
                                   content: Text(drug.metabolism!),
                                 ),
                               if (drug.absorption.isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Absorption',
                                   content: Text(drug.absorption!),
                                 ),
                               if (drug.halfLife != null &&
                                   drug.halfLife!.isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Half Life',
                                   content: Text(drug.halfLife!),
                                 ),
                               if (drug.proteinBinding != null &&
                                   drug.proteinBinding!.isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Protein Binding',
                                   content: Text(drug.proteinBinding!),
                                 ),
                               if (drug.routeOfElimination != null &&
                                   drug.routeOfElimination!.isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Route of Elimination',
                                   content: Text(drug.routeOfElimination!),
                                 ),
                               if (drug.volumeOfDistribution != null &&
                                   drug.volumeOfDistribution!.isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Volume of Distribution',
                                   content: Text(drug.volumeOfDistribution!),
                                 ),
                               if (drug.clearance != null &&
                                   drug.clearance!.isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Clearance',
                                   content: Text(drug.clearance!),
@@ -547,7 +580,7 @@ class DrugDetailScreen extends StatelessWidget {
 
                       // Synonyms section
                       if (drug.synonyms.isNotEmpty)
-                        _buildSection(
+                        DetailWidgets.buildSection(
                           context,
                           title: 'Synonyms',
                           icon: Icons.text_fields,
@@ -658,19 +691,19 @@ class DrugDetailScreen extends StatelessWidget {
                         ),
 
                       // Actions section
-                      _buildSection(
+                      DetailWidgets.buildSection(
                         context,
                         title: 'Actions',
                         icon: Icons.menu_book,
                         content: Column(
                           children: [
-                            _buildActionButton(
+                            DetailWidgets.buildActionButton(
                               context,
                               title: 'View on PubChem',
                               icon: Icons.public,
                               onTap: () => _launchUrl(drug.pubChemUrl),
                             ),
-                            _buildActionButton(
+                            DetailWidgets.buildActionButton(
                               context,
                               title: 'Export Data',
                               icon: Icons.download,
@@ -688,208 +721,6 @@ class DrugDetailScreen extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildSection(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required Widget content,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Card(
-        elevation: 1,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    icon,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const Divider(height: 24),
-              content,
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPropertyCard(
-    BuildContext context, {
-    required String title,
-    required Widget content,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-            ),
-          ),
-          if (title == 'Structure')
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: _build3DViewer(context),
-                ),
-                const SizedBox(height: 16),
-                content,
-              ],
-            )
-          else
-            content,
-        ],
-      ),
-    );
-  }
-
-  Widget _build3DViewer(BuildContext context) {
-    final drug = context.read<DrugProvider>().selectedDrug;
-    if (drug == null) return const SizedBox.shrink();
-
-    return Stack(
-      children: [
-        Complete3DMoleculeViewer(cid: drug.cid),
-        Positioned(
-          bottom: 16,
-          right: 16,
-          child: FloatingActionButton(
-            heroTag: 'fullscreen_fab',
-            mini: true,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => FullScreenMoleculeView(
-                    cid: drug.cid,
-                    title: drug.title,
-                  ),
-                ),
-              );
-            },
-            tooltip: 'View in Full Screen',
-            child: const Icon(Icons.fullscreen),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProperty(String label, String value,
-      {bool isMultiLine = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: isMultiLine ? 13 : 14,
-              fontWeight: isMultiLine ? FontWeight.normal : FontWeight.w500,
-            ),
-            maxLines: isMultiLine ? 3 : 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceVariant,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 20,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                title,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Spacer(),
-              Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant
-                    .withOpacity(0.5),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

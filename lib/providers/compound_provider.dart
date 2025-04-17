@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import '../models/compound.dart';
 import 'base_pubchem_provider.dart';
 import 'package:http/http.dart' as http;
@@ -104,22 +103,6 @@ class CompoundProvider extends BasePubChemProvider {
         print('Description: $description');
         print('Description Source: $descriptionSource');
         print('Description URL: $descriptionUrl');
-      }
-
-      // Fetch synonyms (limited to 50)
-      print('Fetching synonyms...');
-      final synonymsResponse = await http.get(
-        Uri.parse(
-            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/synonyms/JSON'),
-      );
-
-      List<String> synonyms = [];
-      if (synonymsResponse.statusCode == 200) {
-        final synonymsData = json.decode(synonymsResponse.body);
-        final synonymsList =
-            synonymsData['InformationList']['Information'][0]['Synonym'];
-        synonyms =
-            (synonymsList as List).take(50).map((s) => s.toString()).toList();
       }
 
       // Fetch additional data from PUG View
@@ -273,6 +256,11 @@ class CompoundProvider extends BasePubChemProvider {
         title = properties['Title'] ?? properties['IUPACName'] ?? '';
         print('Title from properties: $title');
       }
+
+      // Use base provider's method to fetch synonyms
+      print('Fetching synonyms...');
+      final synonyms = await fetchSynonyms(cid);
+      print('Synonyms fetched: ${synonyms.length}');
 
       // Create the compound object
       _selectedCompound = Compound(

@@ -1,3 +1,4 @@
+import 'package:chem_explore/screens/elements/element_flashcard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -145,9 +146,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           ),
 
           // Search Screen (placeholder)
-          const Center(
-            child: Text('Search Screen Coming Soon'),
-          ),
+          const ElementFlashcardScreen(),
 
           // Favorites Screen
           const BookmarkScreen(),
@@ -183,7 +182,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.search_rounded),
+              icon: Icon(Icons.flash_auto),
               label: 'Search',
             ),
             BottomNavigationBarItem(

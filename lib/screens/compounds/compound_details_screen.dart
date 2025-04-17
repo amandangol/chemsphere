@@ -6,7 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../providers/compound_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/bookmark_provider.dart';
-import '../../widgets/molecule_3d_viewer.dart';
+import '../../widgets/detail_widgets.dart';
 
 class CompoundDetailsScreen extends StatefulWidget {
   const CompoundDetailsScreen({super.key});
@@ -376,7 +376,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
 
                       // Description section
                       if (compound.description.isNotEmpty)
-                        _buildSection(
+                        DetailWidgets.buildSection(
                           context,
                           title: 'Description',
                           icon: Icons.description,
@@ -405,13 +405,13 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                         ),
 
                       // Physical Properties section
-                      _buildSection(
+                      DetailWidgets.buildSection(
                         context,
                         title: 'Physical Properties',
                         icon: Icons.science,
                         content: Column(
                           children: [
-                            _buildPropertyCard(
+                            DetailWidgets.buildPropertyCard(
                               context,
                               title: 'Structure',
                               content: Column(
@@ -426,32 +426,39 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                         width: 1,
                                       ),
                                     ),
-                                    child:
-                                        _build3DViewer(context, compound.cid),
+                                    child: DetailWidgets.build3DViewer(
+                                      context,
+                                      cid: compound.cid,
+                                      title: compound.title,
+                                    ),
                                   ),
                                   const SizedBox(height: 16),
-                                  _buildProperty(
+                                  DetailWidgets.buildProperty(
+                                    context,
                                     'Molecular Formula',
                                     compound.molecularFormula,
                                   ),
-                                  _buildProperty(
+                                  DetailWidgets.buildProperty(
+                                    context,
                                     'SMILES',
                                     compound.smiles,
                                     isMultiLine: true,
                                   ),
-                                  _buildProperty(
+                                  DetailWidgets.buildProperty(
+                                    context,
                                     'InChI',
                                     compound.inchi,
                                     isMultiLine: true,
                                   ),
-                                  _buildProperty(
+                                  DetailWidgets.buildProperty(
+                                    context,
                                     'InChI Key',
                                     compound.inchiKey,
                                   ),
                                 ],
                               ),
                             ),
-                            _buildPropertyCard(
+                            DetailWidgets.buildPropertyCard(
                               context,
                               title: 'Physical & Chemical Properties',
                               content: Column(
@@ -459,13 +466,15 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'XLogP',
                                           compound.xLogP.toStringAsFixed(2),
                                         ),
                                       ),
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'Complexity',
                                           compound.complexity
                                               .toStringAsFixed(2),
@@ -476,13 +485,15 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'H-Bond Donors',
                                           compound.hBondDonorCount.toString(),
                                         ),
                                       ),
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'H-Bond Acceptors',
                                           compound.hBondAcceptorCount
                                               .toString(),
@@ -493,13 +504,15 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'TPSA',
                                           '${compound.tpsa} Å²',
                                         ),
                                       ),
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'Charge',
                                           compound.charge.toString(),
                                         ),
@@ -509,7 +522,8 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'Monoisotopic Mass',
                                           '${compound.monoisotopicMass} g/mol',
                                         ),
@@ -519,14 +533,16 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'Rotatable Bonds',
                                           compound.rotatableBondCount
                                               .toString(),
                                         ),
                                       ),
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'Heavy Atoms',
                                           compound.heavyAtomCount.toString(),
                                         ),
@@ -536,13 +552,15 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'Isotope Atoms',
                                           compound.isotopeAtomCount.toString(),
                                         ),
                                       ),
                                       Expanded(
-                                        child: _buildProperty(
+                                        child: DetailWidgets.buildProperty(
+                                          context,
                                           'Covalent Units',
                                           compound.covalentUnitCount.toString(),
                                         ),
@@ -553,7 +571,8 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   if (compound
                                           .physicalProperties['MeltingPoint'] !=
                                       null)
-                                    _buildProperty(
+                                    DetailWidgets.buildProperty(
+                                      context,
                                       'Melting Point',
                                       compound
                                           .physicalProperties['MeltingPoint'],
@@ -561,7 +580,8 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   if (compound
                                           .physicalProperties['BoilingPoint'] !=
                                       null)
-                                    _buildProperty(
+                                    DetailWidgets.buildProperty(
+                                      context,
                                       'Boiling Point',
                                       compound
                                           .physicalProperties['BoilingPoint'],
@@ -569,27 +589,31 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   if (compound
                                           .physicalProperties['FlashPoint'] !=
                                       null)
-                                    _buildProperty(
+                                    DetailWidgets.buildProperty(
+                                      context,
                                       'Flash Point',
                                       compound.physicalProperties['FlashPoint'],
                                     ),
                                   if (compound.physicalProperties['Density'] !=
                                       null)
-                                    _buildProperty(
+                                    DetailWidgets.buildProperty(
+                                      context,
                                       'Density',
                                       compound.physicalProperties['Density'],
                                     ),
                                   if (compound
                                           .physicalProperties['Solubility'] !=
                                       null)
-                                    _buildProperty(
+                                    DetailWidgets.buildProperty(
+                                      context,
                                       'Solubility',
                                       compound.physicalProperties['Solubility'],
                                     ),
                                   if (compound.physicalProperties[
                                           'VaporPressure'] !=
                                       null)
-                                    _buildProperty(
+                                    DetailWidgets.buildProperty(
+                                      context,
                                       'Vapor Pressure',
                                       compound
                                           .physicalProperties['VaporPressure'],
@@ -603,7 +627,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
 
                       // Safety Data section
                       if (compound.safetyData.isNotEmpty)
-                        _buildSection(
+                        DetailWidgets.buildSection(
                           context,
                           title: 'Safety Information',
                           icon: Icons.warning_rounded,
@@ -616,7 +640,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   (compound.safetyData['GHSClassification']
                                           as List)
                                       .isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'GHS Classification',
                                   content: Column(
@@ -663,7 +687,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   (compound.safetyData['HazardStatements']
                                           as List)
                                       .isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Hazard Statements',
                                   content: Column(
@@ -711,7 +735,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   (compound.safetyData[
                                           'PrecautionaryStatements'] as List)
                                       .isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Precautionary Statements',
                                   content: Column(
@@ -760,7 +784,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   (compound.safetyData['SafetyDataSheets']
                                           as List)
                                       .isNotEmpty)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Safety Data Sheets',
                                   content: Column(
@@ -811,7 +835,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
 
                       // Biological Properties section
                       if (compound.biologicalData.isNotEmpty)
-                        _buildSection(
+                        DetailWidgets.buildSection(
                           context,
                           title: 'Biological Properties',
                           icon: Icons.biotech_rounded,
@@ -867,7 +891,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
 
                       // Synonyms section
                       if (compound.synonyms.isNotEmpty)
-                        _buildSection(
+                        DetailWidgets.buildSection(
                           context,
                           title: 'Synonyms',
                           icon: Icons.text_fields,
@@ -983,14 +1007,14 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                       // Stereochemistry section
                       if (compound.atomStereoCount > 0 ||
                           compound.bondStereoCount > 0)
-                        _buildSection(
+                        DetailWidgets.buildSection(
                           context,
                           title: 'Stereochemistry',
                           icon: Icons.science,
                           content: Column(
                             children: [
                               if (compound.atomStereoCount > 0)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Atom Stereochemistry',
                                   content: Column(
@@ -998,14 +1022,16 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                       Row(
                                         children: [
                                           Expanded(
-                                            child: _buildProperty(
+                                            child: DetailWidgets.buildProperty(
+                                              context,
                                               'Total Atom Stereo Count',
                                               compound.atomStereoCount
                                                   .toString(),
                                             ),
                                           ),
                                           Expanded(
-                                            child: _buildProperty(
+                                            child: DetailWidgets.buildProperty(
+                                              context,
                                               'Defined Atom Stereo Count',
                                               compound.definedAtomStereoCount
                                                   .toString(),
@@ -1013,7 +1039,8 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                           ),
                                         ],
                                       ),
-                                      _buildProperty(
+                                      DetailWidgets.buildProperty(
+                                        context,
                                         'Undefined Atom Stereo Count',
                                         compound.undefinedAtomStereoCount
                                             .toString(),
@@ -1022,7 +1049,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   ),
                                 ),
                               if (compound.bondStereoCount > 0)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Bond Stereochemistry',
                                   content: Column(
@@ -1030,14 +1057,16 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                       Row(
                                         children: [
                                           Expanded(
-                                            child: _buildProperty(
+                                            child: DetailWidgets.buildProperty(
+                                              context,
                                               'Total Bond Stereo Count',
                                               compound.bondStereoCount
                                                   .toString(),
                                             ),
                                           ),
                                           Expanded(
-                                            child: _buildProperty(
+                                            child: DetailWidgets.buildProperty(
+                                              context,
                                               'Defined Bond Stereo Count',
                                               compound.definedBondStereoCount
                                                   .toString(),
@@ -1045,7 +1074,8 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                           ),
                                         ],
                                       ),
-                                      _buildProperty(
+                                      DetailWidgets.buildProperty(
+                                        context,
                                         'Undefined Bond Stereo Count',
                                         compound.undefinedBondStereoCount
                                             .toString(),
@@ -1060,14 +1090,14 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                       // Literature and Patents section
                       if (compound.patentCount > 0 ||
                           compound.literatureCount > 0)
-                        _buildSection(
+                        DetailWidgets.buildSection(
                           context,
                           title: 'Literature and Patents',
                           icon: Icons.menu_book,
                           content: Column(
                             children: [
                               if (compound.patentCount > 0)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Patents',
                                   content: Column(
@@ -1075,13 +1105,15 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                       Row(
                                         children: [
                                           Expanded(
-                                            child: _buildProperty(
+                                            child: DetailWidgets.buildProperty(
+                                              context,
                                               'Patent Count',
                                               compound.patentCount.toString(),
                                             ),
                                           ),
                                           Expanded(
-                                            child: _buildProperty(
+                                            child: DetailWidgets.buildProperty(
+                                              context,
                                               'Patent Family Count',
                                               compound.patentFamilyCount
                                                   .toString(),
@@ -1093,26 +1125,30 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                                   ),
                                 ),
                               if (compound.literatureCount > 0)
-                                _buildPropertyCard(
+                                DetailWidgets.buildPropertyCard(
                                   context,
                                   title: 'Literature',
                                   content: Column(
                                     children: [
-                                      _buildProperty(
+                                      DetailWidgets.buildProperty(
+                                        context,
                                         'Literature Count',
                                         compound.literatureCount.toString(),
                                       ),
                                       if (compound.annotationTypes.isNotEmpty)
-                                        _buildProperty(
+                                        DetailWidgets.buildProperty(
+                                          context,
                                           'Annotation Types',
                                           compound.annotationTypes.join(', '),
                                         ),
-                                      _buildProperty(
+                                      DetailWidgets.buildProperty(
+                                        context,
                                         'Annotation Type Count',
                                         compound.annotationTypeCount.toString(),
                                       ),
                                       if (compound.sourceCategories.isNotEmpty)
-                                        _buildProperty(
+                                        DetailWidgets.buildProperty(
+                                          context,
                                           'Source Categories',
                                           compound.sourceCategories.join(', '),
                                         ),
@@ -1124,19 +1160,19 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                         ),
 
                       // Actions section
-                      _buildSection(
+                      DetailWidgets.buildSection(
                         context,
                         title: 'Actions',
                         icon: Icons.menu_book,
                         content: Column(
                           children: [
-                            _buildActionButton(
+                            DetailWidgets.buildActionButton(
                               context,
                               title: 'View on PubChem',
                               icon: Icons.public,
                               onTap: () => _launchUrl(compound.pubChemUrl),
                             ),
-                            _buildActionButton(
+                            DetailWidgets.buildActionButton(
                               context,
                               title: 'Export Data',
                               icon: Icons.download,
@@ -1164,187 +1200,6 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
           );
         },
       ),
-    );
-  }
-
-  Widget _buildSection(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required Widget content,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Card(
-        elevation: 1,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    icon,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const Divider(height: 24),
-              content,
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPropertyCard(
-    BuildContext context, {
-    required String title,
-    required Widget content,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-            ),
-          ),
-          content,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProperty(String label, String value,
-      {bool isMultiLine = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: isMultiLine ? 13 : 14,
-              color: Colors.black,
-              fontWeight: isMultiLine ? FontWeight.normal : FontWeight.w500,
-            ),
-            maxLines: isMultiLine ? 3 : 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceVariant,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 20,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                title,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Spacer(),
-              Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant
-                    .withOpacity(0.5),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _build3DViewer(BuildContext context, int cid) {
-    final compound = context.read<CompoundProvider>().selectedCompound;
-    if (compound == null) return const SizedBox.shrink();
-
-    return Stack(
-      children: [
-        Complete3DMoleculeViewer(cid: cid),
-        Positioned(
-          bottom: 16,
-          right: 16,
-          child: FloatingActionButton(
-            heroTag: 'fullscreen_fab',
-            mini: true,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => FullScreenMoleculeView(
-                    cid: cid,
-                    title: compound.title,
-                  ),
-                ),
-              );
-            },
-            tooltip: 'View in Full Screen',
-            child: const Icon(Icons.fullscreen),
-          ),
-        ),
-      ],
     );
   }
 }

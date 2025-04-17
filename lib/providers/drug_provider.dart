@@ -84,109 +84,102 @@ class DrugProvider extends BasePubChemProvider {
     notifyListeners();
 
     try {
+      print('\n=== Starting fetchDrugDetails for CID: $cid ===');
+
       // Fetch basic drug data
-      final response = await http.get(
+      print('Fetching detailed info...');
+      final data = await fetchDetailedInfo(cid);
+      print('Detailed info response: ${data.toString().substring(0, 200)}...');
+
+      // Fetch description data from XML endpoint
+      print('Fetching description data...');
+      final descriptionResponse = await http.get(
         Uri.parse(
-            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/JSON'),
+            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/description/XML'),
       );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final pcData = data['PC_Compounds'][0];
+      String description = '';
+      String descriptionSource = '';
+      String descriptionUrl = '';
 
-        // Fetch description data
-        final descResponse = await http.get(
-          Uri.parse(
-              'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/description/XML'),
-        );
+      if (descriptionResponse.statusCode == 200) {
+        final document = XmlDocument.parse(descriptionResponse.body);
+        final descriptionElement =
+            document.findAllElements('Description').firstOrNull;
+        final sourceElement =
+            document.findAllElements('DescriptionSourceName').firstOrNull;
+        final urlElement =
+            document.findAllElements('DescriptionURL').firstOrNull;
 
-        String description = '';
-        String descriptionSource = '';
-        String descriptionUrl = '';
+        description = descriptionElement?.text ?? '';
+        descriptionSource = sourceElement?.text ?? '';
+        descriptionUrl = urlElement?.text ?? '';
 
-        if (descResponse.statusCode == 200) {
-          final xmlDoc = XmlDocument.parse(descResponse.body);
-          final descElement =
-              xmlDoc.getElement('Information')?.getElement('Description');
-          if (descElement != null) {
-            description = descElement.text;
-            descriptionSource = descElement.getAttribute('SourceName') ?? '';
-            descriptionUrl = descElement.getAttribute('URL') ?? '';
-          }
-        }
+        print('Description: $description');
+        print('Description Source: $descriptionSource');
+        print('Description URL: $descriptionUrl');
+      }
 
-        // Fetch synonyms (limited to 50)
-        final synonymsResponse = await http.get(
-          Uri.parse(
-              'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/synonyms/JSON'),
-        );
+      // Fetch drug information from PubChem
+      print('Fetching drug information...');
+      final drugInfoResponse = await http.get(
+        Uri.parse(
+            'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/$cid/JSON'),
+      );
 
-        List<String> synonyms = [];
-        if (synonymsResponse.statusCode == 200) {
-          final synonymsData = json.decode(synonymsResponse.body);
-          final synonymsList =
-              synonymsData['InformationList']['Information'][0]['Synonym'];
-          synonyms =
-              (synonymsList as List).take(50).map((s) => s.toString()).toList();
-        }
+      print('\n=== Drug Information Response ===');
+      print('Status Code: ${drugInfoResponse.statusCode}');
+      print('Response: ${drugInfoResponse.body.substring(0, 200)}...');
 
-        // Use base provider's method to fetch detailed info
-        print('\n=== Raw API Response ===');
-        print('Drug data: ${data['compound']}');
-        print('Record data: ${data['record']}');
+      String indication = '';
+      String mechanismOfAction = '';
+      String toxicity = '';
+      String pharmacology = '';
+      String metabolism = '';
+      String absorption = '';
+      String halfLife = '';
+      String proteinBinding = '';
+      String routeOfElimination = '';
+      String volumeOfDistribution = '';
+      String clearance = '';
 
-        // Find the existing drug
-        final existingDrug = _drugs.firstWhere(
-          (d) => d.cid == cid,
-          orElse: () => throw Exception('Drug not found'),
-        );
+      if (drugInfoResponse.statusCode == 200) {
+        final drugInfoData = json.decode(drugInfoResponse.body);
+        final record = drugInfoData['Record'];
 
-        // Extract additional drug information from record data
-        String indication = '';
-        String mechanismOfAction = '';
-        String toxicity = '';
-        String pharmacology = '';
-        String metabolism = '';
-        String absorption = '';
-        String halfLife = '';
-        String proteinBinding = '';
-        String routeOfElimination = '';
-        String volumeOfDistribution = '';
-        String clearance = '';
-
-        if (data['record'] != null) {
-          final sections = data['record']['Record']?['Section'] ?? [];
-
-          // Helper function to extract text from a section
-          String extractTextFromSection(
-              List<dynamic> sections, List<String> sectionNames) {
-            for (var sectionName in sectionNames) {
-              for (var section in sections) {
-                if (section['TOCHeading'] == sectionName) {
-                  final info = section['Information'] ?? [];
-                  if (info.isNotEmpty) {
-                    final value = info[0]['Value'];
-                    if (value != null) {
-                      if (value['StringWithMarkup'] != null) {
-                        return value['StringWithMarkup'][0]['String'] ?? '';
-                      } else if (value['String'] != null) {
-                        return value['String'] ?? '';
-                      }
+        // Helper function to extract text from a section
+        String extractTextFromSection(
+            List<dynamic> sections, List<String> sectionNames) {
+          for (var sectionName in sectionNames) {
+            for (var section in sections) {
+              if (section['TOCHeading'] == sectionName) {
+                final info = section['Information'] ?? [];
+                if (info.isNotEmpty) {
+                  final value = info[0]['Value'];
+                  if (value != null) {
+                    if (value['StringWithMarkup'] != null) {
+                      return value['StringWithMarkup'][0]['String'] ?? '';
+                    } else if (value['String'] != null) {
+                      return value['String'] ?? '';
                     }
                   }
                 }
-                // Check subsections
-                if (section['Section'] != null) {
-                  final result =
-                      extractTextFromSection(section['Section'], [sectionName]);
-                  if (result.isNotEmpty) return result;
-                }
+              }
+              // Check subsections
+              if (section['Section'] != null) {
+                final result =
+                    extractTextFromSection(section['Section'], [sectionName]);
+                if (result.isNotEmpty) return result;
               }
             }
-            return '';
           }
+          return '';
+        }
 
-          // Extract information from each section with multiple possible names
+        if (record != null && record['Section'] != null) {
+          final sections = record['Section'];
+          print('\n=== Extracting Drug Information ===');
+
           indication = extractTextFromSection(sections, [
             'Therapeutic Uses',
             'Indications and Usage',
@@ -194,6 +187,7 @@ class DrugProvider extends BasePubChemProvider {
             'Uses',
             'Clinical Use'
           ]);
+          print('Indication: $indication');
 
           mechanismOfAction = extractTextFromSection(sections, [
             'Mechanism of Action',
@@ -202,6 +196,7 @@ class DrugProvider extends BasePubChemProvider {
             'Action',
             'Mechanism'
           ]);
+          print('Mechanism of Action: $mechanismOfAction');
 
           toxicity = extractTextFromSection(sections, [
             'Toxicity',
@@ -211,6 +206,7 @@ class DrugProvider extends BasePubChemProvider {
             'Safety',
             'Warnings'
           ]);
+          print('Toxicity: $toxicity');
 
           pharmacology = extractTextFromSection(sections, [
             'Pharmacology',
@@ -218,6 +214,7 @@ class DrugProvider extends BasePubChemProvider {
             'Pharmacological Effects',
             'Pharmacological Properties'
           ]);
+          print('Pharmacology: $pharmacology');
 
           metabolism = extractTextFromSection(sections, [
             'Metabolism',
@@ -225,9 +222,11 @@ class DrugProvider extends BasePubChemProvider {
             'Metabolic Pathway',
             'Metabolic Process'
           ]);
+          print('Metabolism: $metabolism');
 
           absorption = extractTextFromSection(sections,
               ['Absorption', 'Bioavailability', 'Absorption and Distribution']);
+          print('Absorption: $absorption');
 
           halfLife = extractTextFromSection(sections, [
             'Half Life',
@@ -235,12 +234,14 @@ class DrugProvider extends BasePubChemProvider {
             'Half-Life',
             'Plasma Half-Life'
           ]);
+          print('Half Life: $halfLife');
 
           proteinBinding = extractTextFromSection(sections, [
             'Protein Binding',
             'Plasma Protein Binding',
             'Serum Protein Binding'
           ]);
+          print('Protein Binding: $proteinBinding');
 
           routeOfElimination = extractTextFromSection(sections, [
             'Route of Elimination',
@@ -248,6 +249,7 @@ class DrugProvider extends BasePubChemProvider {
             'Elimination',
             'Clearance Route'
           ]);
+          print('Route of Elimination: $routeOfElimination');
 
           volumeOfDistribution = extractTextFromSection(sections, [
             'Volume of Distribution',
@@ -255,6 +257,7 @@ class DrugProvider extends BasePubChemProvider {
             'Vd',
             'Distribution Volume'
           ]);
+          print('Volume of Distribution: $volumeOfDistribution');
 
           clearance = extractTextFromSection(sections, [
             'Clearance',
@@ -262,62 +265,69 @@ class DrugProvider extends BasePubChemProvider {
             'Total Clearance',
             'Plasma Clearance'
           ]);
+          print('Clearance: $clearance');
         }
-
-        // Create updated drug with additional details
-        _selectedDrug = Drug(
-          name: existingDrug.name,
-          cid: existingDrug.cid,
-          title: existingDrug.title,
-          molecularFormula: existingDrug.molecularFormula,
-          molecularWeight: existingDrug.molecularWeight,
-          smiles: existingDrug.smiles,
-          xLogP: existingDrug.xLogP,
-          hBondDonorCount: existingDrug.hBondDonorCount,
-          hBondAcceptorCount: existingDrug.hBondAcceptorCount,
-          rotatableBondCount: existingDrug.rotatableBondCount,
-          heavyAtomCount: existingDrug.heavyAtomCount,
-          atomStereoCount: existingDrug.atomStereoCount,
-          bondStereoCount: existingDrug.bondStereoCount,
-          complexity: existingDrug.complexity,
-          iupacName: existingDrug.iupacName,
-          description: description,
-          descriptionSource: descriptionSource,
-          descriptionUrl: descriptionUrl,
-          synonyms: synonyms,
-          physicalProperties: existingDrug.physicalProperties,
-          pubChemUrl: existingDrug.pubChemUrl,
-          indication: indication,
-          mechanismOfAction: mechanismOfAction,
-          toxicity: toxicity,
-          pharmacology: pharmacology,
-          metabolism: metabolism,
-          absorption: absorption,
-          halfLife: halfLife,
-          proteinBinding: proteinBinding,
-          routeOfElimination: routeOfElimination,
-          volumeOfDistribution: volumeOfDistribution,
-          clearance: clearance,
-        );
-
-        print('\n=== Created Drug Object ===');
-        print('Title: ${_selectedDrug?.title}');
-        print('Description: ${_selectedDrug?.description}');
-        print('Description Source: ${_selectedDrug?.descriptionSource}');
-        print('Description URL: ${_selectedDrug?.descriptionUrl}');
-        print('Synonyms: ${_selectedDrug?.synonyms}');
-        print('Indication: ${_selectedDrug?.indication}');
-        print('Mechanism of Action: ${_selectedDrug?.mechanismOfAction}');
-        print('Toxicity: ${_selectedDrug?.toxicity}');
-        print('Pharmacology: ${_selectedDrug?.pharmacology}');
-        print('Metabolism: ${_selectedDrug?.metabolism}');
-        print('Absorption: ${_selectedDrug?.absorption}');
-        print('Half Life: ${_selectedDrug?.halfLife}');
-        print('Protein Binding: ${_selectedDrug?.proteinBinding}');
-        print('Route of Elimination: ${_selectedDrug?.routeOfElimination}');
-        print('Volume of Distribution: ${_selectedDrug?.volumeOfDistribution}');
-        print('Clearance: ${_selectedDrug?.clearance}');
       }
+
+      // Find the existing drug
+      final existingDrug = _drugs.firstWhere(
+        (d) => d.cid == cid,
+        orElse: () => throw Exception('Drug not found'),
+      );
+
+      // Create updated drug with additional details
+      _selectedDrug = Drug(
+        name: existingDrug.name,
+        cid: existingDrug.cid,
+        title: existingDrug.title,
+        molecularFormula: existingDrug.molecularFormula,
+        molecularWeight: existingDrug.molecularWeight,
+        smiles: existingDrug.smiles,
+        xLogP: existingDrug.xLogP,
+        hBondDonorCount: existingDrug.hBondDonorCount,
+        hBondAcceptorCount: existingDrug.hBondAcceptorCount,
+        rotatableBondCount: existingDrug.rotatableBondCount,
+        heavyAtomCount: existingDrug.heavyAtomCount,
+        atomStereoCount: existingDrug.atomStereoCount,
+        bondStereoCount: existingDrug.bondStereoCount,
+        complexity: existingDrug.complexity,
+        iupacName: existingDrug.iupacName,
+        description: description,
+        descriptionSource: descriptionSource,
+        descriptionUrl: descriptionUrl,
+        synonyms: existingDrug.synonyms,
+        physicalProperties: existingDrug.physicalProperties,
+        pubChemUrl: existingDrug.pubChemUrl,
+        indication: indication,
+        mechanismOfAction: mechanismOfAction,
+        toxicity: toxicity,
+        pharmacology: pharmacology,
+        metabolism: metabolism,
+        absorption: absorption,
+        halfLife: halfLife,
+        proteinBinding: proteinBinding,
+        routeOfElimination: routeOfElimination,
+        volumeOfDistribution: volumeOfDistribution,
+        clearance: clearance,
+      );
+
+      print('\n=== Created Drug Object ===');
+      print('Title: ${_selectedDrug?.title}');
+      print('Description: ${_selectedDrug?.description}');
+      print('Description Source: ${_selectedDrug?.descriptionSource}');
+      print('Description URL: ${_selectedDrug?.descriptionUrl}');
+      print('Synonyms: ${_selectedDrug?.synonyms}');
+      print('Indication: ${_selectedDrug?.indication}');
+      print('Mechanism of Action: ${_selectedDrug?.mechanismOfAction}');
+      print('Toxicity: ${_selectedDrug?.toxicity}');
+      print('Pharmacology: ${_selectedDrug?.pharmacology}');
+      print('Metabolism: ${_selectedDrug?.metabolism}');
+      print('Absorption: ${_selectedDrug?.absorption}');
+      print('Half Life: ${_selectedDrug?.halfLife}');
+      print('Protein Binding: ${_selectedDrug?.proteinBinding}');
+      print('Route of Elimination: ${_selectedDrug?.routeOfElimination}');
+      print('Volume of Distribution: ${_selectedDrug?.volumeOfDistribution}');
+      print('Clearance: ${_selectedDrug?.clearance}');
     } catch (e) {
       print('Error in fetchDrugDetails: $e');
       setError(e.toString());
