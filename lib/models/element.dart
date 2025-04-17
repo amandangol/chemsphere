@@ -1,3 +1,5 @@
+import '../utils/element_data.dart';
+
 class Element {
   final int number;
   final String symbol;
@@ -57,24 +59,45 @@ class Element {
 
   factory Element.fromJson(Map<String, dynamic> json) {
     // Handle atomic mass conversion
-    double parseAtomicMass(dynamic value) {
-      if (value == null) return 0.0;
-      if (value is num) return value.toDouble();
+    double parseAtomicMass(dynamic value, String symbol) {
+      if (value == null) {
+        // Use default value from our data
+        return defaultAtomicMasses[symbol] ?? 0.0;
+      }
+
+      // Handle numeric values directly
+      if (value is num) {
+        final apiValue = value.toDouble();
+        return getAtomicMass(symbol, apiValue);
+      }
+
+      // Handle string values with special formatting
       if (value is String) {
         try {
-          return double.parse(value.replaceAll(RegExp(r'[^\d.]'), ''));
+          // Try to parse the value
+          final apiValue = double.tryParse(value) ??
+              double.tryParse(value.replaceAll(RegExp(r'[^\d.]'), '')) ??
+              0.0;
+
+          // Use the utility function to get the best atomic mass
+          return getAtomicMass(symbol, apiValue);
         } catch (e) {
-          return 0.0;
+          print('Error parsing atomic mass: $e');
+          return defaultAtomicMasses[symbol] ?? 0.0;
         }
       }
-      return 0.0;
+
+      return defaultAtomicMasses[symbol] ?? 0.0;
     }
+
+    // Get the symbol first
+    final symbol = json['symbol'] as String? ?? '';
 
     return Element(
       number: json['number'] ?? 0,
-      symbol: json['symbol'] ?? '',
+      symbol: symbol,
       name: json['name'] ?? '',
-      atomicMass: parseAtomicMass(json['atomic_mass']),
+      atomicMass: parseAtomicMass(json['atomic_mass'], symbol),
       category: json['category'] ?? '',
       phase: json['phase'] ?? '',
       appearance: json['appearance'] ?? '',

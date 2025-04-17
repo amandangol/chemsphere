@@ -2,9 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../providers/element_provider.dart';
 import '../../models/element.dart' as element_model;
 import 'element_detail_screen.dart';
+import 'traditional_periodic_table_screen.dart';
 
 class PeriodicTableScreen extends StatefulWidget {
   const PeriodicTableScreen({Key? key}) : super(key: key);
@@ -21,6 +23,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
   late Animation<double> _animation;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  List<element_model.Element> _filteredElements = [];
 
   @override
   void initState() {
@@ -36,14 +39,55 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
     );
     _animationController.forward();
 
+    // Add listener to search controller
+    _searchController.addListener(_onSearchChanged);
+
     // Fetch elements when the screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ElementProvider>().fetchElements();
     });
   }
 
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+      _updateFilteredElements(context.read<ElementProvider>().elements);
+    });
+  }
+
+  void _updateFilteredElements(List<element_model.Element> elements) {
+    setState(() {
+      _filteredElements = elements.where((element) {
+        final matchesCategory = _filterCategory == 'All' ||
+            element.category.toLowerCase() == _filterCategory.toLowerCase();
+        final matchesSearch = _searchQuery.isEmpty ||
+            element.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            element.symbol.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            element.number.toString().contains(_searchQuery);
+
+        // Debug atomic mass values
+        if (element.atomicMass <= 0) {
+          print(
+              'Element with zero atomic mass: ${element.name} (${element.symbol})');
+        }
+
+        return matchesCategory && matchesSearch;
+      }).toList();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final provider = context.watch<ElementProvider>();
+    if (!provider.isLoading && provider.error == null) {
+      _updateFilteredElements(provider.elements);
+    }
+  }
+
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _animationController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -79,6 +123,69 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                     end: Offset.zero,
                   ).animate(_animation),
                   child: _buildAppBar(theme),
+                ),
+              ),
+
+              // Info banner for traditional view
+              FadeTransition(
+                opacity: _animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, -0.15),
+                    end: Offset.zero,
+                  ).animate(_animation),
+                  child: Container(
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color:
+                          theme.colorScheme.secondaryContainer.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: theme.colorScheme.secondary.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: theme.colorScheme.secondary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Try the Traditional View to explore elements arranged by period and group!',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSecondaryContainer,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.arrow_forward,
+                            color: theme.colorScheme.secondary,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const TraditionalPeriodicTableScreen(),
+                              ),
+                            );
+                          },
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(4),
+                          tooltip: 'Open Traditional View',
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
 
@@ -118,31 +225,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                       return _buildErrorState(provider, theme);
                     }
 
-                    // Filter elements by category and search query
-                    var elements = provider.elements;
-
-                    if (_filterCategory != 'All') {
-                      elements = elements
-                          .where((e) =>
-                              e.category.toLowerCase() ==
-                              _filterCategory.toLowerCase())
-                          .toList();
-                    }
-
-                    if (_searchQuery.isNotEmpty) {
-                      elements = elements
-                          .where((e) =>
-                              e.name
-                                  .toLowerCase()
-                                  .contains(_searchQuery.toLowerCase()) ||
-                              e.symbol
-                                  .toLowerCase()
-                                  .contains(_searchQuery.toLowerCase()) ||
-                              e.number.toString().contains(_searchQuery))
-                          .toList();
-                    }
-
-                    if (elements.isEmpty) {
+                    if (_filteredElements.isEmpty) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -179,8 +262,8 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
                         child: _isGridView
-                            ? _buildGridView(elements, context)
-                            : _buildListView(elements, context),
+                            ? _buildGridView(_filteredElements, context)
+                            : _buildListView(_filteredElements, context),
                       ),
                     );
                   },
@@ -274,6 +357,30 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
           ),
           Row(
             children: [
+              // Traditional view button
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.grid_on,
+                    color: theme.colorScheme.secondary,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const TraditionalPeriodicTableScreen(),
+                      ),
+                    );
+                  },
+                  tooltip: 'Traditional Periodic Table',
+                ),
+              ),
+              const SizedBox(width: 8),
               // Toggle view button with improved design
               Container(
                 decoration: BoxDecoration(
@@ -414,11 +521,6 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
         ),
         child: TextField(
           controller: _searchController,
-          onChanged: (value) {
-            setState(() {
-              _searchQuery = value;
-            });
-          },
           style: GoogleFonts.poppins(
             fontSize: 14,
             color: theme.colorScheme.onSurface,
@@ -442,7 +544,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                     onPressed: () {
                       setState(() {
                         _searchController.clear();
-                        _searchQuery = '';
+                        // Filter will be applied by the listener
                       });
                     },
                   )
@@ -475,66 +577,80 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
     return Container(
       height: 50,
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemBuilder: (context, index) {
-          final category = categories[index];
-          final isSelected = _filterCategory == category['name'];
+      child: AnimationLimiter(
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: categories.length,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemBuilder: (context, index) {
+            final category = categories[index];
+            final isSelected = _filterCategory == category['name'];
 
-          return Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              child: FilterChip(
-                label: Row(
-                  children: [
-                    Text(
-                      category['emoji']!,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      category['name']!,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
-                        color: isSelected
-                            ? theme.colorScheme.onPrimaryContainer
-                            : theme.colorScheme.onSurfaceVariant,
+            return AnimationConfiguration.staggeredList(
+              position: index,
+              duration: const Duration(milliseconds: 375),
+              child: SlideAnimation(
+                horizontalOffset: 50.0,
+                child: FadeInAnimation(
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      child: FilterChip(
+                        label: Row(
+                          children: [
+                            Text(
+                              category['emoji']!,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              category['name']!,
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? theme.colorScheme.onPrimaryContainer
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            _filterCategory = category['name']!;
+                            // Apply filter immediately when category changes
+                            _updateFilteredElements(
+                                context.read<ElementProvider>().elements);
+                          });
+                        },
+                        backgroundColor: theme.colorScheme.surfaceVariant,
+                        selectedColor: theme.colorScheme.primaryContainer,
+                        checkmarkColor: theme.colorScheme.primary,
+                        elevation: isSelected ? 2 : 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                          side: BorderSide(
+                            color: isSelected
+                                ? theme.colorScheme.primary.withOpacity(0.5)
+                                : Colors.transparent,
+                            width: 1,
+                          ),
+                        ),
+                        showCheckmark: false,
                       ),
                     ),
-                  ],
-                ),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() {
-                    _filterCategory = category['name']!;
-                    _animationController.reset();
-                    _animationController.forward();
-                  });
-                },
-                backgroundColor: theme.colorScheme.surfaceVariant,
-                selectedColor: theme.colorScheme.primaryContainer,
-                checkmarkColor: theme.colorScheme.primary,
-                elevation: isSelected ? 2 : 0,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(50),
-                  side: BorderSide(
-                    color: isSelected
-                        ? theme.colorScheme.primary.withOpacity(0.5)
-                        : Colors.transparent,
-                    width: 1,
                   ),
                 ),
-                showCheckmark: false,
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -654,23 +770,33 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
       List<element_model.Element> elements, BuildContext context) {
     final crossAxisCount = MediaQuery.of(context).size.width < 600 ? 4 : 8;
 
-    return GridView.builder(
-      key: const ValueKey('grid_view'),
-      padding: const EdgeInsets.all(16),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        childAspectRatio: 0.9,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+    return AnimationLimiter(
+      child: GridView.builder(
+        key: const ValueKey('grid_view'),
+        padding: const EdgeInsets.all(16),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          childAspectRatio: 0.9,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: elements.length,
+        itemBuilder: (context, index) {
+          return AnimationConfiguration.staggeredGrid(
+            position: index,
+            duration: const Duration(milliseconds: 375),
+            columnCount: crossAxisCount,
+            child: ScaleAnimation(
+              child: FadeInAnimation(
+                child: EnhancedElementCard(
+                  element: elements[index],
+                  index: index,
+                ),
+              ),
+            ),
+          );
+        },
       ),
-      itemCount: elements.length,
-      itemBuilder: (context, index) {
-        final element = elements[index];
-        return EnhancedElementCard(
-          element: element,
-          index: index,
-        );
-      },
     );
   }
 
@@ -678,183 +804,201 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
       List<element_model.Element> elements, BuildContext context) {
     final theme = Theme.of(context);
 
-    return ListView.builder(
-      key: const ValueKey('list_view'),
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      itemCount: elements.length,
-      itemBuilder: (context, index) {
-        final element = elements[index];
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  _getElementColor(element.category).withOpacity(0.1),
-                  _getElementColor(element.category).withOpacity(0.05),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: _getElementColor(element.category).withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () {
-                  context
-                      .read<ElementProvider>()
-                      .fetchElementDetails(element.symbol);
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          const ElementDetailScreen(),
-                      transitionsBuilder:
-                          (context, animation, secondaryAnimation, child) {
-                        return FadeTransition(opacity: animation, child: child);
-                      },
-                    ),
-                  );
-                },
+    return AnimationLimiter(
+      child: ListView.builder(
+        key: const ValueKey('list_view'),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        itemCount: elements.length,
+        itemBuilder: (context, index) {
+          final element = elements[index];
+          return AnimationConfiguration.staggeredList(
+            position: index,
+            duration: const Duration(milliseconds: 375),
+            child: SlideAnimation(
+              verticalOffset: 50.0,
+              child: FadeInAnimation(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      // Element symbol in circle
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              _getElementColor(element.category),
-                              _getElementColor(element.category)
-                                  .withOpacity(0.7),
-                            ],
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: _getElementColor(element.category)
-                                  .withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            element.symbol,
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          _getElementColor(element.category).withOpacity(0.1),
+                          _getElementColor(element.category).withOpacity(0.05),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      // Element info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  element.name,
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                    color: theme.colorScheme.onSurface,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _getElementColor(element.category)
+                              .withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () {
+                          context
+                              .read<ElementProvider>()
+                              .fetchElementDetails(element.symbol);
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) =>
+                                      const ElementDetailScreen(),
+                              transitionsBuilder: (context, animation,
+                                  secondaryAnimation, child) {
+                                return FadeTransition(
+                                    opacity: animation, child: child);
+                              },
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              // Element symbol in circle
+                              Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      _getElementColor(element.category),
+                                      _getElementColor(element.category)
+                                          .withOpacity(0.7),
+                                    ],
                                   ),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: _getElementColor(element.category)
+                                          .withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: _getElementColor(element.category)
-                                        .withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
+                                child: Center(
                                   child: Text(
-                                    '#${element.number}',
+                                    element.symbol,
                                     style: GoogleFonts.poppins(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: _getElementColor(element.category),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Text(
-                                  'Atomic Mass: ',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                Text(
-                                  _formatAtomicMass(element.atomicMass),
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: theme.colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              element.category,
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: _getElementColor(element.category),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 16),
+                              // Element info
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          element.name,
+                                          style: GoogleFonts.poppins(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
+                                            color: theme.colorScheme.onSurface,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: _getElementColor(
+                                                    element.category)
+                                                .withOpacity(0.2),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            '#${element.number}',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color: _getElementColor(
+                                                  element.category),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Atomic Mass: ',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            color: theme
+                                                .colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                        Text(
+                                          _formatAtomicMass(element.atomicMass),
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: theme.colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      element.category,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color:
+                                            _getElementColor(element.category),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Arrow icon
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primaryContainer,
+                                  shape: BoxShape.circle,
+                                ),
+                                padding: const EdgeInsets.all(8),
+                                child: Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 16,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      // Arrow icon
-                      Container(
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(8),
-                        child: Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 16,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -886,6 +1030,9 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
   }
 
   String _formatAtomicMass(double mass) {
+    if (mass <= 0) {
+      return "N/A";
+    }
     String formatted = mass.toStringAsFixed(4);
     while (formatted.endsWith('0')) {
       formatted = formatted.substring(0, formatted.length - 1);
@@ -968,6 +1115,9 @@ class _EnhancedElementCardState extends State<EnhancedElementCard>
   }
 
   String _formatAtomicMass(double mass) {
+    if (mass <= 0) {
+      return "N/A";
+    }
     String formatted = mass.toStringAsFixed(2);
     while (formatted.endsWith('0')) {
       formatted = formatted.substring(0, formatted.length - 1);

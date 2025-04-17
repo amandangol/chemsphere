@@ -1,5 +1,7 @@
 import 'package:chem_explore/screens/elements/element_flashcard_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:lottie/lottie.dart';
@@ -144,8 +146,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
             ),
             child: _buildHomeContent(context),
           ),
-
-          // Search Screen (placeholder)
           const ElementFlashcardScreen(),
 
           // Favorites Screen
@@ -182,8 +182,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.flash_auto),
-              label: 'Search',
+              icon: Icon(Icons.flash_on_rounded),
+              label: 'Flashcards',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.bookmark_rounded),
@@ -339,7 +339,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                         children: [
                           _buildQuickAccessItem(
                             context,
-                            icon: Icons.grid_4x4_rounded,
+                            imagePath: 'assets/svgs/periodictable.svg',
                             label: 'Periodic Table',
                             color: theme.colorScheme.primary,
                             onTap: () => Navigator.push(
@@ -352,7 +352,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                           ),
                           _buildQuickAccessItem(
                             context,
-                            icon: Icons.science_rounded,
+                            imagePath: 'assets/svgs/molecule.svg',
                             label: 'Compound Explorer',
                             color: theme.colorScheme.secondary,
                             onTap: () => Navigator.push(
@@ -365,9 +365,9 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                           ),
                           _buildQuickAccessItem(
                             context,
-                            icon: Icons.science_rounded,
+                            imagePath: 'assets/svgs/drug.svg',
                             label: 'Drug Explorer',
-                            color: theme.colorScheme.scrim,
+                            color: theme.colorScheme.inverseSurface,
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -377,7 +377,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                           ),
                           _buildQuickAccessItem(
                             context,
-                            icon: Icons.local_fire_department_rounded,
+                            imagePath: 'assets/svgs/drug.svg',
                             label: 'Reactions',
                             color: Colors.deepOrange,
                             onTap: () => Navigator.push(
@@ -513,7 +513,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 delegate: SliverChildListDelegate([
                   _buildFeatureCard(
                     context,
-                    icon: Icons.grid_on_rounded,
+                    imagePath: 'assets/svgs/periodictable.svg',
                     title: 'Periodic Table',
                     description: 'Explore elements and their properties',
                     color: theme.colorScheme.primary.withOpacity(0.1),
@@ -527,7 +527,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   ),
                   _buildFeatureCard(
                     context,
-                    icon: Icons.grid_on_rounded,
+                    imagePath: 'assets/svgs/molecule.svg',
                     title: 'Compound Explorer',
                     description:
                         'Explore compound compounds and their properties',
@@ -542,7 +542,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   ),
                   _buildFeatureCard(
                     context,
-                    icon: Icons.medication_rounded,
+                    imagePath: 'assets/svgs/drug.svg',
                     title: 'Pharmaceuticals',
                     description: 'Explore drug compounds and their properties',
                     color: Colors.deepOrange.withOpacity(0.1),
@@ -556,7 +556,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   ),
                   _buildFeatureCard(
                     context,
-                    icon: Icons.local_fire_department_rounded,
+                    imagePath: 'assets/svgs/reaction.svg',
                     title: 'Chemical Reactions',
                     description: 'Study and explore chemical reactions',
                     color: Colors.teal.withOpacity(0.1),
@@ -570,7 +570,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   ),
                   _buildFeatureCard(
                     context,
-                    icon: Icons.school_rounded,
+                    imagePath: 'assets/svgs/school.svg',
                     title: 'Chemistry Guide',
                     description: 'Learn basic chemistry concepts',
                     color: Colors.amber.withOpacity(0.1),
@@ -595,7 +595,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   Widget _buildQuickAccessItem(
     BuildContext context, {
-    required IconData icon,
+    required String imagePath,
     required String label,
     required Color color,
     required VoidCallback onTap,
@@ -624,10 +624,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                       color: color.withOpacity(0.3),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      icon,
+                    child: SvgPicture.asset(
+                      imagePath,
                       color: color,
-                      size: 24,
+                      width: 24,
+                      height: 24,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -650,7 +651,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
   Widget _buildFeatureCard(
     BuildContext context, {
-    required IconData icon,
+    required String imagePath,
     required String title,
     required String description,
     required VoidCallback onTap,
@@ -684,9 +685,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   ),
                 ],
               ),
-              child: Icon(
-                icon,
-                size: 30,
+              child: SvgPicture.asset(
+                imagePath,
+                width: 30,
+                height: 30,
                 color: iconColor,
               ),
             ),

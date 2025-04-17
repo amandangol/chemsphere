@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math'; // For random shuffling
 import 'package:flip_card/flip_card.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Import FontAwesome
 
 import '../../providers/flashcard_provider.dart';
 import '../../models/flashcard_element.dart';
@@ -213,20 +214,53 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
     );
   }
 
-  // --- Card Building Widgets ---
+  // --- Icon Mapping ---
+  IconData _getPropertyIcon(String propertyLabel) {
+    switch (propertyLabel.toLowerCase()) {
+      case 'phase':
+      case 'standard state':
+        // Handled by _getPhaseIcon directly based on value
+        return FontAwesomeIcons.question; // Fallback
+      case 'atomic mass':
+        return FontAwesomeIcons.weightHanging;
+      case 'e. config':
+        return FontAwesomeIcons.atom;
+      case 'electronegativity':
+        return FontAwesomeIcons.bolt;
+      case 'atomic radius':
+        return FontAwesomeIcons.arrowsLeftRightToLine;
+      case 'ionization energy':
+        return FontAwesomeIcons.arrowUpRightDots;
+      case 'electron affinity':
+        return FontAwesomeIcons.handHoldingDollar;
+      case 'oxidation states':
+        return FontAwesomeIcons.layerGroup;
+      case 'density':
+        return FontAwesomeIcons.compress;
+      case 'melting point':
+        return FontAwesomeIcons.icicles;
+      case 'boiling point':
+        return FontAwesomeIcons.fire;
+      case 'year discovered':
+        return FontAwesomeIcons.calendarDays;
+      default:
+        return FontAwesomeIcons.flask; // Generic fallback
+    }
+  }
 
-  // Helper to get phase icon
   IconData _getPhaseIcon(String phase) {
     switch (phase.toLowerCase()) {
       case 'gas':
-        return Icons.cloud_outlined;
+        return FontAwesomeIcons.smog;
       case 'liquid':
-        return Icons.water_drop_outlined;
+        return FontAwesomeIcons.droplet;
       case 'solid':
       default:
-        return Icons.square_foot_outlined;
+        return FontAwesomeIcons.square;
     }
   }
+
+  // --- Card Building Widgets ---
 
   // Combined card content builder
   Widget _buildCardContent(FlashcardElement element, {required bool isFront}) {
@@ -302,9 +336,9 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            Icon(_getPhaseIcon(element.standardState),
-                                color: textColor.withOpacity(0.8), size: 18),
-                            const SizedBox(width: 4),
+                            FaIcon(_getPhaseIcon(element.standardState),
+                                color: textColor.withOpacity(0.8), size: 16),
+                            const SizedBox(width: 6),
                             Text(
                                 element.standardState.isEmpty
                                     ? 'N/A'
@@ -323,7 +357,10 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
               // Middle Section: Details Chips (similar to previous swipe card)
               _buildDetailRow(
                   'E. Config:', element.electronConfiguration, textColor,
-                  allowWrap: false, maxLines: 1), // Show only 1 line on front
+                  allowWrap: false,
+                  maxLines: 1,
+                  icon: _getPropertyIcon('E. Config'),
+                  useChipStyle: true),
               const SizedBox(height: 10),
               Row(
                 children: [
@@ -332,14 +369,15 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                           'Radius',
                           '${element.atomicRadius} pm',
                           textColor,
-                          Icons.settings_ethernet)),
+                          _getPropertyIcon('Atomic Radius'))),
                   const SizedBox(width: 8),
                   Expanded(
-                      child: _buildDetailChip(
-                          'EN',
-                          '${element.electronegativity}',
-                          textColor,
-                          Icons.bolt_outlined)),
+                    child: _buildDetailChip(
+                        'EN',
+                        '${element.electronegativity}',
+                        textColor,
+                        _getPropertyIcon('Electronegativity')),
+                  )
                 ],
               ),
               const SizedBox(height: 6),
@@ -350,14 +388,14 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                           'Density',
                           '${element.density} ${element.standardState == "Gas" ? "g/L" : "g/cm³"}',
                           textColor,
-                          Icons.scale_outlined)),
+                          _getPropertyIcon('Density'))),
                   const SizedBox(width: 8),
                   Expanded(
                       child: _buildDetailChip(
                           'Oxidation',
                           element.oxidationStates,
                           textColor,
-                          Icons.layers_outlined,
+                          _getPropertyIcon('Oxidation States'),
                           maxLines: 1)), // Show only 1 line on front
                 ],
               ),
@@ -411,8 +449,8 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                                   fontSize: 12,
                                   color: textColor.withOpacity(0.6))),
                           const SizedBox(width: 4),
-                          Icon(Icons.touch_app_outlined,
-                              color: textColor.withOpacity(0.6), size: 16),
+                          FaIcon(FontAwesomeIcons.handPointUp,
+                              color: textColor.withOpacity(0.6), size: 14),
                         ],
                       )),
                 ],
@@ -439,42 +477,46 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                   fontWeight: FontWeight.bold,
                   color: textColor.withOpacity(0.9)),
             ),
-            const Divider(height: 16),
+            Divider(
+                height: 16, thickness: 0.5, color: textColor.withOpacity(0.3)),
             _buildDetailItem('Atomic Mass', '${element.formattedAtomicMass} u',
-                textColor, Icons.scale),
+                textColor, _getPropertyIcon('Atomic Mass')),
             _buildDetailItem('Standard State', element.standardState, textColor,
                 _getPhaseIcon(element.standardState)),
             _buildDetailItem('E. Config', element.electronConfiguration,
-                textColor, Icons.layers_outlined,
+                textColor, _getPropertyIcon('E. Config'),
                 allowWrap: true),
-            _buildDetailItem('Electronegativity',
-                '${element.electronegativity}', textColor, Icons.bolt_outlined),
+            _buildDetailItem(
+                'Electronegativity',
+                '${element.electronegativity}',
+                textColor,
+                _getPropertyIcon('Electronegativity')),
             _buildDetailItem('Atomic Radius', '${element.atomicRadius} pm',
-                textColor, Icons.settings_ethernet),
+                textColor, _getPropertyIcon('Atomic Radius')),
             _buildDetailItem(
                 'Ionization Energy',
                 '${element.ionizationEnergy} eV',
                 textColor,
-                Icons.flash_on_outlined),
+                _getPropertyIcon('Ionization Energy')),
             _buildDetailItem(
                 'Electron Affinity',
                 '${element.electronAffinity} eV',
                 textColor,
-                Icons.electrical_services_outlined),
+                _getPropertyIcon('Electron Affinity')),
             _buildDetailItem('Oxidation States', element.oxidationStates,
-                textColor, Icons.exposure,
+                textColor, _getPropertyIcon('Oxidation States'),
                 allowWrap: true),
             _buildDetailItem(
                 'Density',
                 '${element.density} ${element.standardState == "Gas" ? "g/L" : "g/cm³"}',
                 textColor,
-                Icons.scale_outlined),
+                _getPropertyIcon('Density')),
             _buildDetailItem('Melting Point', '${element.meltingPoint} K',
-                textColor, Icons.thermostat_outlined),
+                textColor, _getPropertyIcon('Melting Point')),
             _buildDetailItem('Boiling Point', '${element.boilingPoint} K',
-                textColor, Icons.thermostat_auto_outlined),
+                textColor, _getPropertyIcon('Boiling Point')),
             _buildDetailItem('Year Discovered', element.yearDiscovered,
-                textColor, Icons.history_edu_outlined),
+                textColor, _getPropertyIcon('Year Discovered')),
           ],
         ),
       ),
@@ -496,7 +538,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: textColor.withOpacity(0.8)),
+            FaIcon(icon, size: 14, color: textColor.withOpacity(0.8)),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
@@ -517,29 +559,28 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
 
   // Helper for detail ROWS on the FRONT card (e.g., E. Config)
   Widget _buildDetailRow(String label, String value, Color textColor,
-      {bool allowWrap = false, int maxLines = 1}) {
+      {bool allowWrap = false,
+      int maxLines = 1,
+      required IconData icon,
+      bool useChipStyle = false}) {
+    if (useChipStyle) {
+      return _buildDetailChip(label, value, textColor, icon,
+          maxLines: maxLines);
+    }
+    // Fallback to previous row style if needed, but chip is preferred now
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3.0), // Reduced padding
+      padding: const EdgeInsets.symmetric(vertical: 3.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$label ',
-            style: GoogleFonts.lato(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: textColor.withOpacity(0.9),
-            ),
-          ),
+          FaIcon(icon, size: 16, color: textColor.withOpacity(0.9)),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               value.isEmpty ? 'N/A' : value,
-              style: GoogleFonts.lato(
-                fontSize: 14,
-                color: textColor,
-                height: 1.2,
-              ),
-              textAlign: TextAlign.right,
+              style:
+                  GoogleFonts.lato(fontSize: 14, color: textColor, height: 1.2),
+              textAlign: TextAlign.left,
               softWrap: allowWrap,
               maxLines: maxLines,
               overflow: TextOverflow.ellipsis,
@@ -554,23 +595,25 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
   Widget _buildDetailItem(
       String label, String value, Color textColor, IconData icon,
       {bool allowWrap = false}) {
-    // This is the helper from the previous flipcard implementation - kept for the back card
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         crossAxisAlignment:
             allowWrap ? CrossAxisAlignment.start : CrossAxisAlignment.center,
         children: [
-          Icon(icon, size: 18, color: textColor.withOpacity(0.8)),
-          const SizedBox(width: 10),
+          FaIcon(
+            icon,
+            size: 16,
+            color: textColor.withOpacity(0.8),
+          ),
+          const SizedBox(width: 12),
           Text('$label:',
               style: GoogleFonts.lato(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: textColor.withOpacity(0.9))),
-          const Spacer(),
+          const SizedBox(width: 8),
           Expanded(
-            flex: 2, // Give value more space
             child: Text(
               value.isEmpty ? 'N/A' : value,
               textAlign: TextAlign.right,

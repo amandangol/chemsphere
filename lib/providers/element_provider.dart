@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/element.dart';
+import '../utils/element_data.dart';
 
 class ElementProvider with ChangeNotifier {
   List<Element> _elements = [];
@@ -107,6 +108,19 @@ class ElementProvider with ChangeNotifier {
 
       _elements =
           (data['data'] as List).map((e) => Element.fromJson(e)).toList();
+
+      // Debug any elements with zero atomic mass after applying fallback values
+      final zeroMassElements =
+          _elements.where((e) => e.atomicMass <= 0).toList();
+      if (zeroMassElements.isNotEmpty) {
+        print(
+            'Found ${zeroMassElements.length} elements still with zero/invalid atomic mass after applying fallbacks:');
+        for (final element in zeroMassElements) {
+          print(
+              '- ${element.name} (${element.symbol}): ${element.atomicMass} - Default value in map: ${defaultAtomicMasses[element.symbol]}');
+        }
+      }
+
       _lastFetchTime = DateTime.now();
       await _saveToCache();
       print('Successfully loaded ${_elements.length} elements');
@@ -124,6 +138,13 @@ class ElementProvider with ChangeNotifier {
     if (_elementDetailsCache.containsKey(symbol)) {
       print('Using cached details for $symbol');
       _selectedElement = _elementDetailsCache[symbol];
+
+      // Ensure atomic mass is valid
+      if (_selectedElement!.atomicMass <= 0) {
+        print(
+            'Warning: Cached element $symbol has invalid atomic mass: ${_selectedElement!.atomicMass}. Using fallback value: ${defaultAtomicMasses[symbol]}');
+      }
+
       notifyListeners();
       return;
     }
@@ -156,6 +177,14 @@ class ElementProvider with ChangeNotifier {
       }
 
       _selectedElement = Element.fromJson(data['data']);
+
+      // Check atomic mass for the fetched element
+      if (_selectedElement!.atomicMass <= 0) {
+        print(
+            'Warning: Fetched element $symbol has invalid atomic mass: ${_selectedElement!.atomicMass}. Using fallback value: ${defaultAtomicMasses[symbol]}');
+        print('Raw API data: ${data['data']['atomic_mass']}');
+      }
+
       // Cache the element details
       _elementDetailsCache[symbol] = _selectedElement!;
       print('Successfully cached details for $symbol');
