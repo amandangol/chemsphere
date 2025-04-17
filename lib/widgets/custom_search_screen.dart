@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -20,6 +21,8 @@ class CustomSearchScreen extends StatefulWidget {
   final IconData emptyIcon;
   final int itemCount;
   final String? imageUrl;
+  final List<Widget>? actions;
+  final Future<List<String>> Function(String)? onAutoComplete;
 
   const CustomSearchScreen({
     Key? key,
@@ -40,6 +43,8 @@ class CustomSearchScreen extends StatefulWidget {
     required this.emptyIcon,
     this.itemCount = 6,
     this.imageUrl,
+    this.actions,
+    this.onAutoComplete,
   }) : super(key: key);
 
   @override
@@ -49,11 +54,110 @@ class CustomSearchScreen extends StatefulWidget {
 class _CustomSearchScreenState extends State<CustomSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
+  List<String> _suggestions = [];
+  bool _isLoadingSuggestions = false;
+  OverlayEntry? _overlayEntry;
+  final LayerLink _layerLink = LayerLink();
+  final FocusNode _searchFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchFocusNode.addListener(_onFocusChange);
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.removeListener(_onFocusChange);
+    _searchFocusNode.dispose();
+    _removeOverlay();
     super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (!_searchFocusNode.hasFocus) {
+      _removeOverlay();
+    }
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _showSuggestionsOverlay() {
+    _removeOverlay();
+
+    if (_suggestions.isEmpty) return;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        width: MediaQuery.of(context).size.width - 40,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          offset: const Offset(0, 60),
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.4,
+              ),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: _suggestions.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(_suggestions[index]),
+                    onTap: () {
+                      _searchController.text = _suggestions[index];
+                      widget.onSearch(_suggestions[index]);
+                      _removeOverlay();
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  Future<void> _updateSuggestions(String query) async {
+    if (query.length < 3 || widget.onAutoComplete == null) {
+      setState(() {
+        _suggestions = [];
+      });
+      _removeOverlay();
+      return;
+    }
+
+    setState(() {
+      _isLoadingSuggestions = true;
+    });
+
+    try {
+      final suggestions = await widget.onAutoComplete!(query);
+      setState(() {
+        _suggestions = suggestions;
+      });
+      _showSuggestionsOverlay();
+    } catch (e) {
+      print('Error fetching suggestions: $e');
+    } finally {
+      setState(() {
+        _isLoadingSuggestions = false;
+      });
+    }
   }
 
   void _clearSearch() {
@@ -61,7 +165,9 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
     widget.onClear();
     setState(() {
       _isSearching = false;
+      _suggestions = [];
     });
+    _removeOverlay();
   }
 
   @override
@@ -103,8 +209,8 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                     Positioned.fill(
                       child: Opacity(
                         opacity: 0.7,
-                        child: Image.network(
-                          widget.imageUrl ??
+                        child: CachedNetworkImage(
+                          imageUrl: widget.imageUrl ??
                               'https://i.pinimg.com/736x/52/5d/a0/525da07405f9bd105c0263a319ddcee0.jpg',
                           fit: BoxFit.cover,
                         ),
@@ -137,62 +243,75 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                     // Search field with animated container
                     Hero(
                       tag: 'search_field',
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  theme.colorScheme.primary.withOpacity(0.15),
-                              spreadRadius: 0,
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: widget.hintText,
-                              filled: true,
-                              fillColor: theme.colorScheme.surface,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide: BorderSide.none,
+                      child: CompositedTransformTarget(
+                        link: _layerLink,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    theme.colorScheme.primary.withOpacity(0.15),
+                                spreadRadius: 0,
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
                               ),
-                              prefixIcon: Container(
-                                padding: const EdgeInsets.all(12),
-                                child: Icon(
-                                  widget.searchIcon,
-                                  color: theme.colorScheme.primary,
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: TextField(
+                              controller: _searchController,
+                              focusNode: _searchFocusNode,
+                              decoration: InputDecoration(
+                                hintText: widget.hintText,
+                                filled: true,
+                                fillColor: theme.colorScheme.surface,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                  borderSide: BorderSide.none,
                                 ),
+                                prefixIcon: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Icon(
+                                    widget.searchIcon,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                                suffixIcon: _isLoadingSuggestions
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : _searchController.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.clear),
+                                            onPressed: _clearSearch,
+                                          )
+                                        : IconButton(
+                                            icon: Icon(
+                                              Icons.search,
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                            onPressed: () => widget.onSearch(
+                                                _searchController.text),
+                                          ),
+                                contentPadding:
+                                    const EdgeInsets.symmetric(vertical: 18),
                               ),
-                              suffixIcon: _searchController.text.isNotEmpty
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear),
-                                      onPressed: _clearSearch,
-                                    )
-                                  : IconButton(
-                                      icon: Icon(
-                                        Icons.search,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                      onPressed: () => widget
-                                          .onSearch(_searchController.text),
-                                    ),
-                              contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 18),
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                _isSearching = value.isNotEmpty;
-                              });
-                            },
-                            onSubmitted: widget.onSearch,
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
+                              onChanged: (value) {
+                                setState(() {
+                                  _isSearching = value.isNotEmpty;
+                                });
+                                _updateSuggestions(value);
+                              },
+                              onSubmitted: widget.onSearch,
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                         ),
@@ -451,7 +570,7 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                           child: Icon(
                             Icons.error_outline,
                             size: 48,
-                            color: theme.colorScheme.error,
+                            color: theme.colorScheme.inversePrimary,
                           ),
                         ),
                         const SizedBox(height: 24),

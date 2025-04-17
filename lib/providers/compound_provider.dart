@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import '../models/compound.dart';
 import 'base_pubchem_provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class CompoundProvider extends BasePubChemProvider {
   List<Compound> _compounds = [];
@@ -40,6 +42,27 @@ class CompoundProvider extends BasePubChemProvider {
     }
   }
 
+  Future<Map<String, dynamic>> fetchPugViewData(int cid,
+      {String? heading}) async {
+    try {
+      final url = Uri.parse(
+        'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/$cid/JSON${heading != null ? '?heading=$heading' : ''}',
+      );
+
+      final response = await http.get(url);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Failed to fetch PUG View data: ${response.statusCode}');
+      }
+
+      return json.decode(response.body);
+    } catch (e) {
+      print('Error fetching PUG View data: $e');
+      rethrow;
+    }
+  }
+
   Future<void> fetchCompoundDetails(int cid) async {
     try {
       setLoading(true);
@@ -48,53 +71,45 @@ class CompoundProvider extends BasePubChemProvider {
 
       print('Fetching details for CID: $cid');
 
-      // Use base provider's method to fetch detailed info
+      // Fetch basic compound data
       final data = await fetchDetailedInfo(cid);
-      print('\n=== Raw API Response ===');
-      print('Compound data: ${data['compound']}');
-      print('Record data: ${data['record']}');
+
+      // Fetch additional data from PUG View
+      final pugViewData = await fetchPugViewData(cid);
 
       // Extract properties from compound data
       final compoundData = data['compound']['PC_Compounds']?[0];
       final propertiesData = compoundData?['props'] ?? [];
       final properties = _extractProperties(propertiesData);
-      print('\n=== Extracted Properties ===');
-      print('Properties: $properties');
 
-      // Extract title from record data
-      String title = '';
-      if (data['record'] != null) {
-        final sections = data['record']['Record']?['Section'] ?? [];
-        for (var section in sections) {
-          if (section['TOCHeading'] == 'Names and Identifiers') {
-            final subsections = section['Section'] ?? [];
-            for (var subsection in subsections) {
-              if (subsection['TOCHeading'] == 'Record Title') {
-                title = subsection['Information']?[0]['Value']
-                        ?['StringWithMarkup']?[0]['String'] ??
-                    '';
-                break;
-              }
-            }
-            if (title.isNotEmpty) break;
-          }
-        }
-      }
+      // Extract title from PUG View data
+      String title = pugViewData['Record']?['RecordTitle'] ?? '';
 
-      // If no title found in record, use properties title
+      // If no title found in PUG View, use properties title
       if (title.isEmpty) {
         title = properties['Title'] ?? properties['IUPACName'] ?? '';
       }
 
-      // Use base provider's method to fetch description
-      final descriptionData = await fetchDescription(cid);
-      print('\n=== Description Data ===');
-      print('Description data: $descriptionData');
+      // Extract description from PUG View data
+      String description = '';
+      String descriptionSource = '';
+      String descriptionUrl = '';
+
+      if (pugViewData['Record']?['Section'] != null) {
+        for (var section in pugViewData['Record']['Section']) {
+          if (section['TOCHeading'] == 'Description') {
+            description = section['Information']?[0]['Value']
+                    ?['StringWithMarkup']?[0]['String'] ??
+                '';
+            descriptionSource = section['Information']?[0]['SourceName'] ?? '';
+            descriptionUrl = section['Information']?[0]['URL'] ?? '';
+            break;
+          }
+        }
+      }
 
       // Use base provider's method to fetch synonyms
       final synonyms = await fetchSynonyms(cid);
-      print('\n=== Synonyms Data ===');
-      print('Synonyms data: $synonyms');
 
       // Create the compound object
       _selectedCompound = Compound(
@@ -123,9 +138,9 @@ class CompoundProvider extends BasePubChemProvider {
         complexity:
             double.tryParse(properties['Complexity']?.toString() ?? '0') ?? 0.0,
         iupacName: properties['IUPACName'] ?? '',
-        description: descriptionData['description'] ?? '',
-        descriptionSource: descriptionData['source'] ?? '',
-        descriptionUrl: descriptionData['url'] ?? '',
+        description: description,
+        descriptionSource: descriptionSource,
+        descriptionUrl: descriptionUrl,
         synonyms: synonyms,
         physicalProperties: properties,
         pubChemUrl: 'https://pubchem.ncbi.nlm.nih.gov/compound/$cid',
@@ -277,5 +292,95 @@ class CompoundProvider extends BasePubChemProvider {
 
     print('Extracted properties: $properties');
     return properties;
+  }
+
+  Future<List<Compound>> fetchCompoundsByCriteria({
+    String? heading,
+    String? value,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      setLoading(true);
+      clearError();
+      notifyListeners();
+
+      print('Fetching compounds by criteria: $heading = $value');
+
+      final url = Uri.parse(
+        'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/annotations/heading/$heading/JSON?page=$page&heading_type=Compound${value != null ? '&value=$value' : ''}',
+      );
+
+      final response = await http.get(url);
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to fetch compounds: ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+      final annotations = data['Annotations'] ?? [];
+
+      // Extract CIDs from annotations
+      final cids = annotations
+          .map<String>((annotation) {
+            return annotation['CID']?.toString() ?? '';
+          })
+          .where((cid) => cid.isNotEmpty)
+          .toList();
+
+      // Fetch details for each compound
+      final compounds = <Compound>[];
+      for (final cid in cids.take(limit)) {
+        try {
+          final compoundData = await fetchDetailedInfo(int.parse(cid));
+          final properties = _extractProperties(
+              compoundData['compound']['PC_Compounds']?[0]['props'] ?? []);
+
+          compounds.add(Compound.fromJson({
+            ...properties,
+            'CID': int.parse(cid),
+          }));
+        } catch (e) {
+          print('Error fetching compound $cid: $e');
+          // Continue with next compound
+        }
+      }
+
+      return compounds;
+    } catch (e) {
+      print('Error in fetchCompoundsByCriteria: $e');
+      setError(e.toString());
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Add a method to get available headings
+  Future<List<String>> getAvailableHeadings() async {
+    try {
+      final url = Uri.parse(
+        'https://pubchem.ncbi.nlm.nih.gov/rest/pug/annotations/headings/JSON',
+      );
+
+      final response = await http.get(url);
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to fetch headings: ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+      final List<dynamic> headings =
+          data['InformationList']?['Information'] ?? [];
+
+      return headings
+          .map((heading) => heading['Name']?.toString() ?? '')
+          .where((name) => name.isNotEmpty)
+          .cast<String>()
+          .toList();
+    } catch (e) {
+      print('Error getting headings: $e');
+      return [];
+    }
   }
 }

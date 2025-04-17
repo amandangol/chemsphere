@@ -78,6 +78,8 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
               ),
             );
           },
+          onAutoComplete: (query) =>
+              provider.fetchAutoCompleteSuggestions(query),
           itemBuilder: (drug) => Card(
             margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(

@@ -76,6 +76,8 @@ class _MolecularSearchScreenState extends State<MolecularSearchScreen> {
               ),
             );
           },
+          onAutoComplete: (query) =>
+              provider.fetchAutoCompleteSuggestions(query),
           itemBuilder: (structure) => Card(
             margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(

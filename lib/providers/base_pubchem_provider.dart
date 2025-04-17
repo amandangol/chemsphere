@@ -148,6 +148,54 @@ abstract class BasePubChemProvider with ChangeNotifier {
     }
   }
 
+  // Common method to fetch auto-complete suggestions
+  Future<List<String>> fetchAutoCompleteSuggestions(String query,
+      {String dictionary = 'compound', int limit = 10}) async {
+    try {
+      if (query.length < 3) {
+        return [];
+      }
+
+      final url = Uri.parse(
+          'https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/$dictionary/$query/json?limit=$limit');
+
+      final response = await http.get(url);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Failed to fetch auto-complete suggestions: ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+      final terms = data['dictionary_terms']?[dictionary] ?? [];
+
+      return List<String>.from(terms);
+    } catch (e) {
+      print('Error fetching auto-complete suggestions: $e');
+      return [];
+    }
+  }
+
+  // Common method to fetch 3D structure data
+  Future<String> fetch3DStructure(int cid) async {
+    try {
+      // Fetch 3D structure in SDF format
+      final sdfUrl = Uri.parse(
+          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/SDF?record_type=3d&response_type=display');
+
+      final response = await http.get(sdfUrl);
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to fetch 3D structure: ${response.statusCode}');
+      }
+
+      return response.body;
+    } catch (e) {
+      print('Error fetching 3D structure: $e');
+      throw Exception('Error fetching 3D structure: $e');
+    }
+  }
+
   // Common state management methods
   void setLoading(bool loading) {
     _isLoading = loading;

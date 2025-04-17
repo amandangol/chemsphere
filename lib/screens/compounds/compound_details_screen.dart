@@ -5,9 +5,47 @@ import 'package:share_plus/share_plus.dart';
 import '../../providers/compound_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/bookmark_provider.dart';
+import '../../widgets/molecule_3d_viewer.dart';
 
-class CompoundDetailsScreen extends StatelessWidget {
+class CompoundDetailsScreen extends StatefulWidget {
   const CompoundDetailsScreen({super.key});
+
+  @override
+  State<CompoundDetailsScreen> createState() => _CompoundDetailsScreenState();
+}
+
+class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
+  bool _isLoading3D = false;
+  String? _3dError;
+  double _rotationX = 0.0;
+  double _rotationY = 0.0;
+
+  Future<void> _load3DStructure(int cid) async {
+    setState(() {
+      _isLoading3D = true;
+      _3dError = null;
+    });
+
+    try {
+      await context.read<CompoundProvider>().fetch3DStructure(cid);
+      // For now, we'll just simulate loading the structure
+      await Future.delayed(const Duration(seconds: 1));
+    } catch (e) {
+      setState(() {
+        _3dError = 'Failed to load 3D structure: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading3D = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Future<void> _launchUrl(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri)) {
@@ -393,6 +431,7 @@ class CompoundDetailsScreen extends StatelessWidget {
                           content: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              _build3DViewer(context, compound.cid),
                               _buildProperty(
                                 'Molecular Formula',
                                 compound.molecularFormula,
@@ -956,5 +995,9 @@ class CompoundDetailsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _build3DViewer(BuildContext context, int cid) {
+    return Complete3DMoleculeViewer(cid: cid);
   }
 }
