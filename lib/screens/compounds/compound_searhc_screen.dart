@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,16 +17,16 @@ class CompoundSearchScreen extends StatefulWidget {
 class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
   final SearchHistoryService _searchHistoryService = SearchHistoryService();
   final List<String> _quickSearchItems = [
-    'Aspirin',
-    'Caffeine',
     'Glucose',
-    'Ethanol',
     'Benzene',
+    'Ethanol',
     'Methane',
     'Water',
     'Carbon dioxide',
     'Sodium chloride',
-    'Acetic acid'
+    'Acetic acid',
+    'Ammonia',
+    'Sulfuric acid'
   ];
   List<String> _searchHistory = [];
   List<String> _availableHeadings = [];
@@ -162,18 +163,18 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Consumer<CompoundProvider>(
-      builder: (context, provider, child) {
+      builder: (context, compoundProvider, child) {
         return Stack(
           children: [
             CustomSearchScreen(
-              title: 'Compound Explorer',
-              hintText: 'Search compounds or molecules...',
+              title: 'Compound Search',
+              hintText: 'Search compounds...',
               searchIcon: Icons.science_outlined,
               quickSearchItems: _quickSearchItems,
               historyItems: _searchHistory,
-              isLoading: provider.isLoading,
-              error: provider.error,
-              items: provider.compounds,
+              isLoading: compoundProvider.isLoading,
+              error: compoundProvider.error,
+              items: compoundProvider.compounds,
               imageUrl:
                   'https://w0.peakpx.com/wallpaper/362/21/HD-wallpaper-adn-genetics.jpg',
               onSearch: (query) async {
@@ -181,16 +182,17 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                   await _searchHistoryService.addToSearchHistory(
                       query, SearchType.compound);
                   await _loadSearchHistory();
-                  provider.searchCompounds(query);
+                  compoundProvider.searchCompounds(query);
                 }
               },
               onClear: () {
-                provider.clearCompounds();
+                compoundProvider.clearCompounds();
               },
-              onItemTap: (compound) async {
-                await provider.fetchCompoundDetails(compound.cid);
-                if (provider.error == null &&
-                    provider.selectedCompound != null) {
+              onItemTap: (item) async {
+                final compound = item;
+                await compoundProvider.fetchCompoundDetails(compound.cid);
+                if (compoundProvider.error == null &&
+                    compoundProvider.selectedCompound != null) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -200,16 +202,16 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
-                          provider.error ?? 'Failed to load compound details'),
+                      content: Text(compoundProvider.error ??
+                          'Failed to load compound details'),
                       backgroundColor: Theme.of(context).colorScheme.error,
                     ),
                   );
                 }
               },
               onAutoComplete: (query) =>
-                  provider.fetchAutoCompleteSuggestions(query),
-              itemBuilder: (compound) => Card(
+                  compoundProvider.fetchAutoCompleteSuggestions(query),
+              itemBuilder: (item) => Card(
                 margin: EdgeInsets.zero,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -217,7 +219,8 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                 elevation: 2,
                 child: InkWell(
                   onTap: () {
-                    provider.fetchCompoundDetails(compound.cid);
+                    final compound = item;
+                    compoundProvider.fetchCompoundDetails(compound.cid);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -234,20 +237,30 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                           width: 60,
                           height: 60,
                           decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).colorScheme.primaryContainer,
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(8),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 4,
+                                offset: Offset(2, 2),
+                              )
+                            ],
                           ),
-                          child: Center(
-                            child: Text(
-                              compound.molecularFormula
-                                  .replaceAll(RegExp(r'[0-9]'), ''),
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer,
-                                fontSize: 16,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: CachedNetworkImage(
+                              imageUrl:
+                                  'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${item.cid}/PNG',
+                              fit: BoxFit.contain,
+                              errorWidget: (context, error, stackTrace) =>
+                                  Center(
+                                child: Icon(
+                                  Icons.science_outlined,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                ),
                               ),
                             ),
                           ),
@@ -258,14 +271,14 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                compound.title,
+                                item.title,
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               Text(
-                                compound.molecularFormula,
+                                item.molecularFormula,
                                 style: GoogleFonts.poppins(
                                   color: Theme.of(context)
                                       .colorScheme
@@ -274,7 +287,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                                 ),
                               ),
                               Text(
-                                'CID: ${compound.cid}',
+                                'CID: ${item.cid}',
                                 style: GoogleFonts.poppins(
                                   color: Theme.of(context)
                                       .colorScheme
@@ -303,7 +316,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
               actions: [
                 IconButton(
                   icon: Icon(
-                    _showFilters ? Icons.filter_list : Icons.filter_list_off,
+                    Icons.filter_list,
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   onPressed: () {

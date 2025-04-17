@@ -1,13 +1,12 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/bookmark_provider.dart';
 import '../models/drug.dart';
 import '../models/compound.dart';
-import '../models/molecular_structure.dart';
 import 'drugs/drug_detail_screen.dart';
 import 'compounds/compound_details_screen.dart';
-import 'molecules/molecular_structure_screen.dart';
 
 class BookmarkScreen extends StatelessWidget {
   const BookmarkScreen({super.key});
@@ -17,17 +16,13 @@ class BookmarkScreen extends StatelessWidget {
     final bookmarkProvider = Provider.of<BookmarkProvider>(context);
     final bookmarkedDrugs = bookmarkProvider.bookmarkedDrugs;
     final bookmarkedCompounds = bookmarkProvider.bookmarkedCompounds;
-    final bookmarkedMolecularStructures =
-        bookmarkProvider.bookmarkedMolecularStructures;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bookmarks'),
         centerTitle: true,
       ),
-      body: bookmarkedDrugs.isEmpty &&
-              bookmarkedCompounds.isEmpty &&
-              bookmarkedMolecularStructures.isEmpty
+      body: bookmarkedDrugs.isEmpty && bookmarkedCompounds.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -70,15 +65,8 @@ class BookmarkScreen extends StatelessWidget {
                     _buildSectionHeader(context, 'Drugs'),
                     _buildDrugList(context, bookmarkedDrugs),
                   ],
-                  if (bookmarkedCompounds.isNotEmpty) ...[
-                    _buildSectionHeader(context, 'Compounds'),
+                  if (bookmarkedCompounds.isNotEmpty)
                     _buildCompoundList(context, bookmarkedCompounds),
-                  ],
-                  if (bookmarkedMolecularStructures.isNotEmpty) ...[
-                    _buildSectionHeader(context, 'Molecular Structures'),
-                    _buildMolecularStructureList(
-                        context, bookmarkedMolecularStructures),
-                  ],
                 ],
               ),
             ),
@@ -151,34 +139,6 @@ class BookmarkScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMolecularStructureList(
-      BuildContext context, List<MolecularStructure> structures) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: structures.length,
-      itemBuilder: (context, index) {
-        final structure = structures[index];
-        return _buildBookmarkCard(
-          context,
-          title: structure.title,
-          subtitle: structure.molecularFormula,
-          imageUrl:
-              'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${structure.cid}/PNG',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    MolecularStructureScreen(structure: structure),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   Widget _buildBookmarkCard(
     BuildContext context, {
     required String title,
@@ -196,12 +156,12 @@ class BookmarkScreen extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  imageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
                   width: 60,
                   height: 60,
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Container(
+                  errorWidget: (context, error, stackTrace) => Container(
                     width: 60,
                     height: 60,
                     color: Theme.of(context).colorScheme.surfaceVariant,

@@ -3,6 +3,7 @@ import '../models/compound.dart';
 import 'base_pubchem_provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:xml/xml.dart';
 
 class CompoundProvider extends BasePubChemProvider {
   List<Compound> _compounds = [];
@@ -69,47 +70,209 @@ class CompoundProvider extends BasePubChemProvider {
       clearError();
       notifyListeners();
 
-      print('Fetching details for CID: $cid');
+      print('\n=== Starting fetchCompoundDetails for CID: $cid ===');
 
       // Fetch basic compound data
+      print('Fetching detailed info...');
       final data = await fetchDetailedInfo(cid);
+      print('Detailed info response: ${data.toString().substring(0, 200)}...');
 
-      // Fetch additional data from PUG View
-      final pugViewData = await fetchPugViewData(cid);
+      // Fetch description data from XML endpoint
+      print('Fetching description data...');
+      final descriptionResponse = await http.get(
+        Uri.parse(
+            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/description/XML'),
+      );
 
-      // Extract properties from compound data
-      final compoundData = data['compound']['PC_Compounds']?[0];
-      final propertiesData = compoundData?['props'] ?? [];
-      final properties = _extractProperties(propertiesData);
-
-      // Extract title from PUG View data
-      String title = pugViewData['Record']?['RecordTitle'] ?? '';
-
-      // If no title found in PUG View, use properties title
-      if (title.isEmpty) {
-        title = properties['Title'] ?? properties['IUPACName'] ?? '';
-      }
-
-      // Extract description from PUG View data
       String description = '';
       String descriptionSource = '';
       String descriptionUrl = '';
 
-      if (pugViewData['Record']?['Section'] != null) {
-        for (var section in pugViewData['Record']['Section']) {
-          if (section['TOCHeading'] == 'Description') {
-            description = section['Information']?[0]['Value']
-                    ?['StringWithMarkup']?[0]['String'] ??
-                '';
-            descriptionSource = section['Information']?[0]['SourceName'] ?? '';
-            descriptionUrl = section['Information']?[0]['URL'] ?? '';
-            break;
+      if (descriptionResponse.statusCode == 200) {
+        final document = XmlDocument.parse(descriptionResponse.body);
+        final descriptionElement =
+            document.findAllElements('Description').firstOrNull;
+        final sourceElement =
+            document.findAllElements('DescriptionSourceName').firstOrNull;
+        final urlElement =
+            document.findAllElements('DescriptionURL').firstOrNull;
+
+        description = descriptionElement?.text ?? '';
+        descriptionSource = sourceElement?.text ?? '';
+        descriptionUrl = urlElement?.text ?? '';
+
+        print('Description: $description');
+        print('Description Source: $descriptionSource');
+        print('Description URL: $descriptionUrl');
+      }
+
+      // Fetch synonyms (limited to 50)
+      print('Fetching synonyms...');
+      final synonymsResponse = await http.get(
+        Uri.parse(
+            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/synonyms/JSON'),
+      );
+
+      List<String> synonyms = [];
+      if (synonymsResponse.statusCode == 200) {
+        final synonymsData = json.decode(synonymsResponse.body);
+        final synonymsList =
+            synonymsData['InformationList']['Information'][0]['Synonym'];
+        synonyms =
+            (synonymsList as List).take(50).map((s) => s.toString()).toList();
+      }
+
+      // Fetch additional data from PUG View
+      print('Fetching PUG View data...');
+      final pugViewData = await fetchPugViewData(cid);
+      print(
+          'PUG View response: ${pugViewData.toString().substring(0, 200)}...');
+
+      // Fetch chemical properties
+      print('Fetching chemical properties...');
+      final propertiesResponse = await http.get(
+        Uri.parse(
+            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/property/MeltingPoint,BoilingPoint,FlashPoint,Density,Solubility,LogP,VaporPressure/JSON'),
+      );
+
+      Map<String, dynamic> chemicalProperties = {};
+      if (propertiesResponse.statusCode == 200) {
+        final propertiesData = json.decode(propertiesResponse.body);
+        if (propertiesData['PropertyTable']?['Properties'] != null) {
+          chemicalProperties = propertiesData['PropertyTable']['Properties'][0];
+        }
+      }
+
+      // Fetch safety and hazards data
+      print('Fetching safety data...');
+      final safetyResponse = await http.get(
+        Uri.parse(
+            'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/$cid/JSON?heading=Chemical%20Safety'),
+      );
+
+      Map<String, dynamic> safetyData = {};
+      if (safetyResponse.statusCode == 200) {
+        final safetyJson = json.decode(safetyResponse.body);
+        if (safetyJson['Record']?['Section'] != null) {
+          for (var section in safetyJson['Record']['Section']) {
+            if (section['TOCHeading'] == 'Chemical Safety') {
+              // Extract GHS information
+              List<Map<String, dynamic>> ghsInfo = [];
+              if (section['Section'] != null) {
+                for (var subSection in section['Section']) {
+                  if (subSection['TOCHeading'] == 'GHS Classification') {
+                    if (subSection['Information'] != null) {
+                      for (var info in subSection['Information']) {
+                        ghsInfo.add({
+                          'Name': info['Name'],
+                          'Value': info['StringValue'],
+                        });
+                      }
+                    }
+                  }
+                }
+              }
+
+              // Extract hazard statements
+              List<Map<String, dynamic>> hazardStatements = [];
+              if (section['Section'] != null) {
+                for (var subSection in section['Section']) {
+                  if (subSection['TOCHeading'] == 'Hazard Statements') {
+                    if (subSection['Information'] != null) {
+                      for (var info in subSection['Information']) {
+                        hazardStatements.add({
+                          'Code': info['Name'],
+                          'Statement': info['StringValue'],
+                        });
+                      }
+                    }
+                  }
+                }
+              }
+
+              // Extract precautionary statements
+              List<Map<String, dynamic>> precautionaryStatements = [];
+              if (section['Section'] != null) {
+                for (var subSection in section['Section']) {
+                  if (subSection['TOCHeading'] == 'Precautionary Statements') {
+                    if (subSection['Information'] != null) {
+                      for (var info in subSection['Information']) {
+                        precautionaryStatements.add({
+                          'Code': info['Name'],
+                          'Statement': info['StringValue'],
+                        });
+                      }
+                    }
+                  }
+                }
+              }
+
+              // Extract safety data sheets
+              List<Map<String, dynamic>> safetyDataSheets = [];
+              if (section['Section'] != null) {
+                for (var subSection in section['Section']) {
+                  if (subSection['TOCHeading'] == 'Safety Data Sheets') {
+                    if (subSection['Information'] != null) {
+                      for (var info in subSection['Information']) {
+                        safetyDataSheets.add({
+                          'Source': info['Name'],
+                          'URL': info['URL'],
+                        });
+                      }
+                    }
+                  }
+                }
+              }
+
+              safetyData = {
+                'GHSClassification': ghsInfo,
+                'HazardStatements': hazardStatements,
+                'PrecautionaryStatements': precautionaryStatements,
+                'SafetyDataSheets': safetyDataSheets,
+              };
+              break;
+            }
           }
         }
       }
 
-      // Use base provider's method to fetch synonyms
-      final synonyms = await fetchSynonyms(cid);
+      // Fetch biological properties
+      print('Fetching biological properties...');
+      final bioResponse = await http.get(
+        Uri.parse(
+            'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/$cid/JSON?heading=Biological%20Properties'),
+      );
+
+      Map<String, dynamic> biologicalData = {};
+      if (bioResponse.statusCode == 200) {
+        final bioJson = json.decode(bioResponse.body);
+        if (bioJson['Record']?['Section'] != null) {
+          for (var section in bioJson['Record']['Section']) {
+            if (section['TOCHeading'] == 'Biological Properties') {
+              biologicalData = section;
+              break;
+            }
+          }
+        }
+      }
+
+      // Extract properties from compound data
+      final compoundData = data['compound']['PC_Compounds']?[0];
+      final propertiesData = compoundData?['props'] ?? [];
+      print('Properties data length: ${propertiesData.length}');
+      final properties = _extractProperties(propertiesData);
+      print(
+          'Extracted properties: ${properties.toString().substring(0, 200)}...');
+
+      // Extract title from PUG View data
+      String title = pugViewData['Record']?['RecordTitle'] ?? '';
+      print('Title from PUG View: $title');
+
+      // If no title found in PUG View, use properties title
+      if (title.isEmpty) {
+        title = properties['Title'] ?? properties['IUPACName'] ?? '';
+        print('Title from properties: $title');
+      }
 
       // Create the compound object
       _selectedCompound = Compound(
@@ -142,7 +305,18 @@ class CompoundProvider extends BasePubChemProvider {
         descriptionSource: descriptionSource,
         descriptionUrl: descriptionUrl,
         synonyms: synonyms,
-        physicalProperties: properties,
+        physicalProperties: {
+          ...properties,
+          'MeltingPoint': chemicalProperties['MeltingPoint'],
+          'BoilingPoint': chemicalProperties['BoilingPoint'],
+          'FlashPoint': chemicalProperties['FlashPoint'],
+          'Density': chemicalProperties['Density'],
+          'Solubility': chemicalProperties['Solubility'],
+          'LogP': chemicalProperties['LogP'],
+          'VaporPressure': chemicalProperties['VaporPressure'],
+        },
+        safetyData: safetyData,
+        biologicalData: biologicalData,
         pubChemUrl: 'https://pubchem.ncbi.nlm.nih.gov/compound/$cid',
         monoisotopicMass:
             double.tryParse(properties['Weight']?.toString() ?? '0') ?? 0.0,
@@ -191,6 +365,9 @@ class CompoundProvider extends BasePubChemProvider {
       print('Description Source: ${_selectedCompound?.descriptionSource}');
       print('Description URL: ${_selectedCompound?.descriptionUrl}');
       print('Synonyms: ${_selectedCompound?.synonyms}');
+      print('Chemical Properties: ${_selectedCompound?.physicalProperties}');
+      print('Safety Data: ${_selectedCompound?.safetyData}');
+      print('Biological Data: ${_selectedCompound?.biologicalData}');
     } catch (e) {
       print('Error in fetchCompoundDetails: $e');
       setError(e.toString());

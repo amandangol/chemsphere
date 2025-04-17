@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -7,6 +8,7 @@ import '../../models/drug.dart';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import '../../widgets/molecule_3d_viewer.dart';
 
 class DrugDetailScreen extends StatelessWidget {
   const DrugDetailScreen({Key? key}) : super(key: key);
@@ -76,51 +78,6 @@ class DrugDetailScreen extends StatelessWidget {
     final bookmarkProvider = Provider.of<BookmarkProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Drug Details',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        actions: [
-          Consumer<DrugProvider>(
-            builder: (context, provider, child) {
-              final drug = provider.selectedDrug;
-              if (drug != null) {
-                return IconButton(
-                  icon: Icon(
-                    bookmarkProvider.isBookmarked(drug, BookmarkType.drug)
-                        ? Icons.bookmark
-                        : Icons.bookmark_border,
-                  ),
-                  onPressed: () {
-                    if (bookmarkProvider.isBookmarked(
-                        drug, BookmarkType.drug)) {
-                      bookmarkProvider.removeBookmark(drug, BookmarkType.drug);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${drug.title} removed from bookmarks'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    } else {
-                      bookmarkProvider.addBookmark(drug, BookmarkType.drug);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${drug.title} added to bookmarks'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  },
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
-      ),
       body: Consumer<DrugProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
@@ -200,330 +157,535 @@ class DrugDetailScreen extends StatelessWidget {
             );
           }
 
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  theme.colorScheme.primaryContainer.withOpacity(0.3),
-                  theme.colorScheme.background,
+          return CustomScrollView(
+            physics: const ClampingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 240,
+                pinned: true,
+                stretch: true,
+                backgroundColor: theme.colorScheme.primaryContainer,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    drug.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  background: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Scaffold(
+                            appBar: AppBar(
+                              title: Text(drug.title),
+                              backgroundColor: Colors.black,
+                            ),
+                            backgroundColor: Colors.black,
+                            body: Center(
+                              child: Hero(
+                                tag: 'drug_${drug.cid}',
+                                child: CachedNetworkImage(
+                                  imageUrl:
+                                      'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${drug.cid}/PNG',
+                                  fit: BoxFit.contain,
+                                  errorWidget: (context, error, stackTrace) =>
+                                      Icon(
+                                    Icons.image_not_supported,
+                                    size: 100,
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.5),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Hero(
+                          tag: 'drug_${drug.cid}',
+                          child: CachedNetworkImage(
+                            imageUrl:
+                                'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${drug.cid}/PNG',
+                            fit: BoxFit.cover,
+                            errorWidget: (context, error, stackTrace) => Icon(
+                              Icons.image_not_supported,
+                              size: 100,
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.5),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                theme.colorScheme.surface.withOpacity(0.8),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      bookmarkProvider.isBookmarked(drug, BookmarkType.drug)
+                          ? Icons.bookmark
+                          : Icons.bookmark_border,
+                    ),
+                    onPressed: () {
+                      if (bookmarkProvider.isBookmarked(
+                          drug, BookmarkType.drug)) {
+                        bookmarkProvider.removeBookmark(
+                            drug, BookmarkType.drug);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content:
+                                Text('${drug.title} removed from bookmarks'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      } else {
+                        bookmarkProvider.addBookmark(drug, BookmarkType.drug);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${drug.title} added to bookmarks'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
+                  ),
                 ],
               ),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Drug image header
-                  SizedBox(
-                    height: 240,
-                    width: double.infinity,
-                    child: Stack(
-                      children: [
-                        Center(
-                          child: Hero(
-                            tag: 'drug_${drug.cid}',
-                            child: Image.network(
-                              'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${drug.cid}/PNG',
-                              width: 200,
-                              height: 200,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Icon(Icons.image_not_supported,
-                                      size: 100,
-                                      color: theme.colorScheme.onSurface
-                                          .withOpacity(0.5)),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            height: 20,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  theme.colorScheme.surface.withOpacity(0.8),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
+              SliverToBoxAdapter(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        theme.colorScheme.primaryContainer.withOpacity(0.3),
+                        theme.colorScheme.background,
                       ],
                     ),
                   ),
-
-                  // Title section
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title section
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'CID: ${drug.cid}',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onPrimaryContainer,
-                                  fontWeight: FontWeight.bold,
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    'CID: ${drug.cid}',
+                                    style: TextStyle(
+                                      color:
+                                          theme.colorScheme.onPrimaryContainer,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Chip(
+                                  label:
+                                      Text('MW: ${drug.molecularWeight} g/mol'),
+                                  backgroundColor:
+                                      theme.colorScheme.surfaceVariant,
+                                  labelStyle: TextStyle(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Chip(
+                                  label: Text(drug.molecularFormula),
+                                  backgroundColor:
+                                      theme.colorScheme.tertiaryContainer,
+                                  labelStyle: TextStyle(
+                                    color:
+                                        theme.colorScheme.onTertiaryContainer,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          drug.title,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Chip(
-                              label: Text('MW: ${drug.molecularWeight} g/mol'),
-                              backgroundColor: theme.colorScheme.surfaceVariant,
-                              labelStyle: TextStyle(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Chip(
-                              label: Text(drug.molecularFormula),
-                              backgroundColor:
-                                  theme.colorScheme.tertiaryContainer,
-                              labelStyle: TextStyle(
-                                color: theme.colorScheme.onTertiaryContainer,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
 
-                  // Properties section
-                  _buildSection(
-                    context,
-                    title: 'Physical Properties',
-                    icon: Icons.science,
-                    content: Column(
-                      children: [
-                        _buildPropertyCard(
+                      // Description section
+                      if (drug.description.isNotEmpty)
+                        _buildSection(
                           context,
-                          title: 'Structure',
-                          content: Row(
+                          title: 'Description',
+                          icon: Icons.description,
+                          content: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildProperty(
-                                      'Molecular Formula',
-                                      drug.molecularFormula,
-                                    ),
-                                    _buildProperty(
-                                      'SMILES',
-                                      drug.smiles,
-                                      isMultiLine: true,
-                                    ),
-                                  ],
+                              Text(
+                                drug.description,
+                                style: const TextStyle(
+                                  height: 1.5,
                                 ),
                               ),
+                              if (drug.descriptionSource.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Source: ${drug.descriptionSource}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
-                        _buildPropertyCard(
+
+                      // Properties section
+                      _buildSection(
+                        context,
+                        title: 'Physical Properties',
+                        icon: Icons.science,
+                        content: Column(
+                          children: [
+                            _buildPropertyCard(
+                              context,
+                              title: 'Structure',
+                              content: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildProperty(
+                                          'Molecular Formula',
+                                          drug.molecularFormula,
+                                        ),
+                                        _buildProperty(
+                                          'SMILES',
+                                          drug.smiles,
+                                          isMultiLine: true,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            _buildPropertyCard(
+                              context,
+                              title: 'Physical & Chemical Properties',
+                              content: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _buildProperty(
+                                          'XLogP',
+                                          drug.xLogP.toString(),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: _buildProperty(
+                                          'Complexity',
+                                          drug.complexity.toString(),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _buildProperty(
+                                          'H-Bond Donors',
+                                          drug.hBondDonorCount.toString(),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: _buildProperty(
+                                          'H-Bond Acceptors',
+                                          drug.hBondAcceptorCount.toString(),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  _buildProperty(
+                                    'Rotatable Bonds',
+                                    drug.rotatableBondCount.toString(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Drug Information section
+                      if (drug.indication != null ||
+                          drug.mechanismOfAction != null ||
+                          drug.toxicity != null ||
+                          drug.metabolism != null ||
+                          drug.pharmacology != null ||
+                          drug.proteinBinding != null ||
+                          drug.absorption != null ||
+                          drug.halfLife != null ||
+                          drug.routeOfElimination != null ||
+                          drug.volumeOfDistribution != null ||
+                          drug.clearance != null)
+                        _buildSection(
                           context,
-                          title: 'Physical & Chemical Properties',
+                          title: 'Drug Information',
+                          icon: Icons.medication,
                           content: Column(
                             children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildProperty(
-                                      'XLogP',
-                                      drug.xLogP.toString(),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: _buildProperty(
-                                      'Complexity',
-                                      drug.complexity.toString(),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildProperty(
-                                      'H-Bond Donors',
-                                      drug.hBondDonorCount.toString(),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: _buildProperty(
-                                      'H-Bond Acceptors',
-                                      drug.hBondAcceptorCount.toString(),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              _buildProperty(
-                                'Rotatable Bonds',
-                                drug.rotatableBondCount.toString(),
-                              ),
+                              if (drug.indication!.isNotEmpty)
+                                _buildPropertyCard(
+                                  context,
+                                  title: 'Indication',
+                                  content: Text(drug.indication!),
+                                ),
+                              if (drug.mechanismOfAction!.isNotEmpty)
+                                _buildPropertyCard(
+                                  context,
+                                  title: 'Mechanism of Action',
+                                  content: Text(drug.mechanismOfAction!),
+                                ),
+                              if (drug.toxicity.isNotEmpty)
+                                _buildPropertyCard(
+                                  context,
+                                  title: 'Toxicity',
+                                  content: Text(drug.toxicity!),
+                                ),
+                              if (drug.pharmacology.isNotEmpty)
+                                _buildPropertyCard(
+                                  context,
+                                  title: 'Pharmacology',
+                                  content: Text(drug.pharmacology!),
+                                ),
+                              if (drug.metabolism!.isNotEmpty)
+                                _buildPropertyCard(
+                                  context,
+                                  title: 'Metabolism',
+                                  content: Text(drug.metabolism!),
+                                ),
+                              if (drug.absorption.isNotEmpty)
+                                _buildPropertyCard(
+                                  context,
+                                  title: 'Absorption',
+                                  content: Text(drug.absorption!),
+                                ),
+                              if (drug.halfLife != null &&
+                                  drug.halfLife!.isNotEmpty)
+                                _buildPropertyCard(
+                                  context,
+                                  title: 'Half Life',
+                                  content: Text(drug.halfLife!),
+                                ),
+                              if (drug.proteinBinding != null &&
+                                  drug.proteinBinding!.isNotEmpty)
+                                _buildPropertyCard(
+                                  context,
+                                  title: 'Protein Binding',
+                                  content: Text(drug.proteinBinding!),
+                                ),
+                              if (drug.routeOfElimination != null &&
+                                  drug.routeOfElimination!.isNotEmpty)
+                                _buildPropertyCard(
+                                  context,
+                                  title: 'Route of Elimination',
+                                  content: Text(drug.routeOfElimination!),
+                                ),
+                              if (drug.volumeOfDistribution != null &&
+                                  drug.volumeOfDistribution!.isNotEmpty)
+                                _buildPropertyCard(
+                                  context,
+                                  title: 'Volume of Distribution',
+                                  content: Text(drug.volumeOfDistribution!),
+                                ),
+                              if (drug.clearance != null &&
+                                  drug.clearance!.isNotEmpty)
+                                _buildPropertyCard(
+                                  context,
+                                  title: 'Clearance',
+                                  content: Text(drug.clearance!),
+                                ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
 
-                  // Drug Information section
-                  if (drug.indication != null ||
-                      drug.mechanismOfAction != null ||
-                      drug.toxicity != null ||
-                      drug.metabolism != null ||
-                      drug.pharmacology != null ||
-                      drug.proteinBinding != null ||
-                      drug.absorption != null ||
-                      drug.halfLife != null ||
-                      drug.routeOfElimination != null ||
-                      drug.volumeOfDistribution != null ||
-                      drug.clearance != null)
-                    _buildSection(
-                      context,
-                      title: 'Drug Information',
-                      icon: Icons.medication,
-                      content: Column(
-                        children: [
-                          if (drug.indication != null &&
-                              drug.indication!.isNotEmpty)
-                            _buildPropertyCard(
+                      // Synonyms section
+                      if (drug.synonyms.isNotEmpty)
+                        _buildSection(
+                          context,
+                          title: 'Synonyms',
+                          icon: Icons.text_fields,
+                          content: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: drug.synonyms
+                                    .take(5)
+                                    .map((synonym) => Chip(
+                                          label: Text(
+                                            synonym,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          backgroundColor:
+                                              theme.colorScheme.surfaceVariant,
+                                          labelStyle: TextStyle(
+                                            color: theme
+                                                .colorScheme.onSurfaceVariant,
+                                          ),
+                                        ))
+                                    .toList(),
+                              ),
+                              if (drug.synonyms.length > 5) ...[
+                                const SizedBox(height: 8),
+                                TextButton.icon(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text(
+                                          'All Synonyms',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        content: SingleChildScrollView(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Total synonyms: ${drug.synonyms.length}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: theme
+                                                      .colorScheme.onSurface
+                                                      .withOpacity(0.7),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 16),
+                                              Wrap(
+                                                spacing: 8,
+                                                runSpacing: 8,
+                                                children: drug.synonyms
+                                                    .map((synonym) => Chip(
+                                                          label: Text(
+                                                            synonym,
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 12,
+                                                            ),
+                                                          ),
+                                                          backgroundColor: theme
+                                                              .colorScheme
+                                                              .surfaceVariant,
+                                                          labelStyle: TextStyle(
+                                                            color: theme
+                                                                .colorScheme
+                                                                .onSurfaceVariant,
+                                                          ),
+                                                        ))
+                                                    .toList(),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text('Close'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                  icon: Icon(
+                                    Icons.expand_more,
+                                    size: 16,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  label: Text(
+                                    'Show ${drug.synonyms.length - 5} more synonyms',
+                                    style: TextStyle(
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                      // Actions section
+                      _buildSection(
+                        context,
+                        title: 'Actions',
+                        icon: Icons.menu_book,
+                        content: Column(
+                          children: [
+                            _buildActionButton(
                               context,
-                              title: 'Indication',
-                              content: Text(drug.indication!),
+                              title: 'View on PubChem',
+                              icon: Icons.public,
+                              onTap: () => _launchUrl(drug.pubChemUrl),
                             ),
-                          if (drug.mechanismOfAction != null &&
-                              drug.mechanismOfAction!.isNotEmpty)
-                            _buildPropertyCard(
+                            _buildActionButton(
                               context,
-                              title: 'Mechanism of Action',
-                              content: Text(drug.mechanismOfAction!),
+                              title: 'Export Data',
+                              icon: Icons.download,
+                              onTap: () => _exportDrugData(context, drug),
                             ),
-                          if (drug.toxicity != null &&
-                              drug.toxicity!.isNotEmpty)
-                            _buildPropertyCard(
-                              context,
-                              title: 'Toxicity',
-                              content: Text(drug.toxicity!),
-                            ),
-                          if (drug.pharmacology != null &&
-                              drug.pharmacology!.isNotEmpty)
-                            _buildPropertyCard(
-                              context,
-                              title: 'Pharmacology',
-                              content: Text(drug.pharmacology!),
-                            ),
-                          if (drug.metabolism != null &&
-                              drug.metabolism!.isNotEmpty)
-                            _buildPropertyCard(
-                              context,
-                              title: 'Metabolism',
-                              content: Text(drug.metabolism!),
-                            ),
-                          if (drug.absorption != null &&
-                              drug.absorption!.isNotEmpty)
-                            _buildPropertyCard(
-                              context,
-                              title: 'Absorption',
-                              content: Text(drug.absorption!),
-                            ),
-                          if (drug.halfLife != null &&
-                              drug.halfLife!.isNotEmpty)
-                            _buildPropertyCard(
-                              context,
-                              title: 'Half Life',
-                              content: Text(drug.halfLife!),
-                            ),
-                          if (drug.proteinBinding != null &&
-                              drug.proteinBinding!.isNotEmpty)
-                            _buildPropertyCard(
-                              context,
-                              title: 'Protein Binding',
-                              content: Text(drug.proteinBinding!),
-                            ),
-                          if (drug.routeOfElimination != null &&
-                              drug.routeOfElimination!.isNotEmpty)
-                            _buildPropertyCard(
-                              context,
-                              title: 'Route of Elimination',
-                              content: Text(drug.routeOfElimination!),
-                            ),
-                          if (drug.volumeOfDistribution != null &&
-                              drug.volumeOfDistribution!.isNotEmpty)
-                            _buildPropertyCard(
-                              context,
-                              title: 'Volume of Distribution',
-                              content: Text(drug.volumeOfDistribution!),
-                            ),
-                          if (drug.clearance != null &&
-                              drug.clearance!.isNotEmpty)
-                            _buildPropertyCard(
-                              context,
-                              title: 'Clearance',
-                              content: Text(drug.clearance!),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
 
-                  // Actions section
-                  _buildSection(
-                    context,
-                    title: 'Actions',
-                    icon: Icons.menu_book,
-                    content: Column(
-                      children: [
-                        _buildActionButton(
-                          context,
-                          title: 'View on PubChem',
-                          icon: Icons.public,
-                          onTap: () => _launchUrl(drug.pubChemUrl),
-                        ),
-                        _buildActionButton(
-                          context,
-                          title: 'Export Data',
-                          icon: Icons.download,
-                          onTap: () => _exportDrugData(context, drug),
-                        ),
-                      ],
-                    ),
+                      const SizedBox(height: 24),
+                    ],
                   ),
-
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
-            ),
+            ],
           );
         },
       ),
@@ -595,53 +757,62 @@ class DrugDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-          if (content is Text)
-            StatefulBuilder(
-              builder: (context, setState) {
-                final text = content.data!;
-                final isLongText = text.length > 100;
-                final showFullText = ValueNotifier<bool>(false);
-
-                return ValueListenableBuilder<bool>(
-                  valueListenable: showFullText,
-                  builder: (context, value, child) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          value || !isLongText
-                              ? text
-                              : '${text.substring(0, text.length > 200 ? 200 : text.length)}...',
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                        if (isLongText)
-                          TextButton(
-                            onPressed: () {
-                              showFullText.value = !showFullText.value;
-                            },
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: const Size(50, 30),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(
-                              value ? 'Show Less' : 'View More',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                      ],
-                    );
-                  },
-                );
-              },
+          if (title == 'Structure')
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: _build3DViewer(context),
+                ),
+                const SizedBox(height: 16),
+                content,
+              ],
             )
           else
             content,
         ],
       ),
+    );
+  }
+
+  Widget _build3DViewer(BuildContext context) {
+    final drug = context.read<DrugProvider>().selectedDrug;
+    if (drug == null) return const SizedBox.shrink();
+
+    return Stack(
+      children: [
+        Complete3DMoleculeViewer(cid: drug.cid),
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: FloatingActionButton(
+            heroTag: 'fullscreen_fab',
+            mini: true,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => FullScreenMoleculeView(
+                    cid: drug.cid,
+                    title: drug.title,
+                  ),
+                ),
+              );
+            },
+            tooltip: 'View in Full Screen',
+            child: const Icon(Icons.fullscreen),
+          ),
+        ),
+      ],
     );
   }
 

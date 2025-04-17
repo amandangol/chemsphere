@@ -5,11 +5,10 @@ import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/bookmark_screen.dart';
-import '../screens/compounds/compound_search_screen.dart';
 import '../screens/drugs/drug_search_screen.dart';
 import '../screens/elements/periodic_table_screen.dart';
 import '../screens/reactions/reaction_screen.dart';
-import '../screens/molecules/molecular_search_screen.dart';
+import 'compounds/compound_searhc_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -355,7 +354,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                           _buildQuickAccessItem(
                             context,
                             icon: Icons.science_rounded,
-                            label: 'Compounds',
+                            label: 'Compound Explorer',
                             color: theme.colorScheme.secondary,
                             onTap: () => Navigator.push(
                               context,
@@ -367,14 +366,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                           ),
                           _buildQuickAccessItem(
                             context,
-                            icon: Icons.view_in_ar_rounded,
-                            label: '3D Models',
-                            color: theme.colorScheme.tertiary,
+                            icon: Icons.science_rounded,
+                            label: 'Drug Explorer',
+                            color: theme.colorScheme.scrim,
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    const MolecularSearchScreen(),
+                                builder: (context) => const DrugSearchScreen(),
                               ),
                             ),
                           ),
@@ -530,29 +528,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   ),
                   _buildFeatureCard(
                     context,
-                    icon: Icons.category_rounded,
-                    title: 'Compounds',
-                    description: 'Search and analyze chemical compounds',
+                    icon: Icons.grid_on_rounded,
+                    title: 'Compound Explorer',
+                    description:
+                        'Explore compound compounds and their properties',
                     color: theme.colorScheme.secondary.withOpacity(0.1),
                     iconColor: theme.colorScheme.secondary,
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const CompoundSearchScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildFeatureCard(
-                    context,
-                    icon: Icons.view_in_ar_rounded,
-                    title: 'Molecular Structures',
-                    description: 'Visualize and analyze molecular structures',
-                    color: theme.colorScheme.tertiary.withOpacity(0.1),
-                    iconColor: theme.colorScheme.tertiary,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MolecularSearchScreen(),
                       ),
                     ),
                   ),

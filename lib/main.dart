@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'providers/compound_provider.dart';
 import 'providers/drug_provider.dart';
 import 'providers/element_provider.dart';
-import 'providers/molecular_structure_provider.dart';
 import 'providers/reaction_provider.dart';
 import 'providers/bookmark_provider.dart';
 import 'screens/splash_screen.dart';
@@ -38,7 +37,6 @@ class ChemistryExplorerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ElementProvider()),
         ChangeNotifierProvider(create: (_) => CompoundProvider()),
         ChangeNotifierProvider(create: (_) => DrugProvider()),
-        ChangeNotifierProvider(create: (_) => MolecularStructureProvider()),
         ChangeNotifierProvider(create: (_) => ReactionProvider()),
         ChangeNotifierProvider(create: (_) => BookmarkProvider()),
       ],

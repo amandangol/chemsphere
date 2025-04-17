@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/drug.dart';
 import '../models/compound.dart';
-import '../models/molecular_structure.dart';
 
 enum BookmarkType {
   drug,
@@ -112,28 +111,6 @@ class BookmarkItem {
           'inchiKey': item.inchiKey,
         },
       };
-    } else if (item is MolecularStructure) {
-      return {
-        'type': 'MolecularStructure',
-        'data': {
-          'title': item.title,
-          'cid': item.cid,
-          'molecularFormula': item.molecularFormula,
-          'molecularWeight': item.molecularWeight,
-          'smiles': item.smiles,
-          'inchi': item.inchi,
-          'inchiKey': item.inchiKey,
-          'iupacName': item.iupacName,
-          'xLogP': item.xLogP,
-          'complexity': item.complexity,
-          'hBondDonorCount': item.hBondDonorCount,
-          'hBondAcceptorCount': item.hBondAcceptorCount,
-          'rotatableBondCount': item.rotatableBondCount,
-          'heavyAtomCount': item.heavyAtomCount,
-          'atomStereoCount': item.atomStereoCount,
-          'bondStereoCount': item.bondStereoCount,
-        },
-      };
     }
     throw Exception('Unknown item type');
   }
@@ -178,6 +155,8 @@ class BookmarkItem {
         );
       case 'Compound':
         return Compound(
+          safetyData: data['safetyData'],
+          biologicalData: data['biologicalData'],
           title: data['title'],
           cid: data['cid'],
           molecularFormula: data['molecularFormula'],
@@ -206,27 +185,6 @@ class BookmarkItem {
           inchi: data['inchi'],
           inchiKey: data['inchiKey'],
         );
-      case 'MolecularStructure':
-        return MolecularStructure(
-          title: data['title'],
-          cid: data['cid'],
-          molecularFormula: data['molecularFormula'],
-          molecularWeight: data['molecularWeight'],
-          smiles: data['smiles'],
-          inchi: data['inchi'],
-          inchiKey: data['inchiKey'],
-          iupacName: data['iupacName'],
-          xLogP: data['xLogP'],
-          complexity: data['complexity'],
-          hBondDonorCount: data['hBondDonorCount'],
-          hBondAcceptorCount: data['hBondAcceptorCount'],
-          rotatableBondCount: data['rotatableBondCount'],
-          heavyAtomCount: data['heavyAtomCount'],
-          atomStereoCount: data['atomStereoCount'],
-          bondStereoCount: data['bondStereoCount'],
-        );
-      default:
-        throw Exception('Unknown item type');
     }
   }
 }
@@ -245,11 +203,6 @@ class BookmarkProvider with ChangeNotifier {
   List<Compound> get bookmarkedCompounds => _bookmarks
       .where((item) => item.type == BookmarkType.compound)
       .map((item) => item.item as Compound)
-      .toList();
-
-  List<MolecularStructure> get bookmarkedMolecularStructures => _bookmarks
-      .where((item) => item.type == BookmarkType.molecularStructure)
-      .map((item) => item.item as MolecularStructure)
       .toList();
 
   BookmarkProvider() {
@@ -313,8 +266,6 @@ class BookmarkProvider with ChangeNotifier {
     if (item1 is Drug && item2 is Drug) {
       return item1.cid == item2.cid;
     } else if (item1 is Compound && item2 is Compound) {
-      return item1.cid == item2.cid;
-    } else if (item1 is MolecularStructure && item2 is MolecularStructure) {
       return item1.cid == item2.cid;
     }
     return false;

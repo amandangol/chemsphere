@@ -1,20 +1,22 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import '../providers/compound_provider.dart';
+import '../screens/compounds/compound_details_screen.dart';
 
 class Molecule3DViewer extends StatefulWidget {
   final int cid;
   final double height;
   final Function(WebViewController)? onWebViewCreated;
+  final bool isFullScreen;
 
   const Molecule3DViewer({
     Key? key,
     required this.cid,
     this.height = 300,
     this.onWebViewCreated,
+    this.isFullScreen = false,
   }) : super(key: key);
 
   @override
@@ -25,6 +27,8 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
   late WebViewController _controller;
   bool _isLoading = true;
   String? _error;
+  String _currentStyle = 'stick';
+  bool _isStructureAvailable = true;
 
   @override
   void initState() {
@@ -46,6 +50,7 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
               setState(() {
                 _isLoading = false;
                 _error = 'Failed to load 3D viewer: ${error.description}';
+                _isStructureAvailable = false;
               });
             }
           },
@@ -67,7 +72,11 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
 
     // Notify parent widget about WebView creation
     if (widget.onWebViewCreated != null) {
-      widget.onWebViewCreated!(_controller);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onWebViewCreated!(_controller);
+        }
+      });
     }
   }
 
@@ -85,6 +94,18 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
       // Fetch the SDF data for the compound
       final sdfData = await provider.fetch3DStructure(widget.cid);
 
+      // Check if the structure data is empty or invalid
+      if (sdfData.isEmpty || sdfData.contains('Error')) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _error = '3D structure not available for this compound';
+            _isStructureAvailable = false;
+          });
+        }
+        return;
+      }
+
       // Escape any quotes in the SDF data to avoid JavaScript issues
       final escapedSDF = sdfData.replaceAll('"', '\\"').replaceAll('\n', '\\n');
 
@@ -95,9 +116,10 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
           viewer.clear();
           viewer.addModel("$escapedSDF", "sdf");
           viewer.setBackgroundColor(0xffffff, 0.0);
-          viewer.setStyle({}, {"stick": {}, "sphere": {"scale": 0.3}});
+          viewer.setStyle({}, {"$_currentStyle": {}, "sphere": {"scale": 0.3}});
           viewer.zoomTo();
           viewer.render();
+          ${widget.isFullScreen ? '' : 'viewer.disableRotation();'}
           true;
         } catch (e) {
           console.error("Error loading molecule data:", e);
@@ -107,6 +129,7 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
         if (mounted) {
           setState(() {
             _isLoading = false;
+            _isStructureAvailable = true;
           });
         }
       }).catchError((error) {
@@ -114,6 +137,7 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
           setState(() {
             _isLoading = false;
             _error = 'Error rendering molecule: $error';
+            _isStructureAvailable = false;
           });
         }
       });
@@ -122,9 +146,33 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
         setState(() {
           _isLoading = false;
           _error = 'Failed to load molecule data: $e';
+          _isStructureAvailable = false;
         });
       }
     }
+  }
+
+  void changeStyle(String style) {
+    if (_currentStyle == style) return;
+
+    setState(() {
+      _currentStyle = style;
+    });
+
+    _controller.runJavaScript('''
+      try {
+        let viewer = \$3Dmol.viewers.viewer_3dmol;
+        viewer.clear();
+        viewer.addModel(viewer.getModel().molData, "sdf");
+        viewer.setStyle({}, {"$style": {}, "sphere": {"scale": 0.3}});
+        viewer.zoomTo();
+        viewer.render();
+        true;
+      } catch (e) {
+        console.error("Error changing style:", e);
+        false;
+      }
+    ''');
   }
 
   // Generate HTML with embedded 3Dmol.js
@@ -149,6 +197,8 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
+            touch-action: none;
+            overscroll-behavior: none;
           }
           #viewer {
             position: absolute;
@@ -156,6 +206,15 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
             height: 100%;
             transform: translateZ(0);
             -webkit-transform: translateZ(0);
+            will-change: transform;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            touch-action: none;
+            overscroll-behavior: none;
+          }
+          #viewer canvas {
+            touch-action: none;
+            overscroll-behavior: none;
           }
         </style>
       </head>
@@ -183,6 +242,11 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
               document.getElementById('viewer'), 
               config
             );
+            
+            // Prevent default touch behaviors
+            document.getElementById('viewer').addEventListener('touchmove', function(e) {
+              e.preventDefault();
+            }, { passive: false });
           });
         </script>
       </body>
@@ -192,12 +256,39 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: widget.height,
+    return Container(
+      color: Colors.transparent,
       child: Stack(
         children: [
           // WebView for 3D rendering
-          WebViewWidget(controller: _controller),
+          if (_isStructureAvailable)
+            WebViewWidget(controller: _controller)
+          else
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.science_outlined,
+                    size: 48,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '3D structure not available',
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           // Loading indicator
           if (_isLoading)
@@ -232,6 +323,87 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
                 ],
               ),
             ),
+
+          // Note about full-screen mode
+          if (!widget.isFullScreen)
+            Positioned(
+              bottom: 8,
+              left: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'Tap full screen to interact with the 3D structure',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+
+          // Color legend
+          if (widget.isFullScreen)
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildColorLegendItem('Carbon (C)', Colors.grey),
+                    _buildColorLegendItem('Hydrogen (H)', Colors.white),
+                    _buildColorLegendItem('Oxygen (O)', Colors.red),
+                    _buildColorLegendItem('Nitrogen (N)', Colors.blue),
+                    _buildColorLegendItem('Sulfur (S)', Colors.yellow),
+                    _buildColorLegendItem('Phosphorus (P)', Colors.orange),
+                    _buildColorLegendItem('Halogens', Colors.green),
+                    _buildColorLegendItem('Metals', Colors.purple),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColorLegendItem(String label, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white,
+                width: 1,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -241,11 +413,21 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
 class Molecule3DControls extends StatelessWidget {
   final WebViewController? controller;
   final VoidCallback onReset;
+  final Function(String)? onStyleChange;
+  final String currentStyle;
+  final bool showFullScreenButton;
+  final VoidCallback? onFullScreenToggle;
+  final bool isFullScreen;
 
   const Molecule3DControls({
     Key? key,
     this.controller,
     required this.onReset,
+    this.onStyleChange,
+    this.currentStyle = 'stick',
+    this.showFullScreenButton = true,
+    this.onFullScreenToggle,
+    this.isFullScreen = false,
   }) : super(key: key);
 
   void _executeRotation(String direction) {
@@ -284,43 +466,128 @@ class Molecule3DControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      margin: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            icon: const Icon(Icons.rotate_left),
-            onPressed:
-                controller == null ? null : () => _executeRotation('left'),
-            tooltip: 'Rotate Left',
+          // Rotation controls
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.rotate_left),
+                onPressed:
+                    controller == null ? null : () => _executeRotation('left'),
+                tooltip: 'Rotate Left',
+                style: IconButton.styleFrom(
+                  foregroundColor: theme.colorScheme.primary,
+                  backgroundColor:
+                      theme.colorScheme.primaryContainer.withOpacity(0.3),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.rotate_right),
+                onPressed:
+                    controller == null ? null : () => _executeRotation('right'),
+                tooltip: 'Rotate Right',
+                style: IconButton.styleFrom(
+                  foregroundColor: theme.colorScheme.primary,
+                  backgroundColor:
+                      theme.colorScheme.primaryContainer.withOpacity(0.3),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.keyboard_arrow_up),
+                onPressed:
+                    controller == null ? null : () => _executeRotation('up'),
+                tooltip: 'Rotate Up',
+                style: IconButton.styleFrom(
+                  foregroundColor: theme.colorScheme.primary,
+                  backgroundColor:
+                      theme.colorScheme.primaryContainer.withOpacity(0.3),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.keyboard_arrow_down),
+                onPressed:
+                    controller == null ? null : () => _executeRotation('down'),
+                tooltip: 'Rotate Down',
+                style: IconButton.styleFrom(
+                  foregroundColor: theme.colorScheme.primary,
+                  backgroundColor:
+                      theme.colorScheme.primaryContainer.withOpacity(0.3),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.restart_alt),
+                onPressed: controller == null
+                    ? null
+                    : () {
+                        _executeRotation('reset');
+                        onReset();
+                      },
+                tooltip: 'Reset View',
+                style: IconButton.styleFrom(
+                  foregroundColor: theme.colorScheme.primary,
+                  backgroundColor:
+                      theme.colorScheme.primaryContainer.withOpacity(0.3),
+                ),
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.rotate_right),
-            onPressed:
-                controller == null ? null : () => _executeRotation('right'),
-            tooltip: 'Rotate Right',
-          ),
-          IconButton(
-            icon: const Icon(Icons.keyboard_arrow_up),
-            onPressed: controller == null ? null : () => _executeRotation('up'),
-            tooltip: 'Rotate Up',
-          ),
-          IconButton(
-            icon: const Icon(Icons.keyboard_arrow_down),
-            onPressed:
-                controller == null ? null : () => _executeRotation('down'),
-            tooltip: 'Rotate Down',
-          ),
-          IconButton(
-            icon: const Icon(Icons.restart_alt),
-            onPressed: controller == null
-                ? null
-                : () {
-                    _executeRotation('reset');
-                    onReset();
-                  },
-            tooltip: 'Reset View',
+
+          const SizedBox(height: 8),
+
+          // Style controls and full screen
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // Style selector
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(
+                    value: 'stick',
+                    label: Text('Stick'),
+                    icon: Icon(Icons.linear_scale),
+                  ),
+                  ButtonSegment(
+                    value: 'line',
+                    label: Text('Line'),
+                    icon: Icon(Icons.line_weight),
+                  ),
+                  ButtonSegment(
+                    value: 'sphere',
+                    label: Text('Ball'),
+                    icon: Icon(Icons.circle),
+                  ),
+                ],
+                selected: {currentStyle},
+                onSelectionChanged: (Set<String> selection) {
+                  if (selection.isNotEmpty && onStyleChange != null) {
+                    onStyleChange!(selection.first);
+                  }
+                },
+                style: SegmentedButton.styleFrom(
+                  selectedForegroundColor: theme.colorScheme.onPrimary,
+                  selectedBackgroundColor: theme.colorScheme.primary,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -345,9 +612,10 @@ class _Complete3DMoleculeViewerState extends State<Complete3DMoleculeViewer> {
   WebViewController? _controller;
   bool _isLoading = true;
   String? _error;
+  bool _isFullScreen = false;
+  String _currentStyle = 'stick';
 
   void _onWebViewCreated(WebViewController controller) {
-    // Use a post-frame callback to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         setState(() {
@@ -357,21 +625,93 @@ class _Complete3DMoleculeViewerState extends State<Complete3DMoleculeViewer> {
     });
   }
 
+  void _toggleFullScreen() {
+    setState(() {
+      _isFullScreen = !_isFullScreen;
+    });
+  }
+
+  void _changeStyle(String style) {
+    setState(() {
+      _currentStyle = style;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (_isFullScreen) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title:
+              const Text('3D Structure', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.fullscreen_exit),
+              onPressed: _toggleFullScreen,
+              tooltip: 'Exit Full Screen',
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              // 3D Viewer
+              Molecule3DViewer(
+                cid: widget.cid,
+                onWebViewCreated: _onWebViewCreated,
+                isFullScreen: true,
+              ),
+              // Controls
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: Molecule3DControls(
+                  controller: _controller,
+                  onReset: () {},
+                  onStyleChange: _changeStyle,
+                  currentStyle: _currentStyle,
+                  showFullScreenButton: false,
+                  isFullScreen: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Card(
       margin: const EdgeInsets.all(16),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          Padding(
-            padding: const EdgeInsets.all(16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withOpacity(0.5),
+              border: Border(
+                bottom: BorderSide(
+                  color: theme.colorScheme.primary.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+            ),
             child: Row(
               children: [
                 Icon(
                   Icons.view_in_ar,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -379,26 +719,16 @@ class _Complete3DMoleculeViewerState extends State<Complete3DMoleculeViewer> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
                   ),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () {
-                    setState(() {
-                      _isLoading = true;
-                      _error = null;
-                    });
-                  },
-                  tooltip: 'Reload 3D Structure',
                 ),
               ],
             ),
           ),
 
           // 3D Viewer
-          SizedBox(
-            height: 300,
+          AspectRatio(
+            aspectRatio: 1.5,
             child: Molecule3DViewer(
               cid: widget.cid,
               onWebViewCreated: _onWebViewCreated,
@@ -408,11 +738,107 @@ class _Complete3DMoleculeViewerState extends State<Complete3DMoleculeViewer> {
           // Controls
           Molecule3DControls(
             controller: _controller,
-            onReset: () {
-              // Reset logic if needed
-            },
+            onReset: () {},
+            onStyleChange: _changeStyle,
+            currentStyle: _currentStyle,
+            onFullScreenToggle: _toggleFullScreen,
+          ),
+
+          // Usage hint
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Text(
+              'Tip: Drag to rotate, scroll to zoom, double-tap to reset view',
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class FullScreenMoleculeView extends StatefulWidget {
+  final int cid;
+  final String title;
+
+  const FullScreenMoleculeView({
+    Key? key,
+    required this.cid,
+    required this.title,
+  }) : super(key: key);
+
+  @override
+  State<FullScreenMoleculeView> createState() => _FullScreenMoleculeViewState();
+}
+
+class _FullScreenMoleculeViewState extends State<FullScreenMoleculeView> {
+  WebViewController? _controller;
+  String _currentStyle = 'stick';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text(widget.title, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.black.withOpacity(0.7),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            SizedBox.expand(
+              child: Molecule3DViewer(
+                cid: widget.cid,
+                onWebViewCreated: (controller) {
+                  setState(() {
+                    _controller = controller;
+                  });
+                },
+                isFullScreen: true,
+              ),
+            ),
+            Positioned(
+              bottom: 16,
+              left: 16,
+              right: 16,
+              child: Molecule3DControls(
+                controller: _controller,
+                onReset: () {},
+                onStyleChange: (style) {
+                  setState(() {
+                    _currentStyle = style;
+                  });
+                },
+                currentStyle: _currentStyle,
+                showFullScreenButton: false,
+                isFullScreen: true,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Extension for the CompoundDetailsScreen
+extension Molecule3DViewerExtension on CompoundDetailsScreen {
+  void showFullScreenMoleculeViewer(
+      BuildContext context, int cid, String title) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => FullScreenMoleculeView(
+          cid: cid,
+          title: title,
+        ),
       ),
     );
   }

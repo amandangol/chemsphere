@@ -18,6 +18,8 @@ class Compound {
   final String descriptionUrl;
   final List<String> synonyms;
   final Map<String, dynamic> physicalProperties;
+  final Map<String, dynamic> safetyData;
+  final Map<String, dynamic> biologicalData;
   final String pubChemUrl;
 
   // New properties
@@ -53,13 +55,15 @@ class Compound {
     required this.atomStereoCount,
     required this.bondStereoCount,
     required this.complexity,
-    this.iupacName = '',
-    this.description = '',
-    this.descriptionSource = '',
-    this.descriptionUrl = '',
-    this.synonyms = const [],
-    this.physicalProperties = const {},
-    this.pubChemUrl = '',
+    required this.iupacName,
+    required this.description,
+    required this.descriptionSource,
+    required this.descriptionUrl,
+    required this.synonyms,
+    required this.physicalProperties,
+    required this.safetyData,
+    required this.biologicalData,
+    required this.pubChemUrl,
     // New properties with defaults
     this.monoisotopicMass = 0.0,
     this.tpsa = 0.0,
@@ -165,6 +169,8 @@ class Compound {
       descriptionUrl: json['DescriptionUrl'] ?? '',
       synonyms: List<String>.from(json['Synonyms'] ?? []),
       physicalProperties: physicalProperties,
+      safetyData: Map<String, dynamic>.from(json['SafetyData'] ?? {}),
+      biologicalData: Map<String, dynamic>.from(json['BiologicalData'] ?? {}),
       pubChemUrl:
           'https://pubchem.ncbi.nlm.nih.gov/compound/${json['CID'] ?? 0}',
       monoisotopicMass:
@@ -197,5 +203,49 @@ class Compound {
       inchi: json['InChI'] ?? '',
       inchiKey: json['InChIKey'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'CID': cid,
+      'Title': title,
+      'MolecularFormula': molecularFormula,
+      'MolecularWeight': molecularWeight,
+      'CanonicalSMILES': smiles,
+      'XLogP': xLogP,
+      'HBondDonorCount': hBondDonorCount,
+      'HBondAcceptorCount': hBondAcceptorCount,
+      'RotatableBondCount': rotatableBondCount,
+      'HeavyAtomCount': heavyAtomCount,
+      'AtomStereoCount': atomStereoCount,
+      'BondStereoCount': bondStereoCount,
+      'Complexity': complexity,
+      'IUPACName': iupacName,
+      'Description': description,
+      'DescriptionSource': descriptionSource,
+      'DescriptionUrl': descriptionUrl,
+      'Synonyms': synonyms,
+      'PhysicalProperties': physicalProperties,
+      'SafetyData': safetyData,
+      'BiologicalData': biologicalData,
+      'PubChemUrl': pubChemUrl,
+      'MonoisotopicMass': monoisotopicMass,
+      'TPSA': tpsa,
+      'Charge': charge,
+      'IsotopeAtomCount': isotopeAtomCount,
+      'DefinedAtomStereoCount': definedAtomStereoCount,
+      'UndefinedAtomStereoCount': undefinedAtomStereoCount,
+      'DefinedBondStereoCount': definedBondStereoCount,
+      'UndefinedBondStereoCount': undefinedBondStereoCount,
+      'CovalentUnitCount': covalentUnitCount,
+      'PatentCount': patentCount,
+      'PatentFamilyCount': patentFamilyCount,
+      'AnnotationTypes': annotationTypes,
+      'AnnotationTypeCount': annotationTypeCount,
+      'SourceCategories': sourceCategories,
+      'LiteratureCount': literatureCount,
+      'InChI': inchi,
+      'InChIKey': inchiKey,
+    };
   }
 }
