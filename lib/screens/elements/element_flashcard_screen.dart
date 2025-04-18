@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Import FontA
 
 import '../../providers/flashcard_provider.dart';
 import '../../models/flashcard_element.dart';
+import '../../widgets/chemistry_widgets.dart'; // Import custom chemistry widgets
 
 class ElementFlashcardScreen extends StatefulWidget {
   const ElementFlashcardScreen({Key? key}) : super(key: key);
@@ -122,94 +123,129 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
           ),
         ],
       ),
-      body: Consumer<FlashcardProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading && _initialLoad) {
-            return const Center(
-              child: Column(
+      body: Container(
+        decoration: BoxDecoration(
+          // Chemistry-themed background
+          image: DecorationImage(
+            image: const AssetImage('assets/images/chemistry_bg.png'),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              Colors.white.withOpacity(0.95),
+              BlendMode.luminosity,
+            ),
+          ),
+        ),
+        child: Consumer<FlashcardProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading && _initialLoad) {
+              return ChemistryLoadingWidget(message: 'Loading flashcards...');
+            }
+
+            if (provider.error != null && _displayElements.isEmpty) {
+              return Center(
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Loading flashcards...'),
-                  ]),
-            );
-          }
+                    Icon(Icons.error_outline,
+                        color: theme.colorScheme.error, size: 60),
+                    const SizedBox(height: 16),
+                    Text('Error loading flashcards:',
+                        style: TextStyle(
+                            color: theme.colorScheme.error, fontSize: 16)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(provider.error!, textAlign: TextAlign.center),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                      onPressed: () => _loadElements(forceRefresh: true),
+                    )
+                  ],
+                ),
+              );
+            }
 
-          if (provider.error != null && _displayElements.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline,
-                      color: theme.colorScheme.error, size: 60),
-                  const SizedBox(height: 16),
-                  Text('Error loading flashcards:',
-                      style: TextStyle(
-                          color: theme.colorScheme.error, fontSize: 16)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text(provider.error!, textAlign: TextAlign.center),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
-                    onPressed: () => _loadElements(forceRefresh: true),
-                  )
-                ],
-              ),
-            );
-          }
+            if (_displayElements.isEmpty) {
+              return const Center(child: Text('No flashcards available.'));
+            }
 
-          if (_displayElements.isEmpty) {
-            return const Center(child: Text('No flashcards available.'));
-          }
-
-          // Main content: PageView with FlipCards
-          return Column(
-            children: [
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: _displayElements.length,
-                  itemBuilder: (context, index) {
-                    final element = _displayElements[index];
-                    double scale = 1.0;
-                    if (_pageController.position.haveDimensions) {
-                      scale = (1 -
-                              ((_pageController.page ?? 0.0) - index).abs() *
-                                  0.15)
-                          .clamp(0.85, 1.0);
-                    }
-                    return Transform.scale(
-                      scale: scale,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 20.0, horizontal: 8.0),
-                        child: FlipCard(
-                          fill: Fill.fillBack,
-                          direction: FlipDirection.HORIZONTAL,
-                          // Pass helpers to avoid repeating code
-                          front: _buildCardContent(element, isFront: true),
-                          back: _buildCardContent(element, isFront: false),
+            // Main content: PageView with FlipCards
+            return Column(
+              children: [
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: _displayElements.length,
+                    itemBuilder: (context, index) {
+                      final element = _displayElements[index];
+                      double scale = 1.0;
+                      if (_pageController.position.haveDimensions) {
+                        scale = (1 -
+                                ((_pageController.page ?? 0.0) - index).abs() *
+                                    0.15)
+                            .clamp(0.85, 1.0);
+                      }
+                      return Transform.scale(
+                        scale: scale,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 20.0, horizontal: 8.0),
+                          child: FlipCard(
+                            fill: Fill.fillBack,
+                            direction: FlipDirection.HORIZONTAL,
+                            // Pass helpers to avoid repeating code
+                            front: _buildCardContent(element, isFront: true),
+                            back: _buildCardContent(element, isFront: false),
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
-              // Page indicator
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Text(
-                  '${_currentPage + 1} / ${_displayElements.length}',
-                  style: theme.textTheme.bodySmall,
-                ),
-              )
-            ],
-          );
-        },
+                // Page indicator with chemistry styling
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 5,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.science,
+                          size: 18,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${_currentPage + 1} / ${_displayElements.length}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -399,6 +435,21 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                           maxLines: 1)), // Show only 1 line on front
                 ],
               ),
+              const Spacer(),
+              Align(
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text("Tap for Details",
+                        style: GoogleFonts.lato(
+                            fontSize: 12, color: textColor.withOpacity(0.6))),
+                    const SizedBox(width: 4),
+                    FaIcon(FontAwesomeIcons.handPointUp,
+                        color: textColor.withOpacity(0.6), size: 14),
+                  ],
+                ),
+              ),
               const Spacer(), // Pushes bottom content down
               // Bottom Section: Name, Group, Mass, Year + Tap Hint
               Column(
@@ -435,24 +486,9 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                         Text('Discovered: ${element.yearDiscovered}',
                             style: GoogleFonts.lato(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w300,
+                                fontWeight: FontWeight.w500,
                                 color: textColor.withOpacity(0.7))),
                       ]),
-                  const SizedBox(height: 10),
-                  Align(
-                      alignment: Alignment.bottomRight,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text("Tap for Details",
-                              style: GoogleFonts.lato(
-                                  fontSize: 12,
-                                  color: textColor.withOpacity(0.6))),
-                          const SizedBox(width: 4),
-                          FaIcon(FontAwesomeIcons.handPointUp,
-                              color: textColor.withOpacity(0.6), size: 14),
-                        ],
-                      )),
                 ],
               ),
             ],

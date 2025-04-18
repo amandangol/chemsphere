@@ -1,4 +1,3 @@
-// periodic_table_screen.dart - Enhanced with Modern UI
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,6 +23,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   List<element_model.Element> _filteredElements = [];
+  bool _showInfoCard = true;
 
   @override
   void initState() {
@@ -126,6 +126,18 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                 ),
               ),
 
+              // Educational Info Card
+              FadeTransition(
+                opacity: _animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, -0.15),
+                    end: Offset.zero,
+                  ).animate(_animation),
+                  child: _buildEducationalInfoCard(),
+                ),
+              ),
+
               // Info banner for traditional view
               FadeTransition(
                 opacity: _animation,
@@ -134,56 +146,58 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                     begin: const Offset(0, -0.15),
                     end: Offset.zero,
                   ).animate(_animation),
-                  child: Container(
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color:
-                          theme.colorScheme.secondaryContainer.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: theme.colorScheme.secondary.withOpacity(0.3),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const TraditionalPeriodicTableScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.secondaryContainer
+                            .withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: theme.colorScheme.secondary.withOpacity(0.3),
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: theme.colorScheme.secondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Try the Traditional View to explore elements arranged by period and group!',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: theme.colorScheme.onSecondaryContainer,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            Icons.arrow_forward,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
                             color: theme.colorScheme.secondary,
                             size: 20,
                           ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const TraditionalPeriodicTableScreen(),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Try the Traditional View to explore elements arranged by period and group!',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: theme.colorScheme.onSecondaryContainer,
                               ),
-                            );
-                          },
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(4),
-                          tooltip: 'Open Traditional View',
-                        ),
-                      ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.arrow_forward,
+                              color: theme.colorScheme.secondary,
+                              size: 20,
+                            ),
+                            onPressed: () {},
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(4),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -405,11 +419,11 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              // Refresh button with improved design and force refresh option
+
               PopupMenuButton(
                 icon: Container(
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant,
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Padding(
@@ -498,6 +512,198 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                 ],
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEducationalInfoCard() {
+    if (!_showInfoCard) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.tertiaryContainer.withOpacity(0.8),
+            theme.colorScheme.tertiaryContainer.withOpacity(0.6),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ExpansionTile(
+        title: Text(
+          "Understanding the Periodic Table",
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onTertiaryContainer,
+          ),
+        ),
+        leading: Icon(
+          Icons.school,
+          color: theme.colorScheme.onTertiaryContainer,
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.expand_more,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSecondaryContainer
+                  .withOpacity(0.7),
+              size: 20,
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.close,
+                color: theme.colorScheme.onTertiaryContainer.withOpacity(0.7),
+                size: 20,
+              ),
+              onPressed: () {
+                setState(() {
+                  _showInfoCard = false;
+                });
+              },
+            ),
+          ],
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "The periodic table organizes chemical elements according to their atomic number, electron configuration, and recurring chemical properties. Elements are arranged in rows (periods) and columns (groups).",
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color:
+                        theme.colorScheme.onTertiaryContainer.withOpacity(0.9),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildInfoPill("Atomic Number",
+                          "The number of protons in an atom's nucleus"),
+                      const SizedBox(width: 10),
+                      _buildInfoPill(
+                          "Symbol", "One or two letter element abbreviation"),
+                      const SizedBox(width: 10),
+                      _buildInfoPill(
+                          "Atomic Mass", "Average mass of all isotopes"),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildElementCategoryLegend(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoPill(String term, String definition) {
+    final theme = Theme.of(context);
+
+    return Tooltip(
+      message: definition,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.onTertiaryContainer.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(50),
+          border: Border.all(
+            color: theme.colorScheme.onTertiaryContainer.withOpacity(0.2),
+          ),
+        ),
+        child: Text(
+          term,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: theme.colorScheme.onTertiaryContainer.withOpacity(0.9),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildElementCategoryLegend() {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Element Categories:",
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onTertiaryContainer,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _buildCategoryChip("Metals", const Color(0xFFF44336)),
+            _buildCategoryChip("Nonmetals", const Color(0xFF4CAF50)),
+            _buildCategoryChip("Metalloids", const Color(0xFF9C27B0)),
+            _buildCategoryChip("Noble Gases", const Color(0xFF2196F3)),
+            _buildCategoryChip("Halogens", const Color(0xFF29B6F6)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.5), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: color.withOpacity(0.8),
+            ),
           ),
         ],
       ),

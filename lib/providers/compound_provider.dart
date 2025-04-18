@@ -126,119 +126,6 @@ class CompoundProvider extends BasePubChemProvider {
         }
       }
 
-      // Fetch safety and hazards data
-      print('Fetching safety data...');
-      final safetyResponse = await http.get(
-        Uri.parse(
-            'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/$cid/JSON?heading=Chemical%20Safety'),
-      );
-
-      Map<String, dynamic> safetyData = {};
-      if (safetyResponse.statusCode == 200) {
-        final safetyJson = json.decode(safetyResponse.body);
-        if (safetyJson['Record']?['Section'] != null) {
-          for (var section in safetyJson['Record']['Section']) {
-            if (section['TOCHeading'] == 'Chemical Safety') {
-              // Extract GHS information
-              List<Map<String, dynamic>> ghsInfo = [];
-              if (section['Section'] != null) {
-                for (var subSection in section['Section']) {
-                  if (subSection['TOCHeading'] == 'GHS Classification') {
-                    if (subSection['Information'] != null) {
-                      for (var info in subSection['Information']) {
-                        ghsInfo.add({
-                          'Name': info['Name'],
-                          'Value': info['StringValue'],
-                        });
-                      }
-                    }
-                  }
-                }
-              }
-
-              // Extract hazard statements
-              List<Map<String, dynamic>> hazardStatements = [];
-              if (section['Section'] != null) {
-                for (var subSection in section['Section']) {
-                  if (subSection['TOCHeading'] == 'Hazard Statements') {
-                    if (subSection['Information'] != null) {
-                      for (var info in subSection['Information']) {
-                        hazardStatements.add({
-                          'Code': info['Name'],
-                          'Statement': info['StringValue'],
-                        });
-                      }
-                    }
-                  }
-                }
-              }
-
-              // Extract precautionary statements
-              List<Map<String, dynamic>> precautionaryStatements = [];
-              if (section['Section'] != null) {
-                for (var subSection in section['Section']) {
-                  if (subSection['TOCHeading'] == 'Precautionary Statements') {
-                    if (subSection['Information'] != null) {
-                      for (var info in subSection['Information']) {
-                        precautionaryStatements.add({
-                          'Code': info['Name'],
-                          'Statement': info['StringValue'],
-                        });
-                      }
-                    }
-                  }
-                }
-              }
-
-              // Extract safety data sheets
-              List<Map<String, dynamic>> safetyDataSheets = [];
-              if (section['Section'] != null) {
-                for (var subSection in section['Section']) {
-                  if (subSection['TOCHeading'] == 'Safety Data Sheets') {
-                    if (subSection['Information'] != null) {
-                      for (var info in subSection['Information']) {
-                        safetyDataSheets.add({
-                          'Source': info['Name'],
-                          'URL': info['URL'],
-                        });
-                      }
-                    }
-                  }
-                }
-              }
-
-              safetyData = {
-                'GHSClassification': ghsInfo,
-                'HazardStatements': hazardStatements,
-                'PrecautionaryStatements': precautionaryStatements,
-                'SafetyDataSheets': safetyDataSheets,
-              };
-              break;
-            }
-          }
-        }
-      }
-
-      // Fetch biological properties
-      print('Fetching biological properties...');
-      final bioResponse = await http.get(
-        Uri.parse(
-            'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/$cid/JSON?heading=Biological%20Properties'),
-      );
-
-      Map<String, dynamic> biologicalData = {};
-      if (bioResponse.statusCode == 200) {
-        final bioJson = json.decode(bioResponse.body);
-        if (bioJson['Record']?['Section'] != null) {
-          for (var section in bioJson['Record']['Section']) {
-            if (section['TOCHeading'] == 'Biological Properties') {
-              biologicalData = section;
-              break;
-            }
-          }
-        }
-      }
-
       // Extract properties from compound data
       final compoundData = data['compound']['PC_Compounds']?[0];
       final propertiesData = compoundData?['props'] ?? [];
@@ -262,7 +149,7 @@ class CompoundProvider extends BasePubChemProvider {
       final synonyms = await fetchSynonyms(cid);
       print('Synonyms fetched: ${synonyms.length}');
 
-      // Create the compound object
+      // Create the compound object with empty safety and biological data
       _selectedCompound = Compound(
         cid: cid,
         title: title,
@@ -303,8 +190,8 @@ class CompoundProvider extends BasePubChemProvider {
           'LogP': chemicalProperties['LogP'],
           'VaporPressure': chemicalProperties['VaporPressure'],
         },
-        safetyData: safetyData,
-        biologicalData: biologicalData,
+        safetyData: {}, // Empty safety data
+        biologicalData: {}, // Empty biological data
         pubChemUrl: 'https://pubchem.ncbi.nlm.nih.gov/compound/$cid',
         monoisotopicMass:
             double.tryParse(properties['Weight']?.toString() ?? '0') ?? 0.0,
@@ -354,8 +241,6 @@ class CompoundProvider extends BasePubChemProvider {
       print('Description URL: ${_selectedCompound?.descriptionUrl}');
       print('Synonyms: ${_selectedCompound?.synonyms}');
       print('Chemical Properties: ${_selectedCompound?.physicalProperties}');
-      print('Safety Data: ${_selectedCompound?.safetyData}');
-      print('Biological Data: ${_selectedCompound?.biologicalData}');
     } catch (e) {
       print('Error in fetchCompoundDetails: $e');
       setError(e.toString());

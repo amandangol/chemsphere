@@ -120,6 +120,27 @@ class DrugProvider extends BasePubChemProvider {
         print('Description URL: $descriptionUrl');
       }
 
+      // Fetch additional data from PUG View
+      print('Fetching PUG View data...');
+      final pugViewData = await fetchPugViewData(cid);
+      print(
+          'PUG View response: ${pugViewData.toString().substring(0, 200)}...');
+
+      // Fetch chemical properties
+      print('Fetching chemical properties...');
+      final propertiesResponse = await http.get(
+        Uri.parse(
+            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/property/MeltingPoint,BoilingPoint,FlashPoint,Density,Solubility,LogP,VaporPressure/JSON'),
+      );
+
+      Map<String, dynamic> chemicalProperties = {};
+      if (propertiesResponse.statusCode == 200) {
+        final propertiesData = json.decode(propertiesResponse.body);
+        if (propertiesData['PropertyTable']?['Properties'] != null) {
+          chemicalProperties = propertiesData['PropertyTable']['Properties'][0];
+        }
+      }
+
       // Fetch drug information from PubChem
       print('Fetching drug information...');
       final drugInfoResponse = await http.get(
@@ -269,35 +290,100 @@ class DrugProvider extends BasePubChemProvider {
         }
       }
 
-      // Find the existing drug
-      final existingDrug = _drugs.firstWhere(
-        (d) => d.cid == cid,
-        orElse: () => throw Exception('Drug not found'),
-      );
+      // Extract properties from compound data
+      final compoundData = data['compound']['PC_Compounds']?[0];
+      final propertiesData = compoundData?['props'] ?? [];
+      print('Properties data length: ${propertiesData.length}');
+      final properties = _extractProperties(propertiesData);
+      print(
+          'Extracted properties: ${properties.toString().substring(0, 200)}...');
+
+      // Extract title from PUG View data
+      String title = pugViewData['Record']?['RecordTitle'] ?? '';
+      print('Title from PUG View: $title');
+
+      // If no title found in PUG View, use properties title
+      if (title.isEmpty) {
+        title = properties['Title'] ?? properties['IUPACName'] ?? '';
+        print('Title from properties: $title');
+      }
+
+      // Use base provider's method to fetch synonyms
+      print('Fetching synonyms...');
+      final synonyms = await fetchSynonyms(cid);
+      print('Synonyms fetched: ${synonyms.length}');
+
+      // Find the existing drug or use defaults
+      Drug? existingDrug;
+      try {
+        existingDrug = _drugs.firstWhere(
+          (d) => d.cid == cid,
+        );
+      } catch (e) {
+        // Drug not found, will use defaults
+        existingDrug = null;
+      }
 
       // Create updated drug with additional details
       _selectedDrug = Drug(
-        name: existingDrug.name,
-        cid: existingDrug.cid,
-        title: existingDrug.title,
-        molecularFormula: existingDrug.molecularFormula,
-        molecularWeight: existingDrug.molecularWeight,
-        smiles: existingDrug.smiles,
-        xLogP: existingDrug.xLogP,
-        hBondDonorCount: existingDrug.hBondDonorCount,
-        hBondAcceptorCount: existingDrug.hBondAcceptorCount,
-        rotatableBondCount: existingDrug.rotatableBondCount,
-        heavyAtomCount: existingDrug.heavyAtomCount,
-        atomStereoCount: existingDrug.atomStereoCount,
-        bondStereoCount: existingDrug.bondStereoCount,
-        complexity: existingDrug.complexity,
-        iupacName: existingDrug.iupacName,
+        name: existingDrug?.name ?? title,
+        cid: cid,
+        title: title,
+        molecularFormula: properties['MolecularFormula'] ??
+            existingDrug?.molecularFormula ??
+            '',
+        molecularWeight: double.tryParse(
+                properties['Molecular Weight']?.toString() ?? '0') ??
+            existingDrug?.molecularWeight ??
+            0.0,
+        smiles: properties['CanonicalSMILES'] ?? existingDrug?.smiles ?? '',
+        xLogP: double.tryParse(properties['XLogP']?.toString() ?? '0') ??
+            existingDrug?.xLogP ??
+            0.0,
+        hBondDonorCount:
+            int.tryParse(properties['HBondDonorCount']?.toString() ?? '0') ??
+                existingDrug?.hBondDonorCount ??
+                0,
+        hBondAcceptorCount:
+            int.tryParse(properties['HBondAcceptorCount']?.toString() ?? '0') ??
+                existingDrug?.hBondAcceptorCount ??
+                0,
+        rotatableBondCount:
+            int.tryParse(properties['RotatableBondCount']?.toString() ?? '0') ??
+                existingDrug?.rotatableBondCount ??
+                0,
+        heavyAtomCount:
+            int.tryParse(properties['HeavyAtomCount']?.toString() ?? '0') ??
+                existingDrug?.heavyAtomCount ??
+                0,
+        atomStereoCount:
+            int.tryParse(properties['AtomStereoCount']?.toString() ?? '0') ??
+                existingDrug?.atomStereoCount ??
+                0,
+        bondStereoCount:
+            int.tryParse(properties['BondStereoCount']?.toString() ?? '0') ??
+                existingDrug?.bondStereoCount ??
+                0,
+        complexity:
+            double.tryParse(properties['Complexity']?.toString() ?? '0') ??
+                existingDrug?.complexity ??
+                0.0,
+        iupacName: properties['IUPACName'] ?? existingDrug?.iupacName ?? '',
         description: description,
         descriptionSource: descriptionSource,
         descriptionUrl: descriptionUrl,
-        synonyms: existingDrug.synonyms,
-        physicalProperties: existingDrug.physicalProperties,
-        pubChemUrl: existingDrug.pubChemUrl,
+        synonyms: synonyms,
+        physicalProperties: {
+          ...properties,
+          'MeltingPoint': chemicalProperties['MeltingPoint'],
+          'BoilingPoint': chemicalProperties['BoilingPoint'],
+          'FlashPoint': chemicalProperties['FlashPoint'],
+          'Density': chemicalProperties['Density'],
+          'Solubility': chemicalProperties['Solubility'],
+          'LogP': chemicalProperties['LogP'],
+          'VaporPressure': chemicalProperties['VaporPressure'],
+        },
+        pubChemUrl: 'https://pubchem.ncbi.nlm.nih.gov/compound/$cid',
         indication: indication,
         mechanismOfAction: mechanismOfAction,
         toxicity: toxicity,
@@ -313,10 +399,13 @@ class DrugProvider extends BasePubChemProvider {
 
       print('\n=== Created Drug Object ===');
       print('Title: ${_selectedDrug?.title}');
+      print('Molecular Formula: ${_selectedDrug?.molecularFormula}');
+      print('Molecular Weight: ${_selectedDrug?.molecularWeight}');
       print('Description: ${_selectedDrug?.description}');
       print('Description Source: ${_selectedDrug?.descriptionSource}');
       print('Description URL: ${_selectedDrug?.descriptionUrl}');
       print('Synonyms: ${_selectedDrug?.synonyms}');
+      print('Chemical Properties: ${_selectedDrug?.physicalProperties}');
       print('Indication: ${_selectedDrug?.indication}');
       print('Mechanism of Action: ${_selectedDrug?.mechanismOfAction}');
       print('Toxicity: ${_selectedDrug?.toxicity}');
@@ -334,6 +423,89 @@ class DrugProvider extends BasePubChemProvider {
     } finally {
       setLoading(false);
     }
+  }
+
+  Future<Map<String, dynamic>> fetchPugViewData(int cid,
+      {String? heading}) async {
+    try {
+      final url = Uri.parse(
+        'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/$cid/JSON${heading != null ? '?heading=$heading' : ''}',
+      );
+
+      final response = await http.get(url);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Failed to fetch PUG View data: ${response.statusCode}');
+      }
+
+      return json.decode(response.body);
+    } catch (e) {
+      print('Error fetching PUG View data: $e');
+      rethrow;
+    }
+  }
+
+  Map<String, dynamic> _extractProperties(List<dynamic> props) {
+    final properties = <String, dynamic>{};
+
+    for (var prop in props) {
+      final label = prop['urn']?['label']?.toString() ?? '';
+      final name = prop['urn']?['name']?.toString() ?? '';
+      final value = prop['value'];
+
+      if (value == null) continue;
+
+      // Handle different value types
+      if (value['sval'] != null) {
+        properties[label] = value['sval'];
+      } else if (value['ival'] != null) {
+        properties[label] = value['ival'];
+      } else if (value['fval'] != null) {
+        properties[label] = value['fval'];
+      } else if (value['binary'] != null) {
+        properties[label] = value['binary'];
+      } else if (value['slist'] != null) {
+        properties[label] = List<String>.from(value['slist']);
+      }
+
+      // Map specific properties to their correct names
+      if (label == 'Count' && name == 'Hydrogen Bond Donor') {
+        properties['HBondDonorCount'] = value['ival'];
+      } else if (label == 'Count' && name == 'Hydrogen Bond Acceptor') {
+        properties['HBondAcceptorCount'] = value['ival'];
+      } else if (label == 'Log P') {
+        properties['XLogP'] = value['fval'];
+      } else if (label == 'Mass') {
+        properties['MolecularWeight'] = value['fval'];
+        properties['ExactMass'] = value['fval'];
+        properties['MonoisotopicWeight'] = value['fval'];
+      } else if (label == 'Topological') {
+        properties['TPSA'] = value['fval'];
+      } else if (label == 'IUPAC Name') {
+        properties['IUPACName'] = value['sval'];
+        properties['Title'] = value['sval'];
+      } else if (label == 'Molecular Formula') {
+        properties['MolecularFormula'] = value['sval'];
+      } else if (label == 'SMILES') {
+        properties['CanonicalSMILES'] = value['sval'];
+      } else if (label == 'Compound Complexity') {
+        properties['Complexity'] = value['fval'];
+      } else if (label == 'Charge') {
+        properties['Charge'] = value['ival'];
+      } else if (label == 'Count' && name == 'Rotatable Bond') {
+        properties['RotatableBondCount'] = value['ival'];
+      } else if (label == 'Count' && name == 'Heavy Atom') {
+        properties['HeavyAtomCount'] = value['ival'];
+      } else if (label == 'Count' && name == 'Atom Stereo') {
+        properties['AtomStereoCount'] = value['ival'];
+      } else if (label == 'Count' && name == 'Bond Stereo') {
+        properties['BondStereoCount'] = value['ival'];
+      }
+    }
+
+    print('Extracted properties: $properties');
+    return properties;
   }
 
   void clearSelectedDrug() {

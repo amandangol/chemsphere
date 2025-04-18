@@ -6,12 +6,13 @@ import 'providers/drug_provider.dart';
 import 'providers/element_provider.dart';
 import 'providers/reaction_provider.dart';
 import 'providers/bookmark_provider.dart';
+import 'providers/chemistry_guide_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/main_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ChemistryExplorerApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -41,11 +42,12 @@ class ChemistryExplorerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ReactionProvider()),
         ChangeNotifierProvider(create: (_) => BookmarkProvider()),
         ChangeNotifierProvider(create: (_) => FlashcardProvider()),
+        ChangeNotifierProvider(create: (_) => ChemistryGuideProvider()),
       ],
       child: MaterialApp(
         title: 'ChemVerse',
         theme: AppTheme.lightTheme,
-        home: const MainScreen(),
+        home: const SplashScreen(),
         debugShowCheckedModeBanner: false,
       ),
     );

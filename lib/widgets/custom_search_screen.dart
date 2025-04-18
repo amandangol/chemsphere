@@ -23,6 +23,7 @@ class CustomSearchScreen extends StatefulWidget {
   final String? imageUrl;
   final List<Widget>? actions;
   final Future<List<String>> Function(String)? onAutoComplete;
+  final Widget? customHeader;
 
   const CustomSearchScreen({
     Key? key,
@@ -45,6 +46,7 @@ class CustomSearchScreen extends StatefulWidget {
     this.imageUrl,
     this.actions,
     this.onAutoComplete,
+    this.customHeader,
   }) : super(key: key);
 
   @override
@@ -320,6 +322,12 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
 
                     const SizedBox(height: 24),
 
+                    // Custom Header for educational content
+                    if (widget.customHeader != null) ...[
+                      widget.customHeader!,
+                      const SizedBox(height: 24),
+                    ],
+
                     // Quick search section with animated cards
                     if (!_isSearching && _searchController.text.isEmpty) ...[
                       if (widget.historyItems.isNotEmpty) ...[
@@ -538,8 +546,8 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         SizedBox(
-                          width: 60,
-                          height: 60,
+                          width: 30,
+                          height: 30,
                           child: CircularProgressIndicator(
                             color: theme.colorScheme.primary,
                             strokeWidth: 2,

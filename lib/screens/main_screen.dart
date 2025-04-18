@@ -1,17 +1,8 @@
 import 'package:chem_explore/screens/elements/element_flashcard_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:lottie/lottie.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../screens/bookmark_screen.dart';
-import '../screens/drugs/drug_search_screen.dart';
-import '../screens/elements/periodic_table_screen.dart';
-import '../screens/reactions/reaction_screen.dart';
-import 'compounds/compound_searhc_screen.dart';
+import 'bookmarks/bookmark_screen.dart';
+import '../screens/home/home_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -105,17 +96,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good Morning';
-    } else if (hour < 17) {
-      return 'Good Afternoon';
-    } else {
-      return 'Good Evening';
-    }
-  }
-
   @override
   void dispose() {
     _headerAnimationController.dispose();
@@ -131,28 +111,18 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: [
+        children: const [
           // Home Screen
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  theme.colorScheme.primaryContainer.withOpacity(0.3),
-                  theme.colorScheme.background,
-                ],
-              ),
-            ),
-            child: _buildHomeContent(context),
-          ),
-          const ElementFlashcardScreen(),
+          HomeScreen(),
+
+          // Flashcards Screen
+          ElementFlashcardScreen(),
 
           // Favorites Screen
-          const BookmarkScreen(),
+          BookmarkScreen(),
 
           // Profile Screen (placeholder)
-          const Center(
+          Center(
             child: Text('Profile Screen Coming Soon'),
           ),
         ],
@@ -162,590 +132,121 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           color: theme.colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(0.08),
               offset: const Offset(0, -3),
               blurRadius: 10,
             ),
           ],
-        ),
-        child: BottomNavigationBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          selectedItemColor: theme.colorScheme.primary,
-          unselectedItemColor: theme.colorScheme.onSurface.withOpacity(0.6),
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.flash_on_rounded),
-              label: 'Flashcards',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark_rounded),
-              label: 'Saved',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded),
-              label: 'Profile',
-            ),
-          ],
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHomeContent(BuildContext context) {
-    final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
-    final greeting = _getGreeting();
-    final today = DateFormat('EEEE, MMMM d').format(DateTime.now());
-
-    return SafeArea(
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // Header with Wave Animation
-          SliverToBoxAdapter(
-            child: AnimatedBuilder(
-              animation: _headerAnimation,
-              builder: (context, child) {
-                return Transform.translate(
-                  offset: Offset(0, _headerAnimation.value),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(20, 30, 20, 5),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(
-                                    Icons.science_rounded,
-                                    color: theme.colorScheme.onPrimary,
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  'ChemVerse',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.notifications_outlined),
-                              onPressed: () {},
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 25),
-                        FadeTransition(
-                          opacity: _greetingOpacityAnimation,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                greeting +
-                                    (_username.isNotEmpty
-                                        ? ', $_username'
-                                        : '!'),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onBackground,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                today,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  color: theme.colorScheme.onBackground
-                                      .withOpacity(0.7),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
           ),
-
-          // Animated Lottie Chemistry Animation
-          SliverToBoxAdapter(
-            child: FadeTransition(
-              opacity: _greetingOpacityAnimation,
-              child: Container(
-                height: 200,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: Lottie.asset(
-                    'assets/lottie/lottie_home.json',
-                    fit: BoxFit.contain,
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Background elements - subtle molecule patterns
+              Positioned(
+                left: 40,
+                bottom: 8,
+                child: Opacity(
+                  opacity: 0.1,
+                  child: Icon(
+                    Icons.science,
+                    size: 24,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ),
-            ),
-          ),
-
-          // Quick Access Section
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Quick Access',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+              Positioned(
+                right: 60,
+                bottom: 12,
+                child: Opacity(
+                  opacity: 0.1,
+                  child: Icon(
+                    Icons.hub,
+                    size: 24,
+                    color: theme.colorScheme.secondary,
                   ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 100,
-                    child: AnimationLimiter(
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        children: [
-                          _buildQuickAccessItem(
-                            context,
-                            imagePath: 'assets/svgs/periodictable.svg',
-                            label: 'Periodic Table',
-                            color: theme.colorScheme.primary,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const PeriodicTableScreen(),
-                              ),
-                            ),
-                          ),
-                          _buildQuickAccessItem(
-                            context,
-                            imagePath: 'assets/svgs/molecule.svg',
-                            label: 'Compound Explorer',
-                            color: theme.colorScheme.secondary,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const CompoundSearchScreen(),
-                              ),
-                            ),
-                          ),
-                          _buildQuickAccessItem(
-                            context,
-                            imagePath: 'assets/svgs/drug.svg',
-                            label: 'Drug Explorer',
-                            color: theme.colorScheme.inverseSurface,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const DrugSearchScreen(),
-                              ),
-                            ),
-                          ),
-                          _buildQuickAccessItem(
-                            context,
-                            imagePath: 'assets/svgs/drug.svg',
-                            label: 'Reactions',
-                            color: Colors.deepOrange,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ReactionScreen(),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-
-          // Daily Chemistry Fact
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-              child: AnimatedBuilder(
-                animation: _greetingAnimationController,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(
-                        0, 30 * (1 - _greetingAnimationController.value)),
-                    child: Opacity(
-                      opacity: _greetingAnimationController.value,
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              theme.colorScheme.primary.withOpacity(0.9),
-                              theme.colorScheme.primary,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: theme.colorScheme.primary.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.lightbulb_outline,
-                                  color: theme.colorScheme.onPrimary,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Did You Know?',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onPrimary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 500),
-                              child: Text(
-                                _chemistryFacts[_currentFactIndex],
-                                key: ValueKey<int>(_currentFactIndex),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  color: theme.colorScheme.onPrimary,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Chemistry Fact #${_currentFactIndex + 1}',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: theme.colorScheme.onPrimary
-                                    .withOpacity(0.7),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
+              // Actual bottom navigation bar
+              BottomNavigationBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                selectedItemColor: theme.colorScheme.primary,
+                unselectedItemColor:
+                    theme.colorScheme.onSurface.withOpacity(0.6),
+                showSelectedLabels: true,
+                showUnselectedLabels: true,
+                type: BottomNavigationBarType.fixed,
+                items: [
+                  _buildNavItem(Icons.home_rounded, 'Home'),
+                  _buildNavItem(Icons.flash_on_rounded, 'Flashcards'),
+                  _buildNavItem(Icons.bookmark_rounded, 'Saved'),
+                  _buildNavItem(Icons.person_rounded, 'Profile'),
+                ],
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
                 },
               ),
-            ),
-          ),
-
-          // Main Features
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Explore Chemistry',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-          ),
-
-          // Feature Cards with Animation
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverAnimationBuilder(
-              child: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 0.8,
-                ),
-                delegate: SliverChildListDelegate([
-                  _buildFeatureCard(
-                    context,
-                    imagePath: 'assets/svgs/periodictable.svg',
-                    title: 'Periodic Table',
-                    description: 'Explore elements and their properties',
-                    color: theme.colorScheme.primary.withOpacity(0.1),
-                    iconColor: theme.colorScheme.primary,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const PeriodicTableScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildFeatureCard(
-                    context,
-                    imagePath: 'assets/svgs/molecule.svg',
-                    title: 'Compound Explorer',
-                    description:
-                        'Explore compound compounds and their properties',
-                    color: theme.colorScheme.secondary.withOpacity(0.1),
-                    iconColor: theme.colorScheme.secondary,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CompoundSearchScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildFeatureCard(
-                    context,
-                    imagePath: 'assets/svgs/drug.svg',
-                    title: 'Pharmaceuticals',
-                    description: 'Explore drug compounds and their properties',
-                    color: Colors.deepOrange.withOpacity(0.1),
-                    iconColor: Colors.deepOrange,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DrugSearchScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildFeatureCard(
-                    context,
-                    imagePath: 'assets/svgs/reaction.svg',
-                    title: 'Chemical Reactions',
-                    description: 'Study and explore chemical reactions',
-                    color: Colors.teal.withOpacity(0.1),
-                    iconColor: Colors.teal,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ReactionScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildFeatureCard(
-                    context,
-                    imagePath: 'assets/svgs/school.svg',
-                    title: 'Chemistry Guide',
-                    description: 'Learn basic chemistry concepts',
-                    color: Colors.amber.withOpacity(0.1),
-                    iconColor: Colors.amber.shade800,
-                    onTap: () {
-                      // TODO: Implement chemistry guide screen
-                    },
-                  ),
-                ]),
-              ),
-            ),
-          ),
-
-          // Spacer at bottom
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 20),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickAccessItem(
-    BuildContext context, {
-    required String imagePath,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return AnimationConfiguration.staggeredList(
-      position: _chemistryFacts.indexOf(label),
-      duration: const Duration(milliseconds: 600),
-      child: SlideAnimation(
-        horizontalOffset: 50,
-        child: FadeInAnimation(
-          child: GestureDetector(
-            onTap: onTap,
-            child: Container(
-              width: 100,
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.3),
-                      shape: BoxShape.circle,
-                    ),
-                    child: SvgPicture.asset(
-                      imagePath,
-                      color: color,
-                      width: 24,
-                      height: 24,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    label,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildFeatureCard(
-    BuildContext context, {
-    required String imagePath,
-    required String title,
-    required String description,
-    required VoidCallback onTap,
-    required Color color,
-    required Color iconColor,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
+  BottomNavigationBarItem _buildNavItem(IconData icon, String label) {
+    return BottomNavigationBarItem(
+      icon: Container(
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.grey.withOpacity(0.1),
-          ),
+          color: _getIconColor(label).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: iconColor.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: SvgPicture.asset(
-                imagePath,
-                width: 30,
-                height: 30,
-                color: iconColor,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Colors.black87,
-              ),
-            ),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 18,
-                    color: iconColor,
-                  ),
-                ),
-              ],
+        child: Icon(icon),
+      ),
+      activeIcon: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: _getIconColor(label).withOpacity(0.2),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: _getIconColor(label).withOpacity(0.3),
+              blurRadius: 8,
+              spreadRadius: 1,
             ),
           ],
         ),
+        child: Icon(icon),
       ),
+      label: label,
     );
   }
-}
 
-// Helper class for staggered animations
-class SliverAnimationBuilder extends StatelessWidget {
-  final Widget child;
-
-  const SliverAnimationBuilder({
-    Key? key,
-    required this.child,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimationLimiter(
-      child: child,
-    );
+  Color _getIconColor(String label) {
+    final theme = Theme.of(context);
+    switch (label) {
+      case 'Home':
+        return theme.colorScheme.primary;
+      case 'Flashcards':
+        return Colors.orange;
+      case 'Saved':
+        return Colors.green;
+      case 'Profile':
+        return Colors.purple;
+      default:
+        return theme.colorScheme.primary;
+    }
   }
 }

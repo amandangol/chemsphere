@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/element_provider.dart';
+import '../../widgets/chemistry_widgets.dart';
 
 class ElementDetailScreen extends StatelessWidget {
   const ElementDetailScreen({Key? key}) : super(key: key);
@@ -13,20 +14,8 @@ class ElementDetailScreen extends StatelessWidget {
       body: Consumer<ElementProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Loading element details...',
-                    style: TextStyle(color: theme.colorScheme.primary),
-                  ),
-                ],
-              ),
+            return const ChemistryLoadingWidget(
+              message: 'Loading element details...',
             );
           }
 

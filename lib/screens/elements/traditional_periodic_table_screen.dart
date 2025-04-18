@@ -5,6 +5,7 @@ import '../../providers/element_provider.dart';
 import '../../models/element.dart' as element_model;
 import 'element_detail_screen.dart';
 import 'dart:math';
+import '../../widgets/chemistry_widgets.dart';
 
 // Map of atomic numbers to their proper positions in the periodic table
 class PeriodicTablePosition {
@@ -26,6 +27,7 @@ class _TraditionalPeriodicTableScreenState
   // Zoom and pan controllers
   late TransformationController _transformationController;
   double _initialScale = 1.0;
+  bool _showInfoPanel = false; // Control the educational panel visibility
 
   // Define the grid dimensions for the periodic table
   final int _maxPeriod = 7; // Standard table has 7 periods
@@ -244,6 +246,7 @@ class _TraditionalPeriodicTableScreenState
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
+    final theme = Theme.of(context);
 
     // Adjust initial scale based on screen size to ensure the table fits completely
     _initialScale = (screenSize.width /
@@ -269,116 +272,237 @@ class _TraditionalPeriodicTableScreenState
             fontWeight: FontWeight.bold,
           ),
         ),
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         actions: [
+          // Toggle educational panel
+          IconButton(
+            icon: Icon(_showInfoPanel ? Icons.info : Icons.info_outline,
+                color: theme.colorScheme.onPrimary),
+            tooltip: 'Toggle Info Panel',
+            onPressed: () {
+              setState(() {
+                _showInfoPanel = !_showInfoPanel;
+              });
+            },
+          ),
           // Show legend button
           IconButton(
-            icon: const Icon(Icons.info_outline),
-            tooltip: 'Show Legend',
+            icon: const Icon(Icons.palette_outlined),
+            tooltip: 'Element Categories',
             onPressed: () {
               _showLegend(context);
             },
           ),
-        ],
-      ),
-      // Add info card
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          _showInfoDialog(context);
-        },
-        label: Text(
-          'About Periodic Table',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        icon: const Icon(Icons.help_outline),
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-      ),
-      // Add an overlay banner to explain the view
-      body: Stack(
-        children: [
-          Consumer<ElementProvider>(
-            builder: (context, provider, child) {
-              if (provider.isLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (provider.error != null) {
-                return Center(
-                  child: Text(
-                    'Error: ${provider.error}',
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                );
-              }
-
-              if (provider.elements.isEmpty) {
-                return const Center(child: Text('No elements found'));
-              }
-
-              // Build the periodic table
-              return _buildPeriodicTable(provider.elements);
+          // Show help
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            tooltip: 'Table Guide',
+            onPressed: () {
+              _showInfoDialog(context);
             },
           ),
-          // Educational overlay in top-right
-          Positioned(
-            top: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .tertiaryContainer
-                    .withOpacity(0.8),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Groups →',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onTertiaryContainer,
+        ],
+      ),
+      // Body with info panel and periodic table
+      body: Column(
+        children: [
+          // Educational Info Panel
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            height: _showInfoPanel ? null : 0,
+            child: _showInfoPanel
+                ? _buildInfoPanel(theme)
+                : const SizedBox.shrink(),
+          ),
+
+          // Main periodic table view
+          Expanded(
+            child: Stack(
+              children: [
+                Consumer<ElementProvider>(
+                  builder: (context, provider, child) {
+                    if (provider.isLoading) {
+                      return const ChemistryLoadingWidget(
+                        message: 'Loading elements data...',
+                      );
+                    }
+
+                    if (provider.error != null) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: theme.colorScheme.error,
+                              size: 48,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error: ${provider.error}',
+                              style: TextStyle(
+                                color: theme.colorScheme.error,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                provider.fetchElements(forceRefresh: true);
+                              },
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    if (provider.elements.isEmpty) {
+                      return const Center(child: Text('No elements found'));
+                    }
+
+                    // Build the periodic table
+                    return _buildPeriodicTable(provider.elements);
+                  },
+                ),
+                // Educational overlay in top-right with improved design
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color:
+                          theme.colorScheme.tertiaryContainer.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Groups →',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: theme.colorScheme.onTertiaryContainer,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward,
+                              size: 14,
+                              color: theme.colorScheme.onTertiaryContainer,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Text(
+                              'Periods ↓',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: theme.colorScheme.onTertiaryContainer,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_downward,
+                              size: 14,
+                              color: theme.colorScheme.onTertiaryContainer,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      RotatedBox(
-                        quarterTurns: -1,
-                        child: Text(
-                          'Periods ↓',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onTertiaryContainer,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_downward,
-                        size: 16,
-                        color:
-                            Theme.of(context).colorScheme.onTertiaryContainer,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      // Floating mini-legend at the bottom
+      bottomNavigationBar: Container(
+        color: theme.colorScheme.background,
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildMiniLegendItem(const Color(0xFFF44336), 'Metals'),
+            _buildMiniLegendItem(const Color(0xFF9C27B0), 'Metalloids'),
+            _buildMiniLegendItem(const Color(0xFF4CAF50), 'Nonmetals'),
+            _buildMiniLegendItem(const Color(0xFF2196F3), 'Noble Gases'),
+            IconButton(
+              icon: const Icon(Icons.fullscreen),
+              onPressed: _resetTablePosition,
+              tooltip: 'Reset View',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // New widget for the educational info panel
+  Widget _buildInfoPanel(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withOpacity(0.7),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Understanding the Traditional Periodic Table',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'The periodic table arranges elements by atomic number (number of protons) and groups elements with similar properties in columns.',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildInfoCard(
+                    'Atomic Number', 'Number of protons in the nucleus'),
+                _buildInfoCard(
+                    'Symbol', 'Chemical abbreviation of the element'),
+                _buildInfoCard('Element Name', 'Full name of the element'),
+                _buildInfoCard('Atomic Mass', 'Average mass of all isotopes'),
+                _buildInfoCard('Group', 'Vertical column; similar properties'),
+                _buildInfoCard('Period', 'Horizontal row; same electron shell'),
+              ],
             ),
           ),
         ],
@@ -386,6 +510,70 @@ class _TraditionalPeriodicTableScreenState
     );
   }
 
+  // Small info cards for key terminology
+  Widget _buildInfoCard(String title, String description) {
+    return Card(
+      margin: const EdgeInsets.only(right: 12, bottom: 8),
+      color: Theme.of(context).colorScheme.surface,
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: 150,
+              child: Text(
+                description,
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Mini legend items for the bottom bar
+  Widget _buildMiniLegendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Improved periodic table widget
   Widget _buildPeriodicTable(List<element_model.Element> elements) {
     // Total grid size with extra space for better visibility
     final double tableWidth =
@@ -398,7 +586,7 @@ class _TraditionalPeriodicTableScreenState
         Container(
           width: double.infinity,
           height: double.infinity,
-          color: Colors.grey.shade100,
+          color: Colors.grey.shade50, // Lighter background
           child: InteractiveViewer(
             transformationController: _transformationController,
             boundaryMargin:
@@ -523,14 +711,23 @@ class _TraditionalPeriodicTableScreenState
                       return Positioned(
                         left: 0,
                         top: (index + 1) * (_elementSize + _cellPadding * 2),
-                        child: SizedBox(
+                        child: Container(
                           width: _elementSize / 2,
                           height: _elementSize,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primaryContainer
+                                .withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                           child: Center(
                             child: Text(
                               '${index + 1}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ),
@@ -542,14 +739,23 @@ class _TraditionalPeriodicTableScreenState
                       return Positioned(
                         left: (index + 1) * (_elementSize + _cellPadding * 2),
                         top: 0,
-                        child: SizedBox(
+                        child: Container(
                           width: _elementSize,
                           height: _elementSize / 2,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondaryContainer
+                                .withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                           child: Center(
                             child: Text(
                               '${index + 1}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ),
@@ -562,60 +768,63 @@ class _TraditionalPeriodicTableScreenState
           ),
         ),
 
-        // Zoom controls
+        // Improved zoom controls with better visual design
         Positioned(
-          bottom: 16,
+          bottom: 70,
           right: 16,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FloatingActionButton.small(
-                heroTag: "zoomInBtn",
-                onPressed: () {
-                  final Matrix4 matrix =
-                      _transformationController.value.clone();
-                  matrix.scale(1.2); // Zoom in by 20%
-                  _transformationController.value = matrix;
-                },
-                tooltip: 'Zoom In',
-                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                child: Icon(
-                  Icons.add,
-                  color: Theme.of(context).colorScheme.primary,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-              ),
-              const SizedBox(height: 8),
-              FloatingActionButton.small(
-                heroTag: "zoomOutBtn",
-                onPressed: () {
-                  final Matrix4 matrix =
-                      _transformationController.value.clone();
-                  matrix.scale(0.8); // Zoom out by 20%
-                  _transformationController.value = matrix;
-                },
-                tooltip: 'Zoom Out',
-                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                child: Icon(
-                  Icons.remove,
-                  color: Theme.of(context).colorScheme.primary,
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: "zoomInBtn",
+                  onPressed: () {
+                    final Matrix4 matrix =
+                        _transformationController.value.clone();
+                    matrix.scale(1.2); // Zoom in by 20%
+                    _transformationController.value = matrix;
+                  },
+                  tooltip: 'Zoom In',
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primaryContainer,
+                  foregroundColor:
+                      Theme.of(context).colorScheme.onPrimaryContainer,
+                  child: const Icon(Icons.add),
                 ),
-              ),
-            ],
-          ),
-        ),
-
-        // Full table view button
-        Positioned(
-          bottom: 16,
-          left: 16,
-          child: FloatingActionButton.small(
-            heroTag: "fullTableBtn",
-            onPressed: _resetTablePosition,
-            tooltip: 'Show Full Table',
-            backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-            child: Icon(
-              Icons.fullscreen,
-              color: Theme.of(context).colorScheme.primary,
+                const SizedBox(height: 4),
+                Container(
+                  height: 1,
+                  width: 20,
+                  color: Colors.grey.withOpacity(0.3),
+                ),
+                const SizedBox(height: 4),
+                FloatingActionButton.small(
+                  heroTag: "zoomOutBtn",
+                  onPressed: () {
+                    final Matrix4 matrix =
+                        _transformationController.value.clone();
+                    matrix.scale(0.8); // Zoom out by 20%
+                    _transformationController.value = matrix;
+                  },
+                  tooltip: 'Zoom Out',
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primaryContainer,
+                  foregroundColor:
+                      Theme.of(context).colorScheme.onPrimaryContainer,
+                  child: const Icon(Icons.remove),
+                ),
+              ],
             ),
           ),
         ),
@@ -623,6 +832,7 @@ class _TraditionalPeriodicTableScreenState
     );
   }
 
+  // Improved element cell design
   Widget _buildElementCell(element_model.Element element,
       {int? specialRow,
       int? specialColumn,
@@ -671,13 +881,19 @@ class _TraditionalPeriodicTableScreenState
                 ),
               );
             },
-            child: Container(
-              width: _elementSize,
-              height: _elementSize,
+            borderRadius: BorderRadius.circular(8),
+            child: Ink(
               decoration: BoxDecoration(
-                color: elementColor.withOpacity(0.2),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    elementColor.withOpacity(0.2),
+                    elementColor.withOpacity(0.1),
+                  ],
+                ),
                 border: Border.all(color: elementColor, width: 1.5),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
                     color: elementColor.withOpacity(0.1),
@@ -686,19 +902,23 @@ class _TraditionalPeriodicTableScreenState
                   ),
                 ],
               ),
+              width: _elementSize,
+              height: _elementSize,
               child: Padding(
                 padding: const EdgeInsets.all(2.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Atomic number
-                    Text(
-                      '${element.number}',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: elementColor,
-                        fontWeight: FontWeight.bold,
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        '${element.number}',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: elementColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
 
@@ -708,7 +928,7 @@ class _TraditionalPeriodicTableScreenState
                       children: [
                         Text(
                           element.symbol,
-                          style: const TextStyle(
+                          style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -716,7 +936,9 @@ class _TraditionalPeriodicTableScreenState
                         ),
                         Text(
                           element.name,
-                          style: const TextStyle(fontSize: 8),
+                          style: GoogleFonts.poppins(
+                            fontSize: 8,
+                          ),
                           textAlign: TextAlign.center,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -727,7 +949,9 @@ class _TraditionalPeriodicTableScreenState
                     // Atomic mass
                     Text(
                       _formatAtomicMass(element.atomicMass),
-                      style: const TextStyle(fontSize: 8),
+                      style: GoogleFonts.robotoMono(
+                        fontSize: 8,
+                      ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -848,6 +1072,7 @@ class _TraditionalPeriodicTableScreenState
           'Element Categories',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
         ),
         content: Container(
@@ -922,6 +1147,7 @@ class _TraditionalPeriodicTableScreenState
               'About the Periodic Table',
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
             ),
           ],

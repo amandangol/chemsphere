@@ -106,7 +106,9 @@ abstract class BasePubChemProvider with ChangeNotifier {
       final data = json.decode(response.body);
       final synonymsList = data['InformationList']?['Information'] ?? [];
       if (synonymsList.isNotEmpty) {
-        return List<String>.from(synonymsList[0]['Synonym'] ?? []);
+        // Limit to maximum 50 synonyms to improve performance
+        final allSynonyms = List<String>.from(synonymsList[0]['Synonym'] ?? []);
+        return allSynonyms.take(50).toList();
       }
       return [];
     } catch (e) {

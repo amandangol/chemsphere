@@ -47,6 +47,7 @@ dependencies:
   xml: ^6.5.0
   flip_card: ^0.7.0
   font_awesome_flutter: ^10.8.0
+  flutter_launcher_icons: ^0.14.3
   
 
   # The following adds the Cupertino Icons font to your application.
@@ -79,6 +80,16 @@ flutter:
     - assets/lottie/
     - assets/images/
     - assets/svgs/
+    - assets/icon/icon.png
+
+flutter_icons:
+  android: true
+  ios: true
+  web: true
+  windows: true
+  macos: true
+  image_path: "assets/icon/icon.png"
+  remove_alpha_ios: true # Fixes iOS alpha issue
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
