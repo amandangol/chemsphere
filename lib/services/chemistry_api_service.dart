@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/chemistry_guide.dart';
+import '../screens/chemistryguide/model/chemistry_guide.dart';
 
 class ChemistryApiService {
   static const String _baseUrl = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug';
@@ -131,7 +131,8 @@ class ChemistryApiService {
     try {
       // PubChem doesn't have a direct elements API, but we can extract from periodic table
       final response = await http.get(
-        Uri.parse('$_baseUrl/periodictable/JSON'),
+        Uri.parse(
+            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/periodictable/JSON'),
       );
 
       if (response.statusCode == 200) {
@@ -154,7 +155,8 @@ class ChemistryApiService {
   Future<List<ChemistryElement>> getAllElements() async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/periodictable/JSON'),
+        Uri.parse(
+            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/periodictable/JSON'),
       );
 
       if (response.statusCode == 200) {

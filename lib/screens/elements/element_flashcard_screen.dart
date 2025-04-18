@@ -5,9 +5,9 @@ import 'dart:math'; // For random shuffling
 import 'package:flip_card/flip_card.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Import FontAwesome
 
-import '../../providers/flashcard_provider.dart';
-import '../../models/flashcard_element.dart';
+import 'provider/element_provider.dart';
 import '../../widgets/chemistry_widgets.dart'; // Import custom chemistry widgets
+import 'model/periodic_element.dart'; // Import PeriodicElement model
 
 class ElementFlashcardScreen extends StatefulWidget {
   const ElementFlashcardScreen({Key? key}) : super(key: key);
@@ -18,8 +18,8 @@ class ElementFlashcardScreen extends StatefulWidget {
 
 class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
   late PageController _pageController;
-  List<FlashcardElement> _displayElements =
-      []; // Renamed from _shuffledElements
+  List<PeriodicElement> _displayElements =
+      []; // Changed from Element to PeriodicElement
   bool _initialLoad = true;
   int _currentPage = 0;
   bool _isShuffled = true; // State for shuffle toggle
@@ -40,7 +40,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
   }
 
   Future<void> _loadElements({bool forceRefresh = false}) async {
-    final provider = Provider.of<FlashcardProvider>(context, listen: false);
+    final provider = Provider.of<ElementProvider>(context, listen: false);
     // Ensure loading state is set if refreshing
     if (forceRefresh) {
       setState(() {
@@ -59,7 +59,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
 
   // Updates the display list based on shuffle state
   void _updateDisplayList() {
-    final provider = Provider.of<FlashcardProvider>(context, listen: false);
+    final provider = Provider.of<ElementProvider>(context, listen: false);
     if (provider.elements.isEmpty) {
       _displayElements = [];
       return;
@@ -105,6 +105,29 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
     );
   }
 
+  // Helper to format values - display N/A for 0 or empty values
+  String _formatValue(dynamic value) {
+    if (value == null || value.toString().isEmpty) {
+      return 'N/A';
+    }
+
+    // For numeric values, check if they're zero
+    if (value is num || value is String && double.tryParse(value) != null) {
+      double? numValue;
+      if (value is num) {
+        numValue = value.toDouble();
+      } else {
+        numValue = double.tryParse(value.toString());
+      }
+
+      if (numValue != null && numValue == 0) {
+        return 'N/A';
+      }
+    }
+
+    return value.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -135,7 +158,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
             ),
           ),
         ),
-        child: Consumer<FlashcardProvider>(
+        child: Consumer<ElementProvider>(
           builder: (context, provider, child) {
             if (provider.isLoading && _initialLoad) {
               return ChemistryLoadingWidget(message: 'Loading flashcards...');
@@ -299,7 +322,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
   // --- Card Building Widgets ---
 
   // Combined card content builder
-  Widget _buildCardContent(FlashcardElement element, {required bool isFront}) {
+  Widget _buildCardContent(PeriodicElement element, {required bool isFront}) {
     final cardColor = element.color;
     // Adjust back card color slightly
     final bgColor = isFront ? cardColor : cardColor.withOpacity(0.95);
@@ -330,7 +353,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
   }
 
   // Layout for the FRONT of the card (restored rich view)
-  Widget _buildFrontLayout(FlashcardElement element, Color textColor) {
+  Widget _buildFrontLayout(PeriodicElement element, Color textColor) {
     return Stack(
       children: [
         // Big Symbol Watermark
@@ -372,13 +395,13 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            FaIcon(_getPhaseIcon(element.standardState),
-                                color: textColor.withOpacity(0.8), size: 16),
+                            FaIcon(
+                                _getPhaseIcon(
+                                    _formatValue(element.standardState)),
+                                color: textColor.withOpacity(0.8),
+                                size: 16),
                             const SizedBox(width: 6),
-                            Text(
-                                element.standardState.isEmpty
-                                    ? 'N/A'
-                                    : element.standardState,
+                            Text(_formatValue(element.standardState),
                                 style: GoogleFonts.lato(
                                     fontSize: 16,
                                     color: textColor.withOpacity(0.8))),
@@ -391,8 +414,8 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
               ),
               const SizedBox(height: 20),
               // Middle Section: Details Chips (similar to previous swipe card)
-              _buildDetailRow(
-                  'E. Config:', element.electronConfiguration, textColor,
+              _buildDetailRow('E. Config:',
+                  _formatValue(element.electronConfiguration), textColor,
                   allowWrap: false,
                   maxLines: 1,
                   icon: _getPropertyIcon('E. Config'),
@@ -403,14 +426,14 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                   Expanded(
                       child: _buildDetailChip(
                           'Radius',
-                          '${element.atomicRadius} pm',
+                          '${_formatValue(element.atomicRadius)} pm',
                           textColor,
                           _getPropertyIcon('Atomic Radius'))),
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildDetailChip(
                         'EN',
-                        '${element.electronegativity}',
+                        _formatValue(element.electronegativity),
                         textColor,
                         _getPropertyIcon('Electronegativity')),
                   )
@@ -422,14 +445,14 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                   Expanded(
                       child: _buildDetailChip(
                           'Density',
-                          '${element.density} ${element.standardState == "Gas" ? "g/L" : "g/cm³"}',
+                          '${_formatValue(element.density)} ${element.standardState.toLowerCase() == "gas" ? "g/L" : "g/cm³"}',
                           textColor,
                           _getPropertyIcon('Density'))),
                   const SizedBox(width: 8),
                   Expanded(
                       child: _buildDetailChip(
                           'Oxidation',
-                          element.oxidationStates,
+                          _formatValue(element.oxidationStates),
                           textColor,
                           _getPropertyIcon('Oxidation States'),
                           maxLines: 1)), // Show only 1 line on front
@@ -471,19 +494,21 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(element.groupBlock,
+                            Text(_formatValue(element.groupBlock),
                                 style: GoogleFonts.lato(
                                     fontSize: 18,
                                     color: textColor.withOpacity(0.85))),
                             const SizedBox(height: 2),
-                            Text('${element.formattedAtomicMass} u',
+                            Text(
+                                '${_formatValue(element.formattedAtomicMass)} u',
                                 style: GoogleFonts.lato(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w300,
                                     color: textColor.withOpacity(0.8))),
                           ],
                         ),
-                        Text('Discovered: ${element.yearDiscovered}',
+                        Text(
+                            'Discovered: ${_formatValue(element.yearDiscovered)}',
                             style: GoogleFonts.lato(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
@@ -499,7 +524,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
   }
 
   // Layout for the BACK of the card (list view)
-  Widget _buildBackLayout(FlashcardElement element, Color textColor) {
+  Widget _buildBackLayout(PeriodicElement element, Color textColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
       child: SingleChildScrollView(
@@ -515,44 +540,68 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
             ),
             Divider(
                 height: 16, thickness: 0.5, color: textColor.withOpacity(0.3)),
-            _buildDetailItem('Atomic Mass', '${element.formattedAtomicMass} u',
-                textColor, _getPropertyIcon('Atomic Mass')),
-            _buildDetailItem('Standard State', element.standardState, textColor,
-                _getPhaseIcon(element.standardState)),
-            _buildDetailItem('E. Config', element.electronConfiguration,
-                textColor, _getPropertyIcon('E. Config'),
+            _buildDetailItem(
+                'Atomic Mass',
+                '${_formatValue(element.formattedAtomicMass)} u',
+                textColor,
+                _getPropertyIcon('Atomic Mass')),
+            _buildDetailItem(
+                'Standard State',
+                _formatValue(element.standardState),
+                textColor,
+                _getPhaseIcon(_formatValue(element.standardState))),
+            _buildDetailItem(
+                'E. Config',
+                _formatValue(element.electronConfiguration),
+                textColor,
+                _getPropertyIcon('E. Config'),
                 allowWrap: true),
             _buildDetailItem(
                 'Electronegativity',
-                '${element.electronegativity}',
+                _formatValue(element.electronegativity),
                 textColor,
                 _getPropertyIcon('Electronegativity')),
-            _buildDetailItem('Atomic Radius', '${element.atomicRadius} pm',
-                textColor, _getPropertyIcon('Atomic Radius')),
+            _buildDetailItem(
+                'Atomic Radius',
+                '${_formatValue(element.atomicRadius)} pm',
+                textColor,
+                _getPropertyIcon('Atomic Radius')),
             _buildDetailItem(
                 'Ionization Energy',
-                '${element.ionizationEnergy} eV',
+                '${_formatValue(element.ionizationEnergy)} eV',
                 textColor,
                 _getPropertyIcon('Ionization Energy')),
             _buildDetailItem(
                 'Electron Affinity',
-                '${element.electronAffinity} eV',
+                '${_formatValue(element.electronAffinity)} eV',
                 textColor,
                 _getPropertyIcon('Electron Affinity')),
-            _buildDetailItem('Oxidation States', element.oxidationStates,
-                textColor, _getPropertyIcon('Oxidation States'),
+            _buildDetailItem(
+                'Oxidation States',
+                _formatValue(element.oxidationStates),
+                textColor,
+                _getPropertyIcon('Oxidation States'),
                 allowWrap: true),
             _buildDetailItem(
                 'Density',
-                '${element.density} ${element.standardState == "Gas" ? "g/L" : "g/cm³"}',
+                '${_formatValue(element.density)} ${element.standardState.toLowerCase() == "gas" ? "g/L" : "g/cm³"}',
                 textColor,
                 _getPropertyIcon('Density')),
-            _buildDetailItem('Melting Point', '${element.meltingPoint} K',
-                textColor, _getPropertyIcon('Melting Point')),
-            _buildDetailItem('Boiling Point', '${element.boilingPoint} K',
-                textColor, _getPropertyIcon('Boiling Point')),
-            _buildDetailItem('Year Discovered', element.yearDiscovered,
-                textColor, _getPropertyIcon('Year Discovered')),
+            _buildDetailItem(
+                'Melting Point',
+                '${_formatValue(element.meltingPoint)} K',
+                textColor,
+                _getPropertyIcon('Melting Point')),
+            _buildDetailItem(
+                'Boiling Point',
+                '${_formatValue(element.boilingPoint)} K',
+                textColor,
+                _getPropertyIcon('Boiling Point')),
+            _buildDetailItem(
+                'Year Discovered',
+                _formatValue(element.yearDiscovered),
+                textColor,
+                _getPropertyIcon('Year Discovered')),
           ],
         ),
       ),

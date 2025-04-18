@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/chemistry_guide.dart';
-import '../services/chemistry_api_service.dart';
+import '../model/chemistry_guide.dart';
+import '../../../services/chemistry_api_service.dart';
 
 enum ChemistryGuideLoadingState {
   idle,

@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../providers/bookmark_provider.dart';
-import '../../models/drug.dart';
-import '../../models/compound.dart';
+import 'provider/bookmark_provider.dart';
+import '../drugs/model/drug.dart';
+import '../compounds/model/compound.dart';
 import '../drugs/drug_detail_screen.dart';
 import '../compounds/compound_details_screen.dart';
 import '../../widgets/chemistry_widgets.dart'; // Import custom chemistry widgets

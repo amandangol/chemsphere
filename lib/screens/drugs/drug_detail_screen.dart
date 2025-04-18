@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../providers/bookmark_provider.dart';
-import '../../providers/drug_provider.dart';
-import '../../models/drug.dart';
+import '../bookmarks/provider/bookmark_provider.dart';
+import 'provider/drug_provider.dart';
+import 'model/drug.dart';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';

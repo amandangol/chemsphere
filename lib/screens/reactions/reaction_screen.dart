@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/reaction_provider.dart';
+import 'provider/reaction_provider.dart';
 import '../../services/search_history_service.dart';
 import '../../theme/app_theme.dart';
 

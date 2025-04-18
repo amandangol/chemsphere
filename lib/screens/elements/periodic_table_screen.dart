@@ -1,9 +1,10 @@
+import 'package:chem_explore/widgets/chemistry_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import '../../providers/element_provider.dart';
-import '../../models/element.dart' as element_model;
+import 'provider/element_provider.dart';
+import 'model/periodic_element.dart';
 import 'element_detail_screen.dart';
 import 'traditional_periodic_table_screen.dart';
 
@@ -22,7 +23,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
   late Animation<double> _animation;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  List<element_model.Element> _filteredElements = [];
+  List<PeriodicElement> _filteredElements = [];
   bool _showInfoCard = true;
 
   @override
@@ -40,30 +41,29 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
     _animationController.forward();
 
     // Add listener to search controller
-    _searchController.addListener(_onSearchChanged);
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+        _updateFilteredElements(
+            Provider.of<ElementProvider>(context, listen: false).elements);
+      });
+    });
 
     // Fetch elements when the screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ElementProvider>().fetchElements();
+      context.read<ElementProvider>().fetchFlashcardElements();
     });
   }
 
-  void _onSearchChanged() {
-    setState(() {
-      _searchQuery = _searchController.text;
-      _updateFilteredElements(context.read<ElementProvider>().elements);
-    });
-  }
-
-  void _updateFilteredElements(List<element_model.Element> elements) {
+  void _updateFilteredElements(List<PeriodicElement> elements) {
     setState(() {
       _filteredElements = elements.where((element) {
         final matchesCategory = _filterCategory == 'All' ||
-            element.category.toLowerCase() == _filterCategory.toLowerCase();
+            element.groupBlock.toLowerCase() == _filterCategory.toLowerCase();
         final matchesSearch = _searchQuery.isEmpty ||
             element.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
             element.symbol.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            element.number.toString().contains(_searchQuery);
+            element.atomicNumber.toString().contains(_searchQuery);
 
         // Debug atomic mass values
         if (element.atomicMass <= 0) {
@@ -87,9 +87,8 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
 
   @override
   void dispose() {
-    _searchController.removeListener(_onSearchChanged);
-    _animationController.dispose();
     _searchController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -192,7 +191,15 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                               color: theme.colorScheme.secondary,
                               size: 20,
                             ),
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const TraditionalPeriodicTableScreen(),
+                                ),
+                              );
+                            },
                             constraints: const BoxConstraints(),
                             padding: const EdgeInsets.all(4),
                           ),
@@ -296,22 +303,25 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
 
           return FloatingActionButton(
             onPressed: () {
-              // Show a random element
-              final elements = provider.elements;
-              if (elements.isNotEmpty) {
-                final randomElement =
-                    elements[DateTime.now().millisecond % elements.length];
-                context
-                    .read<ElementProvider>()
-                    .fetchElementDetails(randomElement.symbol);
+              // Generate a random element
+              if (provider.elements.isNotEmpty) {
+                final randomIndex = DateTime.now().millisecondsSinceEpoch %
+                    provider.elements.length;
+                final randomElement = provider.elements[randomIndex];
+
+                // Navigate to element details
+                provider.setSelectedElement(randomElement.symbol);
                 Navigator.push(
                   context,
                   PageRouteBuilder(
                     pageBuilder: (context, animation, secondaryAnimation) =>
-                        const ElementDetailScreen(),
+                        ElementDetailScreen(element: randomElement),
                     transitionsBuilder:
                         (context, animation, secondaryAnimation, child) {
-                      return FadeTransition(opacity: animation, child: child);
+                      return FadeTransition(
+                        opacity: animation,
+                        child: child,
+                      );
                     },
                   ),
                 );
@@ -319,7 +329,6 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
             },
             backgroundColor: theme.colorScheme.tertiary,
             child: const Icon(Icons.auto_awesome, color: Colors.white),
-            tooltip: 'Random Element',
           );
         },
       ),
@@ -391,7 +400,6 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                       ),
                     );
                   },
-                  tooltip: 'Traditional Periodic Table',
                 ),
               ),
               const SizedBox(width: 8),
@@ -415,7 +423,6 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                       _animationController.forward();
                     });
                   },
-                  tooltip: _isGridView ? 'List View' : 'Grid View',
                 ),
               ),
               const SizedBox(width: 8),
@@ -443,7 +450,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                       subtitle: const Text('Use cached data if available'),
                     ),
                     onTap: () {
-                      context.read<ElementProvider>().fetchElements();
+                      context.read<ElementProvider>().fetchFlashcardElements();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
@@ -469,7 +476,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                     onTap: () {
                       context
                           .read<ElementProvider>()
-                          .fetchElements(forceRefresh: true);
+                          .fetchFlashcardElements(forceRefresh: true);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
@@ -596,53 +603,11 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildInfoPill("Atomic Number",
-                          "The number of protons in an atom's nucleus"),
-                      const SizedBox(width: 10),
-                      _buildInfoPill(
-                          "Symbol", "One or two letter element abbreviation"),
-                      const SizedBox(width: 10),
-                      _buildInfoPill(
-                          "Atomic Mass", "Average mass of all isotopes"),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
                 _buildElementCategoryLegend(),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildInfoPill(String term, String definition) {
-    final theme = Theme.of(context);
-
-    return Tooltip(
-      message: definition,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.onTertiaryContainer.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(50),
-          border: Border.all(
-            color: theme.colorScheme.onTertiaryContainer.withOpacity(0.2),
-          ),
-        ),
-        child: Text(
-          term,
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: theme.colorScheme.onTertiaryContainer.withOpacity(0.9),
-          ),
-        ),
       ),
     );
   }
@@ -830,7 +795,9 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                             _filterCategory = category['name']!;
                             // Apply filter immediately when category changes
                             _updateFilteredElements(
-                                context.read<ElementProvider>().elements);
+                                Provider.of<ElementProvider>(context,
+                                        listen: false)
+                                    .elements);
                           });
                         },
                         backgroundColor: theme.colorScheme.surfaceVariant,
@@ -862,48 +829,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
   }
 
   Widget _buildLoadingState(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.primary.withOpacity(0.2),
-                  blurRadius: 20,
-                  spreadRadius: 5,
-                ),
-              ],
-            ),
-            child: CircularProgressIndicator(
-              color: theme.colorScheme.primary,
-              strokeWidth: 3,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Loading elements...',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Preparing your periodic adventure',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
+    return const ChemistryLoadingWidget(message: 'Loading elements...');
   }
 
   Widget _buildErrorState(ElementProvider provider, ThemeData theme) {
@@ -946,7 +872,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
-              onPressed: () => provider.fetchElements(),
+              onPressed: () => provider.fetchFlashcardElements(),
               icon: const Icon(Icons.refresh_rounded),
               label: Text(
                 'Try Again',
@@ -972,8 +898,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
     );
   }
 
-  Widget _buildGridView(
-      List<element_model.Element> elements, BuildContext context) {
+  Widget _buildGridView(List<PeriodicElement> elements, BuildContext context) {
     final crossAxisCount = MediaQuery.of(context).size.width < 600 ? 4 : 8;
 
     return AnimationLimiter(
@@ -994,7 +919,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
             columnCount: crossAxisCount,
             child: ScaleAnimation(
               child: FadeInAnimation(
-                child: EnhancedElementCard(
+                child: ElementCard(
                   element: elements[index],
                   index: index,
                 ),
@@ -1006,8 +931,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
     );
   }
 
-  Widget _buildListView(
-      List<element_model.Element> elements, BuildContext context) {
+  Widget _buildListView(List<PeriodicElement> elements, BuildContext context) {
     final theme = Theme.of(context);
 
     return AnimationLimiter(
@@ -1033,14 +957,15 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          _getElementColor(element.category).withOpacity(0.1),
-                          _getElementColor(element.category).withOpacity(0.05),
+                          _getElementColor(element.groupBlock).withOpacity(0.1),
+                          _getElementColor(element.groupBlock)
+                              .withOpacity(0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: _getElementColor(element.category)
+                          color: _getElementColor(element.groupBlock)
                               .withOpacity(0.1),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
@@ -1054,13 +979,13 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                         onTap: () {
                           context
                               .read<ElementProvider>()
-                              .fetchElementDetails(element.symbol);
+                              .setSelectedElement(element.symbol);
                           Navigator.push(
                             context,
                             PageRouteBuilder(
                               pageBuilder:
                                   (context, animation, secondaryAnimation) =>
-                                      const ElementDetailScreen(),
+                                      ElementDetailScreen(element: element),
                               transitionsBuilder: (context, animation,
                                   secondaryAnimation, child) {
                                 return FadeTransition(
@@ -1082,16 +1007,17 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                     colors: [
-                                      _getElementColor(element.category),
-                                      _getElementColor(element.category)
+                                      _getElementColor(element.groupBlock),
+                                      _getElementColor(element.groupBlock)
                                           .withOpacity(0.7),
                                     ],
                                   ),
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: _getElementColor(element.category)
-                                          .withOpacity(0.3),
+                                      color:
+                                          _getElementColor(element.groupBlock)
+                                              .withOpacity(0.3),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -1130,18 +1056,18 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                               horizontal: 8, vertical: 2),
                                           decoration: BoxDecoration(
                                             color: _getElementColor(
-                                                    element.category)
+                                                    element.groupBlock)
                                                 .withOpacity(0.2),
                                             borderRadius:
                                                 BorderRadius.circular(12),
                                           ),
                                           child: Text(
-                                            '#${element.number}',
+                                            '#${element.atomicNumber}',
                                             style: GoogleFonts.poppins(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w500,
                                               color: _getElementColor(
-                                                  element.category),
+                                                  element.groupBlock),
                                             ),
                                           ),
                                         ),
@@ -1159,7 +1085,8 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                           ),
                                         ),
                                         Text(
-                                          _formatAtomicMass(element.atomicMass),
+                                          _formatValue(
+                                              element.formattedAtomicMass),
                                           style: GoogleFonts.poppins(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w500,
@@ -1169,13 +1096,28 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                       ],
                                     ),
                                     const SizedBox(height: 4),
-                                    Text(
-                                      element.category,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        color:
-                                            _getElementColor(element.category),
-                                      ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          element.groupBlock,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: _getElementColor(
+                                                element.groupBlock),
+                                          ),
+                                        ),
+                                        Text(
+                                          'State: ${_formatValue(element.standardState)}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            color: theme
+                                                .colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -1235,6 +1177,28 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
     }
   }
 
+  String _formatValue(dynamic value) {
+    if (value == null || value.toString().isEmpty) {
+      return 'N/A';
+    }
+
+    // For numeric values, check if they're zero
+    if (value is num || value is String && double.tryParse(value) != null) {
+      double? numValue;
+      if (value is num) {
+        numValue = value.toDouble();
+      } else {
+        numValue = double.tryParse(value.toString());
+      }
+
+      if (numValue != null && numValue == 0) {
+        return 'N/A';
+      }
+    }
+
+    return value.toString();
+  }
+
   String _formatAtomicMass(double mass) {
     if (mass <= 0) {
       return "N/A";
@@ -1250,285 +1214,230 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
   }
 }
 
-class EnhancedElementCard extends StatefulWidget {
-  final element_model.Element element;
+class ElementCard extends StatefulWidget {
+  final PeriodicElement element;
   final int index;
 
-  const EnhancedElementCard({
+  const ElementCard({
     Key? key,
     required this.element,
     required this.index,
   }) : super(key: key);
 
   @override
-  State<EnhancedElementCard> createState() => _EnhancedElementCardState();
+  State<ElementCard> createState() => _ElementCardState();
 }
 
-class _EnhancedElementCardState extends State<EnhancedElementCard>
+class _ElementCardState extends State<ElementCard>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
+  late AnimationController _animationController;
   bool _isHovered = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 200),
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-
-    // Add a slight delay based on index for staggered animation
-    Future.delayed(Duration(milliseconds: 30 * widget.index % 500), () {
-      if (mounted) _controller.forward();
-    });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   Color _getElementColor() {
-    switch (widget.element.category.toLowerCase()) {
+    switch (widget.element.groupBlock.toLowerCase()) {
+      case 'nonmetal':
       case 'diatomic nonmetal':
-        return const Color(0xFF00C853); // Bright green
       case 'polyatomic nonmetal':
-        return const Color(0xFF4CAF50); // Green
-      case 'alkali metal':
-        return const Color(0xFFF44336); // Red
-      case 'alkaline earth metal':
-        return const Color(0xFFFF9800); // Orange
-      case 'transition metal':
-        return const Color(0xFFFFD600); // Yellow
-      case 'metalloid':
-        return const Color(0xFF9C27B0); // Purple
-      case 'halogen':
-        return const Color(0xFF29B6F6); // Light Blue
+        return const Color(0xFF00C853); // Bright green
       case 'noble gas':
-        return const Color(0xFF2196F3); // Blue
+        return const Color(0xFF2962FF); // Bright blue
+      case 'alkali metal':
+        return const Color(0xFFD50000); // Bright red
+      case 'alkaline earth metal':
+        return const Color(0xFFFF6D00); // Bright orange
+      case 'metalloid':
+        return const Color(0xFF6200EA); // Bright purple
+      case 'halogen':
+        return const Color(0xFF00B8D4); // Cyan
+      case 'transition metal':
+        return const Color(0xFFFFAB00); // Amber
+      case 'post-transition metal':
+        return const Color(0xFF1565C0); // Blue
       case 'lanthanide':
-        return const Color(0xFFE91E63); // Pink
+        return const Color(0xFFC51162); // Pink
       case 'actinide':
-        return const Color(0xFF673AB7); // Deep Purple
+        return const Color(0xFF4A148C); // Deep purple
       default:
-        return const Color(0xFF9E9E9E); // Grey
+        return Colors.grey;
     }
   }
 
-  String _formatAtomicMass(double mass) {
-    if (mass <= 0) {
-      return "N/A";
+  String _formatValue(dynamic value) {
+    if (value == null || value.toString().isEmpty) {
+      return 'N/A';
     }
-    String formatted = mass.toStringAsFixed(2);
-    while (formatted.endsWith('0')) {
-      formatted = formatted.substring(0, formatted.length - 1);
+
+    // For numeric values, check if they're zero
+    if (value is num || value is String && double.tryParse(value) != null) {
+      double? numValue;
+      if (value is num) {
+        numValue = value.toDouble();
+      } else {
+        numValue = double.tryParse(value.toString());
+      }
+
+      if (numValue != null && numValue == 0) {
+        return 'N/A';
+      }
     }
-    if (formatted.endsWith('.')) {
-      formatted = formatted.substring(0, formatted.length - 1);
-    }
-    return formatted;
+
+    return value.toString();
   }
 
   String _getCategoryEmoji() {
-    switch (widget.element.category.toLowerCase()) {
+    switch (widget.element.groupBlock.toLowerCase()) {
+      case 'nonmetal':
       case 'diatomic nonmetal':
       case 'polyatomic nonmetal':
-        return '💨';
-      case 'alkali metal':
-        return '🔥';
-      case 'alkaline earth metal':
-        return '🌍';
-      case 'transition metal':
-        return '⚙️';
-      case 'metalloid':
-        return '🔋';
-      case 'halogen':
-        return '💎';
+        return '🌿'; // Plant for nonmetal
       case 'noble gas':
-        return '✨';
+        return '💨'; // Wind for noble gas
+      case 'alkali metal':
+        return '🔥'; // Fire for alkali metal
+      case 'alkaline earth metal':
+        return '🌋'; // Volcano for alkaline earth metal
+      case 'metalloid':
+        return '🔮'; // Crystal ball for metalloid
+      case 'halogen':
+        return '🧪'; // Test tube for halogen
+      case 'transition metal':
+        return '⚙️'; // Gear for transition metal
+      case 'post-transition metal':
+        return '🔧'; // Wrench for post-transition metal
       case 'lanthanide':
-        return '🌟';
+        return '✨'; // Sparkles for lanthanide
       case 'actinide':
-        return '☢️';
+        return '☢️'; // Radioactive for actinide
       default:
-        return '⚗️';
+        return '🔍'; // Default
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final color = _getElementColor();
-    final categoryEmoji = _getCategoryEmoji();
+    final emoji = _getCategoryEmoji();
 
-    return ScaleTransition(
-      scale: _scaleAnimation,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        child: MouseRegion(
-          onEnter: (_) => setState(() => _isHovered = true),
-          onExit: (_) => setState(() => _isHovered = false),
-          child: Card(
-            clipBehavior: Clip.antiAlias,
-            elevation: _isHovered ? 8 : 2,
-            shadowColor: color.withOpacity(0.3),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: color.withOpacity(_isHovered ? 0.8 : 0.5),
-                width: 2,
-              ),
-            ),
-            child: InkWell(
-              onTap: () {
-                context
-                    .read<ElementProvider>()
-                    .fetchElementDetails(widget.element.symbol);
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                        const ElementDetailScreen(),
-                    transitionsBuilder:
-                        (context, animation, secondaryAnimation, child) {
-                      return FadeTransition(opacity: animation, child: child);
-                    },
-                  ),
-                );
-              },
-              splashColor: color.withOpacity(0.2),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      color.withOpacity(0.1),
-                      color.withOpacity(0.3),
-                    ],
-                  ),
+        child: Card(
+          elevation: _isHovered ? 8 : 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              // Set selected element and navigate to details
+              Provider.of<ElementProvider>(context, listen: false)
+                  .setSelectedElement(widget.element.symbol);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      ElementDetailScreen(element: widget.element),
                 ),
-                child: Stack(
-                  children: [
-                    // Background pattern for visual interest
-                    Positioned.fill(
-                      child: Opacity(
-                        opacity: 0.05,
-                        child: CustomPaint(
-                          painter: AtomPatternPainter(color: color),
-                        ),
-                      ),
-                    ),
-
-                    // Atomic number with better styling
-                    Positioned(
-                      top: 6,
-                      left: 6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '${widget.element.number}',
-                          style: GoogleFonts.robotoMono(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: color.withOpacity(0.9),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Element data in center
-                    Positioned.fill(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 8,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              widget.element.symbol,
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 22,
-                                color: theme.colorScheme.onSurface,
-                                shadows: [
-                                  Shadow(
-                                    color: color.withOpacity(0.3),
-                                    blurRadius: 2,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              widget.element.name,
-                              style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _formatAtomicMass(widget.element.atomicMass),
-                              style: GoogleFonts.robotoMono(
-                                fontSize: 9,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Category indicator with emoji
-                    Positioned(
-                      bottom: 4,
-                      right: 4,
-                      child: Tooltip(
-                        message: widget.element.category,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color:
-                                theme.colorScheme.background.withOpacity(0.8),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: color.withOpacity(0.5),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            categoryEmoji,
-                            style: const TextStyle(fontSize: 8),
-                          ),
-                        ),
-                      ),
-                    ),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    color,
+                    color.withOpacity(0.7),
                   ],
                 ),
+              ),
+              child: Stack(
+                children: [
+                  // Atomic number in top-left
+                  Positioned(
+                    top: 8,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${widget.element.atomicNumber}',
+                        style: GoogleFonts.robotoMono(
+                          fontSize: 10,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Main content
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0,
+                      vertical: 12.0,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Element symbol
+                        Text(
+                          widget.element.symbol,
+                          style: GoogleFonts.poppins(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        // Element name
+                        Text(
+                          widget.element.name,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        // Atomic mass
+                        Text(
+                          _formatValue(widget.element.formattedAtomicMass),
+                          style: GoogleFonts.robotoMono(
+                            fontSize: 11,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

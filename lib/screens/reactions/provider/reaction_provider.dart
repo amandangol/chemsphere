@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../models/reaction.dart';
+import '../model/reaction.dart';
 
 class ReactionProvider with ChangeNotifier {
   List<ChemicalReaction> _reactions = [];

@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import '../models/drug.dart';
-import '../models/compound.dart';
+import '../../drugs/model/drug.dart';
+import '../../compounds/model/compound.dart';
 
 enum BookmarkType {
   drug,

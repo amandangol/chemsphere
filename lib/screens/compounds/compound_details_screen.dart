@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../providers/compound_provider.dart';
+import 'provider/compound_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../providers/bookmark_provider.dart';
-import '../../models/compound.dart';
+import '../bookmarks/provider/bookmark_provider.dart';
+import 'model/compound.dart';
 import '../../widgets/detail_widgets.dart';
 import '../../widgets/chemistry_widgets.dart';
 

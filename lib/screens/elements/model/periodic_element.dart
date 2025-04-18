@@ -36,7 +36,7 @@ Color _parseColor(String? hexColor) {
   }
 }
 
-class FlashcardElement {
+class PeriodicElement {
   final int atomicNumber;
   final String symbol;
   final String name;
@@ -56,7 +56,7 @@ class FlashcardElement {
   final String groupBlock; // Category
   final String yearDiscovered;
 
-  FlashcardElement({
+  PeriodicElement({
     required this.atomicNumber,
     required this.symbol,
     required this.name,
@@ -80,16 +80,16 @@ class FlashcardElement {
   // ["AtomicNumber", "Symbol", "Name", "AtomicMass", "CPKHexColor", "ElectronConfiguration",
   // "Electronegativity", "AtomicRadius", "IonizationEnergy", "ElectronAffinity", "OxidationStates",
   // "StandardState", "MeltingPoint", "BoilingPoint", "Density", "GroupBlock", "YearDiscovered"]
-  factory FlashcardElement.fromJson(List<dynamic> cellData) {
+  factory PeriodicElement.fromJson(List<dynamic> cellData) {
     // Basic validation
     if (cellData.length < 17) {
       print(
-          "Error: FlashcardElement cellData has length ${cellData.length}, expected 17.");
+          "Error: PeriodicElement cellData has length ${cellData.length}, expected 17.");
       throw FormatException(
-          "Invalid FlashcardElement data length: ${cellData.length}");
+          "Invalid PeriodicElement data length: ${cellData.length}");
     }
 
-    return FlashcardElement(
+    return PeriodicElement(
       atomicNumber: _parseInt(cellData[0]),
       symbol: cellData[1]?.toString() ?? '',
       name: cellData[2]?.toString() ?? '',
@@ -136,8 +136,8 @@ class FlashcardElement {
   }
 
   // fromJsonMap potentially used for loading from cache
-  factory FlashcardElement.fromJsonMap(Map<String, dynamic> json) {
-    return FlashcardElement(
+  factory PeriodicElement.fromJsonMap(Map<String, dynamic> json) {
+    return PeriodicElement(
       atomicNumber: _parseInt(json['AtomicNumber']),
       symbol: json['Symbol'] ?? '',
       name: json['Name'] ?? '',

@@ -9,7 +9,7 @@ import '../elements/periodic_table_screen.dart';
 import '../compounds/compound_searhc_screen.dart';
 import '../drugs/drug_search_screen.dart';
 import '../reactions/reaction_screen.dart';
-import '../guide/chemistry_guide_screen.dart';
+import '../chemistryguide/chemistry_guide_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
-import '../../providers/chemistry_guide_provider.dart';
-import '../../models/chemistry_guide.dart';
-import 'elements_topic_screen.dart';
-import 'topic_detail_screen.dart';
+import 'provider/chemistry_guide_provider.dart';
+import 'model/chemistry_guide.dart';
+import 'widgets/elements_topic_screen.dart';
+import 'widgets/topic_detail_screen.dart';
 
 class ChemistryGuideScreen extends StatefulWidget {
   const ChemistryGuideScreen({Key? key}) : super(key: key);

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
-import '../providers/compound_provider.dart';
+import '../screens/compounds/provider/compound_provider.dart';
 import '../screens/compounds/compound_details_screen.dart';
 import 'dart:async';
 

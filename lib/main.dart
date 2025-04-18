@@ -1,14 +1,12 @@
-import 'package:chem_explore/providers/flashcard_provider.dart';
+import 'package:chem_explore/screens/elements/provider/element_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/compound_provider.dart';
-import 'providers/drug_provider.dart';
-import 'providers/element_provider.dart';
-import 'providers/reaction_provider.dart';
-import 'providers/bookmark_provider.dart';
-import 'providers/chemistry_guide_provider.dart';
+import 'screens/compounds/provider/compound_provider.dart';
+import 'screens/drugs/provider/drug_provider.dart';
+import 'screens/reactions/provider/reaction_provider.dart';
+import 'screens/bookmarks/provider/bookmark_provider.dart';
+import 'screens/chemistryguide/provider/chemistry_guide_provider.dart';
 import 'screens/splash_screen.dart';
-import 'screens/main_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -41,7 +39,6 @@ class ChemistryExplorerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DrugProvider()),
         ChangeNotifierProvider(create: (_) => ReactionProvider()),
         ChangeNotifierProvider(create: (_) => BookmarkProvider()),
-        ChangeNotifierProvider(create: (_) => FlashcardProvider()),
         ChangeNotifierProvider(create: (_) => ChemistryGuideProvider()),
       ],
       child: MaterialApp(

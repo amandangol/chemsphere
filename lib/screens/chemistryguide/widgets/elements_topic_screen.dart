@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import '../../models/chemistry_guide.dart';
-import '../../providers/chemistry_guide_provider.dart';
+import '../model/chemistry_guide.dart';
+import '../provider/chemistry_guide_provider.dart';
 
 class ElementsTopicScreen extends StatefulWidget {
   final String title;

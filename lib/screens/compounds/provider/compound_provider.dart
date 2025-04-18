@@ -1,5 +1,5 @@
-import '../models/compound.dart';
-import 'base_pubchem_provider.dart';
+import '../model/compound.dart';
+import '../../../providers/base_pubchem_provider.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:xml/xml.dart';
