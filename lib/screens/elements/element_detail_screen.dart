@@ -4,6 +4,7 @@ import 'provider/element_provider.dart';
 import '../../widgets/chemistry_widgets.dart';
 import 'model/periodic_element.dart';
 import 'model/element_description_data.dart';
+import '../bookmarks/provider/bookmark_provider.dart';
 
 class ElementDetailScreen extends StatelessWidget {
   final PeriodicElement? element;
@@ -13,6 +14,7 @@ class ElementDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bookmarkProvider = Provider.of<BookmarkProvider>(context);
 
     // Use passed element or get it from provider
     final currentElement =
@@ -48,6 +50,8 @@ class ElementDetailScreen extends StatelessWidget {
     }
 
     final color = _getElementColor(currentElement.groupBlock);
+    final isBookmarked =
+        bookmarkProvider.isBookmarked(currentElement, BookmarkType.element);
 
     // Get discovery information and description from static data
     final discoveryInfo =
@@ -177,15 +181,36 @@ class ElementDetailScreen extends StatelessWidget {
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.bookmark_border),
+                  icon: Icon(
+                    isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                  ),
                   color: Colors.white,
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Bookmark feature coming soon'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
+                  onPressed: () async {
+                    if (isBookmarked) {
+                      await bookmarkProvider.removeBookmark(
+                          currentElement, BookmarkType.element);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                '${currentElement.name} removed from bookmarks'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    } else {
+                      await bookmarkProvider.addBookmark(
+                          currentElement, BookmarkType.element);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                '${currentElement.name} added to bookmarks'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
                   },
                 ),
               ],

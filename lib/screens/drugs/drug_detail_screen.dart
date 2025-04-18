@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../bookmarks/provider/bookmark_provider.dart';
 import 'provider/drug_provider.dart';
@@ -222,56 +223,66 @@ class DrugDetailScreen extends StatelessWidget {
         ChemistryDetailHeader(
           title: drug.title,
           cid: drug.cid,
-          trailing: IconButton(
-            icon: Icon(
-              bookmarkProvider.isBookmarked(drug, BookmarkType.drug)
-                  ? Icons.bookmark
-                  : Icons.bookmark_border,
+          trailing: Row(children: [
+            IconButton(
+              icon: Icon(
+                bookmarkProvider.isBookmarked(drug, BookmarkType.drug)
+                    ? Icons.bookmark
+                    : Icons.bookmark_border,
+              ),
+              onPressed: () async {
+                if (bookmarkProvider.isBookmarked(drug, BookmarkType.drug)) {
+                  final success = await bookmarkProvider.removeBookmark(
+                      drug, BookmarkType.drug);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(success
+                            ? '${drug.title} removed from bookmarks'
+                            : 'Error removing bookmark'),
+                        behavior: SnackBarBehavior.floating,
+                        action: success
+                            ? null
+                            : SnackBarAction(
+                                label: 'Retry',
+                                onPressed: () => bookmarkProvider
+                                    .removeBookmark(drug, BookmarkType.drug),
+                              ),
+                      ),
+                    );
+                  }
+                } else {
+                  final success = await bookmarkProvider.addBookmark(
+                      drug, BookmarkType.drug);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(success
+                            ? '${drug.title} added to bookmarks'
+                            : 'Error adding bookmark'),
+                        behavior: SnackBarBehavior.floating,
+                        action: success
+                            ? null
+                            : SnackBarAction(
+                                label: 'Retry',
+                                onPressed: () => bookmarkProvider.addBookmark(
+                                    drug, BookmarkType.drug),
+                              ),
+                      ),
+                    );
+                  }
+                }
+              },
             ),
-            onPressed: () async {
-              if (bookmarkProvider.isBookmarked(drug, BookmarkType.drug)) {
-                final success = await bookmarkProvider.removeBookmark(
-                    drug, BookmarkType.drug);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(success
-                          ? '${drug.title} removed from bookmarks'
-                          : 'Error removing bookmark'),
-                      behavior: SnackBarBehavior.floating,
-                      action: success
-                          ? null
-                          : SnackBarAction(
-                              label: 'Retry',
-                              onPressed: () => bookmarkProvider.removeBookmark(
-                                  drug, BookmarkType.drug),
-                            ),
-                    ),
-                  );
-                }
-              } else {
-                final success =
-                    await bookmarkProvider.addBookmark(drug, BookmarkType.drug);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(success
-                          ? '${drug.title} added to bookmarks'
-                          : 'Error adding bookmark'),
-                      behavior: SnackBarBehavior.floating,
-                      action: success
-                          ? null
-                          : SnackBarAction(
-                              label: 'Retry',
-                              onPressed: () => bookmarkProvider.addBookmark(
-                                  drug, BookmarkType.drug),
-                            ),
-                    ),
-                  );
-                }
-              }
-            },
-          ),
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: () {
+                Share.share(
+                  'Check out ${drug.title} (${drug.molecularFormula}) on PubChem: ${drug.pubChemUrl}',
+                );
+              },
+            ),
+          ]),
           onImageTap: () {
             Navigator.push(
               context,

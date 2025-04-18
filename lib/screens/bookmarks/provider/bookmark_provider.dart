@@ -3,11 +3,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../drugs/model/drug.dart';
 import '../../compounds/model/compound.dart';
+import '../../elements/model/periodic_element.dart';
 
 enum BookmarkType {
   drug,
   compound,
   molecularStructure,
+  element,
 }
 
 class BookmarkItem {
@@ -126,6 +128,29 @@ class BookmarkItem {
           'annotationTypeCount': item.annotationTypeCount,
           'sourceCategories': item.sourceCategories,
           'literatureCount': item.literatureCount,
+        },
+      };
+    } else if (item is PeriodicElement) {
+      return {
+        'type': 'Element',
+        'data': {
+          'atomicNumber': item.atomicNumber,
+          'symbol': item.symbol,
+          'name': item.name,
+          'atomicMass': item.atomicMass,
+          'cpkHexColor': item.cpkHexColor,
+          'electronConfiguration': item.electronConfiguration,
+          'electronegativity': item.electronegativity,
+          'atomicRadius': item.atomicRadius,
+          'ionizationEnergy': item.ionizationEnergy,
+          'electronAffinity': item.electronAffinity,
+          'oxidationStates': item.oxidationStates,
+          'standardState': item.standardState,
+          'meltingPoint': item.meltingPoint,
+          'boilingPoint': item.boilingPoint,
+          'density': item.density,
+          'groupBlock': item.groupBlock,
+          'yearDiscovered': item.yearDiscovered,
         },
       };
     }
@@ -312,6 +337,51 @@ class BookmarkItem {
                 ? data['literatureCount']
                 : int.tryParse(data['literatureCount']?.toString() ?? '0') ?? 0,
           );
+        case 'Element':
+          return PeriodicElement(
+            atomicNumber: data['atomicNumber'] ?? 0,
+            symbol: data['symbol'] ?? '',
+            name: data['name'] ?? '',
+            atomicMass: (data['atomicMass'] is num)
+                ? data['atomicMass'].toDouble()
+                : double.tryParse(data['atomicMass']?.toString() ?? '0') ?? 0.0,
+            cpkHexColor: data['cpkHexColor'] ?? '',
+            electronConfiguration: data['electronConfiguration'] ?? '',
+            electronegativity: (data['electronegativity'] is num)
+                ? data['electronegativity'].toDouble()
+                : double.tryParse(
+                        data['electronegativity']?.toString() ?? '0') ??
+                    0.0,
+            atomicRadius: (data['atomicRadius'] is num)
+                ? data['atomicRadius'].toDouble()
+                : double.tryParse(data['atomicRadius']?.toString() ?? '0') ??
+                    0.0,
+            ionizationEnergy: (data['ionizationEnergy'] is num)
+                ? data['ionizationEnergy'].toDouble()
+                : double.tryParse(
+                        data['ionizationEnergy']?.toString() ?? '0') ??
+                    0.0,
+            electronAffinity: (data['electronAffinity'] is num)
+                ? data['electronAffinity'].toDouble()
+                : double.tryParse(
+                        data['electronAffinity']?.toString() ?? '0') ??
+                    0.0,
+            oxidationStates: data['oxidationStates'] ?? '',
+            standardState: data['standardState'] ?? '',
+            meltingPoint: (data['meltingPoint'] is num)
+                ? data['meltingPoint'].toDouble()
+                : double.tryParse(data['meltingPoint']?.toString() ?? '0') ??
+                    0.0,
+            boilingPoint: (data['boilingPoint'] is num)
+                ? data['boilingPoint'].toDouble()
+                : double.tryParse(data['boilingPoint']?.toString() ?? '0') ??
+                    0.0,
+            density: (data['density'] is num)
+                ? data['density'].toDouble()
+                : double.tryParse(data['density']?.toString() ?? '0') ?? 0.0,
+            groupBlock: data['groupBlock'] ?? '',
+            yearDiscovered: data['yearDiscovered'] ?? '',
+          );
         default:
           throw Exception('Unknown item type: ${json['type']}');
       }
@@ -338,6 +408,11 @@ class BookmarkProvider with ChangeNotifier {
   List<Compound> get bookmarkedCompounds => _bookmarks
       .where((item) => item.type == BookmarkType.compound)
       .map((item) => item.item as Compound)
+      .toList();
+
+  List<PeriodicElement> get bookmarkedElements => _bookmarks
+      .where((item) => item.type == BookmarkType.element)
+      .map((item) => item.item as PeriodicElement)
       .toList();
 
   BookmarkProvider() {
@@ -418,6 +493,8 @@ class BookmarkProvider with ChangeNotifier {
       return item1.cid == item2.cid;
     } else if (item1 is Compound && item2 is Compound) {
       return item1.cid == item2.cid;
+    } else if (item1 is PeriodicElement && item2 is PeriodicElement) {
+      return item1.symbol == item2.symbol;
     }
     return false;
   }

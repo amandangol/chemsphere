@@ -5,20 +5,44 @@ import 'package:google_fonts/google_fonts.dart';
 import 'provider/bookmark_provider.dart';
 import '../drugs/model/drug.dart';
 import '../compounds/model/compound.dart';
+import '../elements/model/periodic_element.dart'; // Import PeriodicElement
 import '../drugs/drug_detail_screen.dart';
 import '../compounds/compound_details_screen.dart';
+import '../elements/element_detail_screen.dart'; // Import ElementDetailScreen
 import '../../widgets/chemistry_widgets.dart'; // Import custom chemistry widgets
 import 'dart:math';
 
-class BookmarkScreen extends StatelessWidget {
+class BookmarkScreen extends StatefulWidget {
   const BookmarkScreen({super.key});
+
+  @override
+  State<BookmarkScreen> createState() => _BookmarkScreenState();
+}
+
+class _BookmarkScreenState extends State<BookmarkScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final bookmarkProvider = Provider.of<BookmarkProvider>(context);
     final bookmarkedDrugs = bookmarkProvider.bookmarkedDrugs;
     final bookmarkedCompounds = bookmarkProvider.bookmarkedCompounds;
+    final bookmarkedElements = bookmarkProvider.bookmarkedElements;
     final hasError = bookmarkProvider.lastError != null;
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -41,6 +65,35 @@ class BookmarkScreen extends StatelessWidget {
             },
           ),
         ],
+        bottom: (bookmarkedDrugs.isEmpty &&
+                    bookmarkedCompounds.isEmpty &&
+                    bookmarkedElements.isEmpty) ||
+                hasError
+            ? null
+            : TabBar(
+                controller: _tabController,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: theme.colorScheme.primary,
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+                tabs: [
+                  Tab(
+                    icon: const Icon(Icons.medication),
+                    text: 'Drugs (${bookmarkedDrugs.length}),',
+                  ),
+                  Tab(
+                    icon: const Icon(Icons.science),
+                    text: 'Compounds (${bookmarkedCompounds.length})',
+                  ),
+                  Tab(
+                    icon: const Icon(Icons.api),
+                    text: 'Elements (${bookmarkedElements.length})',
+                  ),
+                ],
+              ),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -56,10 +109,35 @@ class BookmarkScreen extends StatelessWidget {
         ),
         child: hasError
             ? _buildErrorView(context, bookmarkProvider)
-            : (bookmarkedDrugs.isEmpty && bookmarkedCompounds.isEmpty)
+            : (bookmarkedDrugs.isEmpty &&
+                    bookmarkedCompounds.isEmpty &&
+                    bookmarkedElements.isEmpty)
                 ? _buildEmptyView(context)
-                : _buildBookmarksView(context, bookmarkProvider,
-                    bookmarkedDrugs, bookmarkedCompounds),
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // Drugs Tab
+                      bookmarkedDrugs.isEmpty
+                          ? _buildEmptyCategoryView(
+                              context, 'No drugs bookmarked')
+                          : _buildDrugList(
+                              context, bookmarkProvider, bookmarkedDrugs),
+
+                      // Compounds Tab
+                      bookmarkedCompounds.isEmpty
+                          ? _buildEmptyCategoryView(
+                              context, 'No compounds bookmarked')
+                          : _buildCompoundList(
+                              context, bookmarkProvider, bookmarkedCompounds),
+
+                      // Elements Tab
+                      bookmarkedElements.isEmpty
+                          ? _buildEmptyCategoryView(
+                              context, 'No elements bookmarked')
+                          : _buildElementList(
+                              context, bookmarkProvider, bookmarkedElements),
+                    ],
+                  ),
       ),
     );
   }
@@ -182,65 +260,45 @@ class BookmarkScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBookmarksView(
-      BuildContext context,
-      BookmarkProvider bookmarkProvider,
-      List<Drug> bookmarkedDrugs,
-      List<Compound> bookmarkedCompounds) {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (bookmarkedDrugs.isNotEmpty) ...[
-            _buildSectionHeader(context, 'Drugs'),
-            _buildDrugList(context, bookmarkProvider, bookmarkedDrugs),
-          ],
-          if (bookmarkedCompounds.isNotEmpty) ...[
-            _buildSectionHeader(context, 'Compounds'),
-            _buildCompoundList(context, bookmarkProvider, bookmarkedCompounds),
-          ],
-          // Add some space at the bottom
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
+  Widget _buildEmptyCategoryView(BuildContext context, String message) {
+    final theme = Theme.of(context);
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.8),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              title == 'Drugs' ? Icons.medication : Icons.science,
-              size: 20,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
+    return Center(
+      child: ChemistryCardBackground(
+        backgroundColor: Colors.white.withOpacity(0.9),
+        child: Padding(
+          padding: const EdgeInsets.all(30.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.bookmark_border,
+                    size: 40,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                message,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -249,8 +307,8 @@ class BookmarkScreen extends StatelessWidget {
   Widget _buildDrugList(
       BuildContext context, BookmarkProvider provider, List<Drug> drugs) {
     return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 16),
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
       itemCount: drugs.length,
       itemBuilder: (context, index) {
         final drug = drugs[index];
@@ -306,8 +364,8 @@ class BookmarkScreen extends StatelessWidget {
   Widget _buildCompoundList(BuildContext context, BookmarkProvider provider,
       List<Compound> compounds) {
     return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 16),
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
       itemCount: compounds.length,
       itemBuilder: (context, index) {
         final compound = compounds[index];
@@ -362,11 +420,123 @@ class BookmarkScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildElementList(BuildContext context, BookmarkProvider provider,
+      List<PeriodicElement> elements) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      shrinkWrap: true,
+      itemCount: elements.length,
+      itemBuilder: (context, index) {
+        final element = elements[index];
+        return _buildBookmarkCard(
+          context,
+          title: element.name,
+          subtitle: '${element.symbol} · ${element.groupBlock}',
+          imageUrl: '', // Elements don't have images
+          customImage: Container(
+            decoration: BoxDecoration(
+              color: _getElementColor(element.groupBlock),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    element.symbol,
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    element.atomicNumber.toString(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          onTap: () {
+            try {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ElementDetailScreen(element: element),
+                ),
+              );
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content:
+                      Text('Error viewing element details: ${e.toString()}'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          },
+          onRemove: () async {
+            final success =
+                await provider.removeBookmark(element, BookmarkType.element);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(success
+                      ? '${element.name} removed from bookmarks'
+                      : 'Error removing bookmark'),
+                  behavior: SnackBarBehavior.floating,
+                  action: success
+                      ? null
+                      : SnackBarAction(
+                          label: 'Retry',
+                          onPressed: () => provider.removeBookmark(
+                              element, BookmarkType.element),
+                        ),
+                ),
+              );
+            }
+          },
+        );
+      },
+    );
+  }
+
+  Color _getElementColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'nonmetal':
+        return Colors.green;
+      case 'alkali metal':
+        return Colors.red;
+      case 'alkaline earth metal':
+        return Colors.orange;
+      case 'transition metal':
+        return Colors.yellow.shade700;
+      case 'metalloid':
+        return Colors.purple;
+      case 'halogen':
+        return Colors.lightBlue;
+      case 'noble gas':
+        return Colors.blue;
+      case 'lanthanide':
+        return Colors.pink;
+      case 'actinide':
+        return Colors.deepPurple;
+      default:
+        return Colors.grey;
+    }
+  }
+
   Widget _buildBookmarkCard(
     BuildContext context, {
     required String title,
     required String subtitle,
     required String imageUrl,
+    Widget? customImage,
     required VoidCallback onTap,
     required VoidCallback onRemove,
   }) {
@@ -473,14 +643,19 @@ class BookmarkScreen extends StatelessWidget {
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => _FullScreenImageView(
-                            imageUrl: imageUrl,
-                            title: title,
+                      if (customImage != null) {
+                        // For elements we just navigate to details instead of fullscreen view
+                        onTap();
+                      } else {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => _FullScreenImageView(
+                              imageUrl: imageUrl,
+                              title: title,
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      }
                     },
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(16),
@@ -490,54 +665,57 @@ class BookmarkScreen extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Stack(
-                          children: [
-                            // Add a subtle gradient overlay
-                            Positioned.fill(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Colors.blue.withOpacity(0.1),
-                                      Colors.purple.withOpacity(0.1),
-                                    ],
+                        child: customImage != null
+                            ? customImage // Use custom widget for elements
+                            : Stack(
+                                children: [
+                                  // Add a subtle gradient overlay
+                                  Positioned.fill(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            Colors.blue.withOpacity(0.1),
+                                            Colors.purple.withOpacity(0.1),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  // Image with hero animation
+                                  Hero(
+                                    tag: "image_$imageUrl",
+                                    child: CachedNetworkImage(
+                                      imageUrl: imageUrl,
+                                      fit: BoxFit.contain,
+                                      placeholder: (context, url) => Container(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest,
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2),
+                                        ),
+                                      ),
+                                      errorWidget:
+                                          (context, error, stackTrace) =>
+                                              Container(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest,
+                                        child: Icon(
+                                          Icons.image_not_supported,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            // Image with hero animation
-                            Hero(
-                              tag: "image_$imageUrl",
-                              child: CachedNetworkImage(
-                                imageUrl: imageUrl,
-                                fit: BoxFit.contain,
-                                placeholder: (context, url) => Container(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  ),
-                                ),
-                                errorWidget: (context, error, stackTrace) =>
-                                    Container(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
-                                  child: Icon(
-                                    Icons.image_not_supported,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ),
