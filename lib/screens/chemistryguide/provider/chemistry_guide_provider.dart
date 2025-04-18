@@ -17,7 +17,7 @@ class ChemistryGuideProvider with ChangeNotifier {
   Map<String, List<ChemistryElement>> _elementCategories = {};
   List<ChemicalCompound> _commonCompounds = [];
   List<ChemistryPathway> _pathways = [];
-  List<ChemistryTopic> _topics = [];
+  final List<ChemistryTopic> _topics = [];
   ChemistryElement? _selectedElement;
   ChemicalCompound? _selectedCompound;
 

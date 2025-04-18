@@ -1,10 +1,11 @@
 import '../model/compound.dart';
 import '../../../providers/base_pubchem_provider.dart';
+import '../../../providers/pubchem_impl_mixin.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:xml/xml.dart';
 
-class CompoundProvider extends BasePubChemProvider {
+class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
   List<Compound> _compounds = [];
   Compound? _selectedCompound;
 

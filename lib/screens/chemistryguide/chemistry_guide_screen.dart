@@ -26,14 +26,14 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
           description: 'The basic building blocks of matter',
           icon: Icons.circle_outlined,
           screenBuilder: (context) =>
-              ElementsTopicScreen(title: 'Atoms and Elements'),
+              const ElementsTopicScreen(title: 'Atoms and Elements'),
         ),
         GuideTopic(
           title: 'Periodic Table',
           description: 'Organization and trends of elements',
           icon: Icons.grid_on,
           screenBuilder: (context) =>
-              ElementsTopicScreen(title: 'Periodic Table'),
+              const ElementsTopicScreen(title: 'Periodic Table'),
         ),
         GuideTopic(
           title: 'Chemical Bonds',
@@ -590,7 +590,7 @@ class PathwayDetailScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -663,7 +663,7 @@ class PathwayDetailScreen extends StatelessWidget {
                   errorBuilder: (context, error, stackTrace) => Container(
                     height: 200,
                     width: double.infinity,
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

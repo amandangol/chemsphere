@@ -31,6 +31,9 @@ class Drug {
   final String volumeOfDistribution;
   final String clearance;
   final String name;
+  final String stabilityShelfLife;
+  final String therapeuticUses;
+  final List<Map<String, String>> crystalStructures;
 
   const Drug({
     required this.cid,
@@ -65,6 +68,9 @@ class Drug {
     required this.volumeOfDistribution,
     required this.clearance,
     required this.name,
+    this.stabilityShelfLife = '',
+    this.therapeuticUses = '',
+    this.crystalStructures = const [],
   });
 
   factory Drug.fromJson(Map<String, dynamic> json) {
@@ -109,6 +115,12 @@ class Drug {
       volumeOfDistribution: json['VolumeOfDistribution'] ?? '',
       clearance: json['Clearance'] ?? '',
       name: json['Name'] ?? '',
+      stabilityShelfLife: json['StabilityShelfLife'] ?? '',
+      therapeuticUses: json['TherapeuticUses'] ?? '',
+      crystalStructures: (json['CrystalStructures'] as List?)
+              ?.map((e) => Map<String, String>.from(e))
+              .toList() ??
+          [],
     );
   }
 }

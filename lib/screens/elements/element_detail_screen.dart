@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'provider/element_provider.dart';
-import '../../widgets/chemistry_widgets.dart';
 import 'model/periodic_element.dart';
 import 'model/element_description_data.dart';
 import '../bookmarks/provider/bookmark_provider.dart';
@@ -67,7 +66,7 @@ class ElementDetailScreen extends StatelessWidget {
             end: Alignment.bottomCenter,
             colors: [
               color.withOpacity(0.3),
-              theme.colorScheme.background,
+              theme.colorScheme.surface,
             ],
           ),
         ),

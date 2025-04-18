@@ -183,7 +183,7 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
     _rotationTimer?.cancel();
     _rotationTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
       if (mounted && _isStructureAvailable && !_isLoading) {
-        _controller?.runJavaScript('''
+        _controller.runJavaScript('''
           try {
             let viewer = \$3Dmol.viewers.viewer_3dmol;
             viewer.rotate(0.5, {y: 1});
@@ -679,9 +679,9 @@ class Complete3DMoleculeViewer extends StatefulWidget {
 
 class _Complete3DMoleculeViewerState extends State<Complete3DMoleculeViewer> {
   WebViewController? _controller;
-  bool _isLoading = true;
+  final bool _isLoading = true;
   String? _error;
-  bool _isFullScreen = false;
+  final bool _isFullScreen = false;
   String _currentStyle = 'stick';
   bool _autoRotate = true;
   Timer? _rotationTimer;

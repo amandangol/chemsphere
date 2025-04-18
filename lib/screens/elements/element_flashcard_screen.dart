@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:math'; // For random shuffling
+// For random shuffling
 import 'package:flip_card/flip_card.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Import FontAwesome
 
@@ -161,7 +161,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
         child: Consumer<ElementProvider>(
           builder: (context, provider, child) {
             if (provider.isLoading && _initialLoad) {
-              return ChemistryLoadingWidget(message: 'Loading flashcards...');
+              return const ChemistryLoadingWidget(message: 'Loading flashcards...');
             }
 
             if (provider.error != null && _displayElements.isEmpty) {

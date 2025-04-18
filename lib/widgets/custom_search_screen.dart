@@ -232,7 +232,7 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    theme.colorScheme.background,
+                    theme.colorScheme.surface,
                     theme.colorScheme.primaryContainer.withOpacity(0.1),
                   ],
                 ),
@@ -383,8 +383,8 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                                         decoration: BoxDecoration(
                                           borderRadius:
                                               BorderRadius.circular(16),
-                                          color:
-                                              theme.colorScheme.surfaceVariant,
+                                          color: theme.colorScheme
+                                              .surfaceContainerHighest,
                                           boxShadow: [
                                             BoxShadow(
                                               color: theme.shadowColor
@@ -631,7 +631,7 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceVariant,
+                            color: theme.colorScheme.surfaceContainerHighest,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(

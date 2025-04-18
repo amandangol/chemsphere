@@ -11,7 +11,6 @@ import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/detail_widgets.dart';
 import '../../widgets/chemistry_widgets.dart';
-import '../../widgets/molecule_3d_viewer.dart';
 
 class DrugDetailScreen extends StatelessWidget {
   final Drug? selectedDrug;
@@ -344,7 +343,8 @@ class DrugDetailScreen extends StatelessWidget {
                               'MW: ${drug.molecularWeight} g/mol',
                               style: GoogleFonts.poppins(fontSize: 13),
                             ),
-                            backgroundColor: theme.colorScheme.surfaceVariant,
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
                             labelStyle: TextStyle(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -384,10 +384,12 @@ class DrugDetailScreen extends StatelessWidget {
               icon: Icons.description,
               content: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     drug.description,
                     style: GoogleFonts.poppins(
+                      fontSize: 14,
                       height: 1.5,
                     ),
                   ),
@@ -395,40 +397,34 @@ class DrugDetailScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       'Source: ${drug.descriptionSource}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                    ),
-                  ],
-                  if (drug.descriptionUrl.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    InkWell(
-                      onTap: () => _launchUrl(drug.descriptionUrl),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.link,
-                            size: 16,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'View Source',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: theme.colorScheme.primary,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ],
                 ],
               ),
             ),
           ),
+        // 3D Molecular Structure section
+        SliverToBoxAdapter(
+          child: DetailWidgets.buildSection(
+            context,
+            title: '3D Molecular Structure',
+            icon: Icons.view_in_ar,
+            content: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: DetailWidgets.build3DViewer(
+                context,
+                cid: drug.cid,
+                title: drug.title,
+              ),
+            ),
+          ),
+        ),
 
         // Properties section
         SliverToBoxAdapter(
@@ -441,25 +437,19 @@ class DrugDetailScreen extends StatelessWidget {
                 DetailWidgets.buildPropertyCard(
                   context,
                   title: 'Structure',
-                  content: Row(
+                  content: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            DetailWidgets.buildProperty(
-                              context,
-                              'Molecular Formula',
-                              drug.molecularFormula,
-                            ),
-                            DetailWidgets.buildProperty(
-                              context,
-                              'SMILES',
-                              drug.smiles,
-                              isMultiLine: true,
-                            ),
-                          ],
-                        ),
+                      DetailWidgets.buildProperty(
+                        context,
+                        'Molecular Formula',
+                        drug.molecularFormula,
+                      ),
+                      DetailWidgets.buildProperty(
+                        context,
+                        'SMILES',
+                        drug.smiles,
+                        isMultiLine: true,
                       ),
                     ],
                   ),
@@ -518,29 +508,6 @@ class DrugDetailScreen extends StatelessWidget {
           ),
         ),
 
-        // 3D Molecular Structure section
-        SliverToBoxAdapter(
-          child: DetailWidgets.buildSection(
-            context,
-            title: '3D Molecular Structure',
-            icon: Icons.view_in_ar,
-            content: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: theme.colorScheme.primary.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-              child: DetailWidgets.build3DViewer(
-                context,
-                cid: drug.cid,
-                title: drug.title,
-              ),
-            ),
-          ),
-        ),
-
         // Drug Information section
         if (drug.indication != null ||
             drug.mechanismOfAction != null ||
@@ -560,74 +527,71 @@ class DrugDetailScreen extends StatelessWidget {
               icon: Icons.medication,
               content: Column(
                 children: [
-                  if (drug.indication!.isNotEmpty)
-                    DetailWidgets.buildPropertyCard(
+                  if (drug.indication.isNotEmpty)
+                    _buildExpandableProperty(
                       context,
                       title: 'Indication',
-                      content: Text(drug.indication!),
+                      content: drug.indication,
                     ),
-                  if (drug.mechanismOfAction!.isNotEmpty)
-                    DetailWidgets.buildPropertyCard(
+                  if (drug.mechanismOfAction.isNotEmpty)
+                    _buildExpandableProperty(
                       context,
                       title: 'Mechanism of Action',
-                      content: Text(drug.mechanismOfAction!),
+                      content: drug.mechanismOfAction,
                     ),
                   if (drug.toxicity.isNotEmpty)
-                    DetailWidgets.buildPropertyCard(
+                    _buildExpandableProperty(
                       context,
                       title: 'Toxicity',
-                      content: Text(drug.toxicity!),
+                      content: drug.toxicity,
                     ),
                   if (drug.pharmacology.isNotEmpty)
-                    DetailWidgets.buildPropertyCard(
+                    _buildExpandableProperty(
                       context,
                       title: 'Pharmacology',
-                      content: Text(drug.pharmacology!),
+                      content: drug.pharmacology,
                     ),
-                  if (drug.metabolism!.isNotEmpty)
-                    DetailWidgets.buildPropertyCard(
+                  if (drug.metabolism.isNotEmpty)
+                    _buildExpandableProperty(
                       context,
                       title: 'Metabolism',
-                      content: Text(drug.metabolism!),
+                      content: drug.metabolism,
                     ),
                   if (drug.absorption.isNotEmpty)
-                    DetailWidgets.buildPropertyCard(
+                    _buildExpandableProperty(
                       context,
                       title: 'Absorption',
-                      content: Text(drug.absorption!),
+                      content: drug.absorption,
                     ),
-                  if (drug.halfLife != null && drug.halfLife!.isNotEmpty)
-                    DetailWidgets.buildPropertyCard(
+                  if (drug.halfLife.isNotEmpty)
+                    _buildExpandableProperty(
                       context,
                       title: 'Half Life',
-                      content: Text(drug.halfLife!),
+                      content: drug.halfLife,
                     ),
-                  if (drug.proteinBinding != null &&
-                      drug.proteinBinding!.isNotEmpty)
-                    DetailWidgets.buildPropertyCard(
+                  if (drug.proteinBinding.isNotEmpty)
+                    _buildExpandableProperty(
                       context,
                       title: 'Protein Binding',
-                      content: Text(drug.proteinBinding!),
+                      content: drug.proteinBinding,
                     ),
-                  if (drug.routeOfElimination != null &&
-                      drug.routeOfElimination!.isNotEmpty)
-                    DetailWidgets.buildPropertyCard(
+                  if (drug.routeOfElimination.isNotEmpty)
+                    _buildExpandableProperty(
                       context,
                       title: 'Route of Elimination',
-                      content: Text(drug.routeOfElimination!),
+                      content: drug.routeOfElimination,
                     ),
-                  if (drug.volumeOfDistribution != null &&
-                      drug.volumeOfDistribution!.isNotEmpty)
-                    DetailWidgets.buildPropertyCard(
+                  if (drug.volumeOfDistribution.isNotEmpty)
+                    _buildExpandableProperty(
                       context,
                       title: 'Volume of Distribution',
-                      content: Text(drug.volumeOfDistribution!),
+                      content: drug.volumeOfDistribution,
                     ),
-                  if (drug.clearance != null && drug.clearance!.isNotEmpty)
-                    DetailWidgets.buildPropertyCard(
+                  if (drug.clearance.isNotEmpty)
+                    _buildExpandableProperty(
                       context,
                       title: 'Clearance',
-                      content: Text(drug.clearance!),
+                      content: drug.clearance,
                     ),
                 ],
               ),
@@ -656,7 +620,8 @@ class DrugDetailScreen extends StatelessWidget {
                                   fontSize: 12,
                                 ),
                               ),
-                              backgroundColor: theme.colorScheme.surfaceVariant,
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerHighest,
                               labelStyle: TextStyle(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
@@ -701,8 +666,8 @@ class DrugDetailScreen extends StatelessWidget {
                                                   fontSize: 12,
                                                 ),
                                               ),
-                                              backgroundColor: theme
-                                                  .colorScheme.surfaceVariant,
+                                              backgroundColor: theme.colorScheme
+                                                  .surfaceContainerHighest,
                                               labelStyle: TextStyle(
                                                 color: theme.colorScheme
                                                     .onSurfaceVariant,
@@ -766,10 +731,92 @@ class DrugDetailScreen extends StatelessWidget {
         ),
 
         // Bottom padding
-        SliverToBoxAdapter(
+        const SliverToBoxAdapter(
           child: SizedBox(height: 24),
         ),
       ],
+    );
+  }
+
+  // Helper method to build expandable property sections
+  Widget _buildExpandableProperty(
+    BuildContext context, {
+    required String title,
+    required String content,
+    bool initiallyExpanded = false,
+    Widget? customContent,
+    String? url,
+    String? urlText,
+  }) {
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ExpansionTile(
+        initiallyExpanded: initiallyExpanded,
+        title: Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        trailing: Icon(
+          Icons.expand_more,
+          color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+        ),
+        childrenPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
+        ),
+        children: [
+          if (customContent != null) customContent,
+          if (content.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                content,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+          if (url != null && urlText != null) ...[
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: () => _launchUrl(url),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.link,
+                    size: 16,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    urlText,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: theme.colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

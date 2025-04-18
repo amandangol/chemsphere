@@ -16,7 +16,7 @@ class _ReactionScreenState extends State<ReactionScreen> {
   final SearchHistoryService _searchHistoryService = SearchHistoryService();
   bool _isSearching = false;
   List<String> _searchHistory = [];
-  List<String> _quickSearchItems = [
+  final List<String> _quickSearchItems = [
     'Combustion',
     'Synthesis',
     'Decomposition',

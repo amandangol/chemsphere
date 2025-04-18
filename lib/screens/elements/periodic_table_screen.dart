@@ -105,7 +105,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
             end: Alignment.bottomRight,
             colors: [
               theme.colorScheme.primaryContainer.withOpacity(0.5),
-              theme.colorScheme.background,
+              theme.colorScheme.surface,
               theme.colorScheme.tertiaryContainer.withOpacity(0.3),
             ],
           ),
@@ -383,7 +383,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
               // Traditional view button
               Container(
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceVariant,
+                  color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: IconButton(
@@ -406,7 +406,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
               // Toggle view button with improved design
               Container(
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceVariant,
+                  color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: IconButton(
@@ -680,7 +680,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Container(
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceVariant,
+          color: theme.colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -800,7 +800,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                     .elements);
                           });
                         },
-                        backgroundColor: theme.colorScheme.surfaceVariant,
+                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
                         selectedColor: theme.colorScheme.primaryContainer,
                         checkmarkColor: theme.colorScheme.primary,
                         elevation: isSelected ? 2 : 0,

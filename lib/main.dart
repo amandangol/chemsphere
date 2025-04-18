@@ -1,7 +1,9 @@
 import 'package:chem_explore/screens/elements/provider/element_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'screens/compounds/provider/chemical_search_provider.dart';
 import 'screens/compounds/provider/compound_provider.dart';
+import 'screens/formula/provider/formula_search_provider.dart';
 import 'screens/drugs/provider/drug_provider.dart';
 import 'screens/reactions/provider/reaction_provider.dart';
 import 'screens/bookmarks/provider/bookmark_provider.dart';
@@ -40,6 +42,8 @@ class ChemistryExplorerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ReactionProvider()),
         ChangeNotifierProvider(create: (_) => BookmarkProvider()),
         ChangeNotifierProvider(create: (_) => ChemistryGuideProvider()),
+        ChangeNotifierProvider(create: (_) => FormulaSearchProvider()),
+        ChangeNotifierProvider(create: (_) => ChemicalSearchProvider()),
       ],
       child: MaterialApp(
         title: 'ChemVerse',

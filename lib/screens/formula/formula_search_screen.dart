@@ -2,66 +2,76 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'provider/drug_provider.dart';
+import '../compounds/compound_details_screen.dart';
+import '../compounds/provider/compound_provider.dart';
+import 'provider/formula_search_provider.dart';
 import '../../services/search_history_service.dart';
 import '../../widgets/custom_search_screen.dart';
-import 'drug_detail_screen.dart';
 
-class DrugSearchScreen extends StatefulWidget {
-  const DrugSearchScreen({Key? key}) : super(key: key);
+class FormulaSearchScreen extends StatefulWidget {
+  const FormulaSearchScreen({Key? key}) : super(key: key);
 
   @override
-  State<DrugSearchScreen> createState() => _DrugSearchScreenState();
+  State<FormulaSearchScreen> createState() => _FormulaSearchScreenState();
 }
 
-class _DrugSearchScreenState extends State<DrugSearchScreen> {
+class _FormulaSearchScreenState extends State<FormulaSearchScreen> {
+  final TextEditingController _formulaController = TextEditingController();
   final SearchHistoryService _searchHistoryService = SearchHistoryService();
-  final List<String> _quickSearchItems = [
-    'Aspirin',
-    'Ibuprofen',
-    'Paracetamol',
-    'Amoxicillin',
-    'Metformin',
-    'Atorvastatin',
-    'Omeprazole',
-    'Lisinopril',
-    'Levothyroxine',
-    'Metoprolol'
-  ];
   List<String> _searchHistory = [];
   bool _showInfoCard = true;
 
-  // Information about drugs for educational purposes
-  final Map<String, Map<String, String>> _drugInfo = {
-    'Aspirin': {
-      'generic': 'Acetylsalicylic acid',
-      'class': 'NSAID (Non-steroidal anti-inflammatory drug)',
-      'uses': 'Pain relief, fever reduction, anti-inflammatory, blood thinner',
-    },
-    'Ibuprofen': {
-      'generic': 'Ibuprofen',
-      'class': 'NSAID (Non-steroidal anti-inflammatory drug)',
-      'uses': 'Pain relief, fever reduction, anti-inflammatory',
-    },
-    'Paracetamol': {
-      'generic': 'Acetaminophen',
-      'class': 'Analgesic and antipyretic',
-      'uses': 'Pain relief and fever reduction',
-    },
-  };
+  final List<String> _quickSearchItems = [
+    'H2O',
+    'C6H12O6',
+    'NaCl',
+    'C2H5OH',
+    'CH4',
+    'CO2',
+    'C8H10N4O2',
+    'H2SO4',
+    'NaOH',
+    'NH3'
+  ];
 
   @override
   void initState() {
     super.initState();
     _loadSearchHistory();
+    // Reset the provider state when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<FormulaSearchProvider>(context, listen: false)
+          .clearSearchResults();
+    });
   }
 
   Future<void> _loadSearchHistory() async {
     final history =
-        await _searchHistoryService.getSearchHistory(SearchType.drug);
+        await _searchHistoryService.getSearchHistory(SearchType.formula);
     setState(() {
       _searchHistory = history;
     });
+  }
+
+  @override
+  void dispose() {
+    _formulaController.dispose();
+    super.dispose();
+  }
+
+  String? _validateFormula(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a molecular formula';
+    }
+
+    // Basic validation for molecular formula
+    // Should contain at least one letter and optional numbers
+    final RegExp formulaRegex = RegExp(r'^[A-Z][a-zA-Z0-9]*$');
+    if (!formulaRegex.hasMatch(value)) {
+      return 'Enter a valid molecular formula (e.g., H2O, C6H12O6)';
+    }
+
+    return null;
   }
 
   Widget _buildInfoCard() {
@@ -74,8 +84,8 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.8),
-            Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.6),
+            Theme.of(context).colorScheme.tertiaryContainer.withOpacity(0.8),
+            Theme.of(context).colorScheme.tertiaryContainer.withOpacity(0.6),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
@@ -90,16 +100,16 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
       child: ExpansionTile(
         initiallyExpanded: false,
         title: Text(
-          "What are Pharmaceutical Drugs?",
+          "What is a Molecular Formula?",
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSecondaryContainer,
+            color: Theme.of(context).colorScheme.onTertiaryContainer,
           ),
         ),
         leading: Icon(
-          Icons.medication,
-          color: Theme.of(context).colorScheme.onSecondaryContainer,
+          Icons.science,
+          color: Theme.of(context).colorScheme.onTertiaryContainer,
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -108,7 +118,7 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
               Icons.expand_more,
               color: Theme.of(context)
                   .colorScheme
-                  .onSecondaryContainer
+                  .onTertiaryContainer
                   .withOpacity(0.7),
               size: 20,
             ),
@@ -118,7 +128,7 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                 Icons.close,
                 color: Theme.of(context)
                     .colorScheme
-                    .onSecondaryContainer
+                    .onTertiaryContainer
                     .withOpacity(0.7),
                 size: 20,
               ),
@@ -137,40 +147,33 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Pharmaceutical drugs are substances used to diagnose, cure, treat, or prevent diseases. They typically work by altering chemical processes in the body.",
+                  "A molecular formula is a representation of a molecule using chemical symbols to indicate the types of atoms with subscripts to show the number of atoms of each element.",
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Theme.of(context)
                         .colorScheme
-                        .onSecondaryContainer
+                        .onTertiaryContainer
                         .withOpacity(0.9),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Drugs can be classified based on their chemical structure, mechanism of action, therapeutic use, or biological target.",
+                  "For example, H₂O indicates 2 hydrogen atoms and 1 oxygen atom, which is the molecular formula for water.",
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Theme.of(context)
                         .colorScheme
-                        .onSecondaryContainer
+                        .onTertiaryContainer
                         .withOpacity(0.9),
                   ),
                 ),
                 const SizedBox(height: 16),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildInfoPill("Analgesics", Icons.healing),
-                      const SizedBox(width: 8),
-                      _buildInfoPill("Antibiotics", Icons.coronavirus),
-                      const SizedBox(width: 8),
-                      _buildInfoPill("Antivirals", Icons.biotech),
-                      const SizedBox(width: 8),
-                      _buildInfoPill("Vaccines", Icons.shield),
-                    ],
-                  ),
+                Row(
+                  children: [
+                    _buildInfoPill("Elements", Icons.category),
+                    const SizedBox(width: 8),
+                    _buildInfoPill("Proportions", Icons.balance),
+                  ],
                 ),
               ],
             ),
@@ -181,48 +184,55 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
   }
 
   Widget _buildInfoPill(String label, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      decoration: BoxDecoration(
-        color:
-            Theme.of(context).colorScheme.onSecondaryContainer.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(50),
-        border: Border.all(
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        decoration: BoxDecoration(
           color: Theme.of(context)
               .colorScheme
-              .onSecondaryContainer
-              .withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 16,
+              .onTertiaryContainer
+              .withOpacity(0.1),
+          borderRadius: BorderRadius.circular(50),
+          border: Border.all(
             color: Theme.of(context)
                 .colorScheme
-                .onSecondaryContainer
-                .withOpacity(0.8),
+                .onTertiaryContainer
+                .withOpacity(0.2),
           ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
               color: Theme.of(context)
                   .colorScheme
-                  .onSecondaryContainer
-                  .withOpacity(0.9),
+                  .onTertiaryContainer
+                  .withOpacity(0.8),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onTertiaryContainer
+                      .withOpacity(0.9),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildDrugGlossary() {
+  Widget _buildFormulaTips() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
@@ -232,41 +242,37 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
       child: ExpansionTile(
         initiallyExpanded: false,
         title: Text(
-          "Drug Terminology",
+          "Formula Writing Tips",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
           ),
         ),
-        leading: const Icon(Icons.menu_book),
+        leading: const Icon(Icons.tips_and_updates),
         expandedCrossAxisAlignment: CrossAxisAlignment.start,
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
-          _buildGlossaryItem(
-              "Generic Name",
-              "The standard non-proprietary name given to a drug's active ingredient.",
-              "Example: Acetylsalicylic acid (for Aspirin)"),
-          _buildGlossaryItem(
-              "Brand Name",
-              "The proprietary name given by the manufacturer to a drug or combination of drugs.",
-              "Example: Tylenol (for Acetaminophen/Paracetamol)"),
-          _buildGlossaryItem(
-              "Drug Class",
-              "A group of medications that work in a similar way or are used to treat the same condition.",
-              "Example: NSAIDs, Antibiotics, Antidepressants"),
-          _buildGlossaryItem(
-              "Mechanism of Action",
-              "The specific biochemical interaction through which a drug produces its effect.",
-              "Example: Aspirin inhibits the enzyme cyclooxygenase"),
-          _buildGlossaryItem(
-              "Half-life",
-              "The time required for the concentration of a drug in the body to be reduced by one-half.",
-              "Example: Caffeine has a half-life of about 5-6 hours"),
+          _buildTipItem(
+              "Capitalization",
+              "Element symbols always start with a capital letter, with the second letter in lowercase if present.",
+              "Examples: H (hydrogen), He (helium), Na (sodium)"),
+          _buildTipItem(
+              "Numbers",
+              "Numbers after element symbols indicate the number of atoms of that element.",
+              "Example: H2O has 2 hydrogen atoms and 1 oxygen atom"),
+          _buildTipItem(
+              "Order",
+              "Elements are typically written in a specific order: C, H, then other elements alphabetically.",
+              "Example: C2H5OH (ethanol)"),
+          _buildTipItem(
+              "Parentheses",
+              "Parentheses group atoms together with a subscript indicating how many of the group.",
+              "Example: Ca(OH)2 has one calcium, two oxygen, and two hydrogen atoms"),
         ],
       ),
     );
   }
 
-  Widget _buildGlossaryItem(String term, String definition, String example) {
+  Widget _buildTipItem(String term, String definition, String example) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -305,102 +311,162 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
     );
   }
 
-  // Update the disclaimer in the customHeader section
-  Widget _buildDisclaimer() {
-    if (!_showInfoCard) return const SizedBox.shrink();
-
+  Widget _buildCommonFormulas() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.4),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.error.withOpacity(0.3),
-        ),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: ListTile(
-        leading: Icon(
-          Icons.warning_amber_rounded,
-          color: Theme.of(context).colorScheme.error,
-          size: 20,
-        ),
+      child: ExpansionTile(
+        initiallyExpanded: false,
         title: Text(
-          "For educational purposes only. Consult healthcare professionals for medical advice.",
+          "Common Molecular Formulas",
           style: GoogleFonts.poppins(
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.onErrorContainer,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        dense: true,
+        leading: const Icon(Icons.menu_book),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          _buildFormulaItem("H2O", "Water",
+              "The most common compound on Earth's surface, essential for life."),
+          _buildFormulaItem("C6H12O6", "Glucose",
+              "A simple sugar that is an important energy source in organisms."),
+          _buildFormulaItem("NaCl", "Sodium Chloride (Salt)",
+              "Essential dietary mineral and food preservative."),
+          _buildFormulaItem("C2H5OH", "Ethanol",
+              "Found in alcoholic beverages, also used as a solvent and fuel."),
+          _buildFormulaItem("C8H10N4O2", "Caffeine",
+              "Stimulant found in coffee, tea, and many other beverages."),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormulaItem(String formula, String name, String description) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  formula,
+                  style: GoogleFonts.robotoMono(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onTertiaryContainer,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                name,
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            description,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<DrugProvider>(
+    return Consumer<FormulaSearchProvider>(
       builder: (context, provider, child) {
         return Scaffold(
           body: CustomSearchScreen(
-            title: 'Drug Search',
-            hintText: 'Enter drug name (e.g., "aspirin", "ibuprofen")',
-            searchIcon: Icons.medication_outlined,
+            title: 'Formula Search',
+            hintText: 'Enter a molecular formula (e.g., H2O)',
+            searchIcon: Icons.science_outlined,
             quickSearchItems: _quickSearchItems,
             historyItems: _searchHistory,
             isLoading: provider.isLoading,
             error: provider.error,
-            items: provider.drugs,
+            items: provider.searchResults,
             imageUrl:
-                'https://images.rawpixel.com/image_800/czNmcy1wcml2YXRlL3Jhd3BpeGVsX2ltYWdlcy93ZWJzaXRlX2NvbnRlbnQvbHIvcm0zNzNiYXRjaDE1LTIxNy0wMS5qcGc.jpg',
+                'https://img.freepik.com/free-photo/3d-atom-structure-science-background_1048-5589.jpg',
             customHeader: Column(
               children: [
                 // Educational info card
                 _buildInfoCard(),
 
-                // Glossary
-                if (_showInfoCard) _buildDrugGlossary(),
+                // Formula writing tips
+                if (_showInfoCard) _buildFormulaTips(),
 
-                // Disclaimer
-                if (_showInfoCard) _buildDisclaimer(),
+                // Common formulas
+                if (_showInfoCard) _buildCommonFormulas(),
               ],
             ),
             onSearch: (query) async {
               if (query.isNotEmpty) {
                 await _searchHistoryService.addToSearchHistory(
-                    query, SearchType.drug);
+                    query, SearchType.formula);
                 await _loadSearchHistory();
-                provider.searchDrugs(query);
+                provider.searchByFormula(query);
               }
             },
             onClear: () {
-              provider.clearDrugs();
+              provider.clearSearchResults();
             },
-            onItemTap: (drug) {
-              provider.fetchDrugDetails(drug.cid);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const DrugDetailScreen(),
-                ),
-              );
+            onItemTap: (compound) async {
+              final compoundProvider =
+                  Provider.of<CompoundProvider>(context, listen: false);
+              await compoundProvider.fetchCompoundDetails(compound.cid);
+              if (context.mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CompoundDetailsScreen(),
+                  ),
+                );
+              }
             },
-            onAutoComplete: (query) =>
-                provider.fetchAutoCompleteSuggestions(query),
-            itemBuilder: (drug) => Card(
+            onAutoComplete: (query) => Future.value([]),
+            itemBuilder: (compound) => Card(
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
               elevation: 2,
               child: InkWell(
-                onTap: () {
-                  provider.fetchDrugDetails(drug.cid);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const DrugDetailScreen(),
-                    ),
-                  );
+                onTap: () async {
+                  final compoundProvider =
+                      Provider.of<CompoundProvider>(context, listen: false);
+                  await compoundProvider.fetchCompoundDetails(compound.cid);
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CompoundDetailsScreen(),
+                      ),
+                    );
+                  }
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Padding(
@@ -411,25 +477,22 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                         width: 70,
                         height: 70,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.1),
+                              color: Colors.black12,
                               blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
+                              offset: Offset(2, 2),
+                            )
                           ],
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: CachedNetworkImage(
                             imageUrl:
-                                'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${drug.cid}/PNG',
-                            fit: BoxFit.cover,
+                                'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${compound.cid}/PNG',
+                            fit: BoxFit.contain,
                             placeholder: (context, url) => Container(
                               width: 120,
                               height: 120,
@@ -465,7 +528,7 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              drug.title,
+                              compound.title,
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -482,23 +545,23 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                                   decoration: BoxDecoration(
                                     color: Theme.of(context)
                                         .colorScheme
-                                        .secondaryContainer,
+                                        .tertiaryContainer,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    drug.molecularFormula,
+                                    compound.molecularFormula,
                                     style: GoogleFonts.robotoMono(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                       color: Theme.of(context)
                                           .colorScheme
-                                          .onSecondaryContainer,
+                                          .onTertiaryContainer,
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'CID: ${drug.cid}',
+                                  'CID: ${compound.cid}',
                                   style: GoogleFonts.poppins(
                                     color: Theme.of(context)
                                         .colorScheme
@@ -509,62 +572,34 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                                 ),
                               ],
                             ),
-                            if (_drugInfo.containsKey(drug.title)) ...[
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.category,
-                                    size: 14,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary
-                                        .withOpacity(0.7),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      _drugInfo[drug.title]!['class'] ?? '',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withOpacity(0.7),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
+                            const SizedBox(height: 4),
+                            Text(
+                              'MW: ${compound.molecularWeight.toStringAsFixed(2)} g/mol',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.7),
                               ),
-                            ],
+                            ),
                           ],
                         ),
                       ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primaryContainer
-                              .withOpacity(0.3),
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(8),
-                        child: Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ],
                   ),
                 ),
               ),
             ),
-            emptyMessage: 'Ready to Explore Medications',
-            emptySubMessage: 'Search for any drug to discover its properties',
-            emptyIcon: Icons.medication,
+            emptyMessage: 'Ready to Search by Formula',
+            emptySubMessage:
+                'Enter a molecular formula to find matching compounds',
+            emptyIcon: Icons.science,
             actions: [
               IconButton(
                 icon: Icon(

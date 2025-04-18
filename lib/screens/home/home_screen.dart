@@ -10,6 +10,7 @@ import '../compounds/compound_searhc_screen.dart';
 import '../drugs/drug_search_screen.dart';
 import '../reactions/reaction_screen.dart';
 import '../chemistryguide/chemistry_guide_screen.dart';
+import '../formula/formula_search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -242,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 style: GoogleFonts.poppins(
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onBackground,
+                                  color: theme.colorScheme.onSurface,
                                   shadows: [
                                     Shadow(
                                       color: Colors.black.withOpacity(0.1),
@@ -265,7 +266,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     today,
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
-                                      color: theme.colorScheme.onBackground
+                                      color: theme.colorScheme.onSurface
                                           .withOpacity(0.7),
                                     ),
                                   ),
@@ -583,6 +584,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const DrugSearchScreen(),
+                      ),
+                    ),
+                  ),
+                  _buildFeatureCard(
+                    context,
+                    imagePath: 'assets/svgs/formula-search.svg',
+                    title: 'Formula Search',
+                    description: 'Search for chemical formulas',
+                    color: Colors.teal.withOpacity(0.1),
+                    iconColor: Colors.teal,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FormulaSearchScreen(),
                       ),
                     ),
                   ),

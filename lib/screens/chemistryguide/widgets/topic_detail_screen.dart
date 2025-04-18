@@ -26,7 +26,7 @@ class TopicDetailScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -112,7 +112,7 @@ class TopicDetailScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Theme.of(context)
                             .colorScheme
-                            .surfaceVariant
+                            .surfaceContainerHighest
                             .withOpacity(0.3),
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -296,7 +296,7 @@ class TopicDetailScreen extends StatelessWidget {
                                       width: 200,
                                       color: Theme.of(context)
                                           .colorScheme
-                                          .surfaceVariant,
+                                          .surfaceContainerHighest,
                                       child: Icon(
                                         Icons.image_not_supported,
                                         size: 48,

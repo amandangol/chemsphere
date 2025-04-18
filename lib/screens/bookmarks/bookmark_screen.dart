@@ -665,57 +665,55 @@ class _BookmarkScreenState extends State<BookmarkScreen>
                       padding: const EdgeInsets.all(12),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: customImage != null
-                            ? customImage // Use custom widget for elements
-                            : Stack(
-                                children: [
-                                  // Add a subtle gradient overlay
-                                  Positioned.fill(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            Colors.blue.withOpacity(0.1),
-                                            Colors.purple.withOpacity(0.1),
-                                          ],
-                                        ),
+                        child: customImage ??
+                            Stack(
+                              children: [
+                                // Add a subtle gradient overlay
+                                Positioned.fill(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Colors.blue.withOpacity(0.1),
+                                          Colors.purple.withOpacity(0.1),
+                                        ],
                                       ),
                                     ),
                                   ),
-                                  // Image with hero animation
-                                  Hero(
-                                    tag: "image_$imageUrl",
-                                    child: CachedNetworkImage(
-                                      imageUrl: imageUrl,
-                                      fit: BoxFit.contain,
-                                      placeholder: (context, url) => Container(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surfaceContainerHighest,
-                                        child: const Center(
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 2),
-                                        ),
+                                ),
+                                // Image with hero animation
+                                Hero(
+                                  tag: "image_$imageUrl",
+                                  child: CachedNetworkImage(
+                                    imageUrl: imageUrl,
+                                    fit: BoxFit.contain,
+                                    placeholder: (context, url) => Container(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                      child: const Center(
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
                                       ),
-                                      errorWidget:
-                                          (context, error, stackTrace) =>
-                                              Container(
+                                    ),
+                                    errorWidget: (context, error, stackTrace) =>
+                                        Container(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                      child: Icon(
+                                        Icons.image_not_supported,
                                         color: Theme.of(context)
                                             .colorScheme
-                                            .surfaceContainerHighest,
-                                        child: Icon(
-                                          Icons.image_not_supported,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                        ),
+                                            .onSurfaceVariant,
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
+                            ),
                       ),
                     ),
                   ),

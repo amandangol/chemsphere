@@ -1,10 +1,11 @@
 import '../model/drug.dart';
 import '../../../providers/base_pubchem_provider.dart';
+import '../../../providers/pubchem_impl_mixin.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 import 'dart:convert';
 
-class DrugProvider extends BasePubChemProvider {
+class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
   List<Drug> _drugs = [];
   Drug? _selectedDrug;
 

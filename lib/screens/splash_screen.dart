@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
 import 'dart:math' as math;
-import '../main.dart';
 import 'main_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -302,7 +300,7 @@ class _SplashScreenState extends State<SplashScreen>
                             text: 'Explore the ',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
-                              color: theme.colorScheme.onBackground
+                              color: theme.colorScheme.onSurface
                                   .withOpacity(0.8),
                             ),
                           ),
@@ -318,7 +316,7 @@ class _SplashScreenState extends State<SplashScreen>
                             text: ' of ',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
-                              color: theme.colorScheme.onBackground
+                              color: theme.colorScheme.onSurface
                                   .withOpacity(0.8),
                             ),
                           ),
@@ -377,7 +375,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                     const SizedBox(height: 20),
 
-                    Text(
+                    const Text(
                       '⚗️ • 🧪 • 🔬',
                       style: TextStyle(
                         fontSize: 16,

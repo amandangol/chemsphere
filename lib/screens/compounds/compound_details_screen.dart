@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,6 +8,9 @@ import '../bookmarks/provider/bookmark_provider.dart';
 import 'model/compound.dart';
 import '../../widgets/detail_widgets.dart';
 import '../../widgets/chemistry_widgets.dart';
+import 'similar_compounds_screen.dart';
+import 'provider/chemical_search_provider.dart';
+import '../formula/formula_search_screen.dart';
 
 class CompoundDetailsScreen extends StatefulWidget {
   final Compound? selectedCompound;
@@ -222,6 +224,29 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
+                icon: const Icon(Icons.explore),
+                tooltip: 'Explore Related',
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => MultiProvider(
+                        providers: [
+                          ChangeNotifierProvider.value(
+                              value: Provider.of<CompoundProvider>(context,
+                                  listen: false)),
+                          ChangeNotifierProvider(
+                              create: (_) => ChemicalSearchProvider()),
+                        ],
+                        child: SimilarCompoundsScreen(
+                          cid: compound.cid,
+                          compoundName: compound.title,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              IconButton(
                 icon: Icon(
                   bookmarkProvider.isBookmarked(compound, BookmarkType.compound)
                       ? Icons.bookmark
@@ -373,7 +398,8 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                               'MW: ${compound.molecularWeight.toStringAsFixed(2)} g/mol',
                               style: GoogleFonts.poppins(fontSize: 13),
                             ),
-                            backgroundColor: theme.colorScheme.surfaceVariant,
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
                             labelStyle: TextStyle(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -429,6 +455,27 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                     ),
                   ),
 
+                // 3D Molecular Structure section
+                DetailWidgets.buildSection(
+                  context,
+                  title: '3D Molecular Structure',
+                  icon: Icons.view_in_ar,
+                  content: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: theme.colorScheme.primary.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: DetailWidgets.build3DViewer(
+                      context,
+                      cid: compound.cid,
+                      title: compound.title,
+                    ),
+                  ),
+                ),
+
                 // Physical Properties section
                 DetailWidgets.buildSection(
                   context,
@@ -442,22 +489,6 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                         content: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: theme.colorScheme.primary
-                                      .withOpacity(0.2),
-                                  width: 1,
-                                ),
-                              ),
-                              child: DetailWidgets.build3DViewer(
-                                context,
-                                cid: compound.cid,
-                                title: compound.title,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
                             DetailWidgets.buildProperty(
                               context,
                               'Molecular Formula',
@@ -638,117 +669,6 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                   ),
                 ),
 
-                // Synonyms section
-                if (compound.synonyms.isNotEmpty)
-                  DetailWidgets.buildSection(
-                    context,
-                    title: 'Synonyms',
-                    icon: Icons.text_fields,
-                    content: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: compound.synonyms
-                              .take(5)
-                              .map((synonym) => Chip(
-                                    label: Text(
-                                      synonym,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    backgroundColor:
-                                        theme.colorScheme.surfaceVariant,
-                                    labelStyle: TextStyle(
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ))
-                              .toList(),
-                        ),
-                        if (compound.synonyms.length > 5) ...[
-                          const SizedBox(height: 8),
-                          TextButton.icon(
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: Text(
-                                    'All Synonyms',
-                                    style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  content: SingleChildScrollView(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Total synonyms: ${compound.synonyms.length}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12,
-                                            color: theme.colorScheme.onSurface
-                                                .withOpacity(0.7),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 8,
-                                          children: compound.synonyms
-                                              .map((synonym) => Chip(
-                                                    label: Text(
-                                                      synonym,
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                    backgroundColor: theme
-                                                        .colorScheme
-                                                        .surfaceVariant,
-                                                    labelStyle: TextStyle(
-                                                      color: theme.colorScheme
-                                                          .onSurfaceVariant,
-                                                    ),
-                                                  ))
-                                              .toList(),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: Text(
-                                        'Close',
-                                        style: GoogleFonts.poppins(),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                            icon: Icon(
-                              Icons.expand_more,
-                              size: 16,
-                              color: theme.colorScheme.primary,
-                            ),
-                            label: Text(
-                              'Show ${compound.synonyms.length - 5} more synonyms',
-                              style: GoogleFonts.poppins(
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
                 // Stereochemistry section
                 if (compound.atomStereoCount > 0 ||
                     compound.bondStereoCount > 0)
@@ -897,6 +817,139 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                       ],
                     ),
                   ),
+
+                // Synonyms section
+                if (compound.synonyms.isNotEmpty)
+                  DetailWidgets.buildSection(
+                    context,
+                    title: 'Synonyms',
+                    icon: Icons.text_fields,
+                    content: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: compound.synonyms
+                              .take(5)
+                              .map((synonym) => Chip(
+                                    label: Text(
+                                      synonym,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    backgroundColor: theme
+                                        .colorScheme.surfaceContainerHighest,
+                                    labelStyle: TextStyle(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
+                        if (compound.synonyms.length > 5) ...[
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text(
+                                    'All Synonyms',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  content: SingleChildScrollView(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Total synonyms: ${compound.synonyms.length}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            color: theme.colorScheme.onSurface
+                                                .withOpacity(0.7),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 8,
+                                          children: compound.synonyms
+                                              .map((synonym) => Chip(
+                                                    label: Text(
+                                                      synonym,
+                                                      style:
+                                                          GoogleFonts.poppins(
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                    backgroundColor: theme
+                                                        .colorScheme
+                                                        .surfaceContainerHighest,
+                                                    labelStyle: TextStyle(
+                                                      color: theme.colorScheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                                  ))
+                                              .toList(),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text(
+                                        'Close',
+                                        style: GoogleFonts.poppins(),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            icon: Icon(
+                              Icons.expand_more,
+                              size: 16,
+                              color: theme.colorScheme.primary,
+                            ),
+                            label: Text(
+                              'Show ${compound.synonyms.length - 5} more synonyms',
+                              style: GoogleFonts.poppins(
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                // Related Compounds section
+                DetailWidgets.buildSection(
+                  context,
+                  title: 'Related Information',
+                  icon: Icons.explore,
+                  content: DetailWidgets.buildActionButton(
+                    context,
+                    title: 'Find Similar Compounds',
+                    icon: Icons.compare,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SimilarCompoundsScreen(
+                            cid: compound.cid,
+                            compoundName: compound.title,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
 
                 // Actions section
                 DetailWidgets.buildSection(

@@ -2,9 +2,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum SearchType {
   compound,
+  element,
   drug,
   molecularStructure,
   reaction,
+  formula,
 }
 
 class SearchHistoryService {
@@ -14,12 +16,16 @@ class SearchHistoryService {
     switch (type) {
       case SearchType.compound:
         return 'compound_search_history';
+      case SearchType.element:
+        return 'element_search_history';
       case SearchType.drug:
         return 'drug_search_history';
       case SearchType.molecularStructure:
         return 'molecular_structure_search_history';
       case SearchType.reaction:
         return 'reaction_search_history';
+      case SearchType.formula:
+        return 'formula_search_history';
     }
   }
 

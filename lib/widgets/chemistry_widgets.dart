@@ -154,7 +154,7 @@ class ChemistryCardBackground extends StatelessWidget {
   }
 
   Widget _buildMoleculeElement(double size, Color color) {
-    return Container(
+    return SizedBox(
       width: size * 4,
       height: size * 3,
       child: CustomPaint(
