@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import '../../utils/error_handler.dart';
 import 'provider/element_provider.dart';
 import 'model/periodic_element.dart';
 import 'element_detail_screen.dart';
@@ -800,7 +801,8 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                     .elements);
                           });
                         },
-                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                        backgroundColor:
+                            theme.colorScheme.surfaceContainerHighest,
                         selectedColor: theme.colorScheme.primaryContainer,
                         checkmarkColor: theme.colorScheme.primary,
                         elevation: isSelected ? 2 : 0,
@@ -833,68 +835,12 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
   }
 
   Widget _buildErrorState(ElementProvider provider, ThemeData theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.errorContainer.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.error_outline_rounded,
-                size: 60,
-                color: theme.colorScheme.error,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Oops! Something went wrong',
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.error,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              provider.error ?? 'Unable to load elements',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => provider.fetchFlashcardElements(),
-              icon: const Icon(Icons.refresh_rounded),
-              label: Text(
-                'Try Again',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(50),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return ErrorHandler.buildErrorWidget(
+      errorMessage: ErrorHandler.getErrorMessage(provider.error),
+      onRetry: () {
+        provider.fetchFlashcardElements();
+      },
+      iconColor: theme.colorScheme.error,
     );
   }
 

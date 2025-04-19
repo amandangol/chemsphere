@@ -2,9 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:io'; // Import for SocketException
 import 'provider/drug_provider.dart';
 import '../../services/search_history_service.dart';
 import '../../widgets/custom_search_screen.dart';
+import '../../utils/error_handler.dart'; // Import ErrorHandler
 import 'drug_detail_screen.dart';
 
 class DrugSearchScreen extends StatefulWidget {
@@ -366,43 +368,84 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
             ),
             onSearch: (query) async {
               if (query.isNotEmpty) {
-                await _searchHistoryService.addToSearchHistory(
-                    query, SearchType.drug);
-                await _loadSearchHistory();
-                provider.searchDrugs(query);
+                try {
+                  await _searchHistoryService.addToSearchHistory(
+                      query, SearchType.drug);
+                  await _loadSearchHistory();
+                  await provider.searchDrugs(query);
+                } catch (e) {
+                  print('Error during drug search: $e');
+                  if (e is SocketException) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ErrorHandler.getErrorMessage(e)),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                  }
+                }
               }
             },
             onClear: () {
               provider.clearDrugs();
             },
             onItemTap: (drug) {
-              provider.fetchDrugDetails(drug.cid);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const DrugDetailScreen(),
-                ),
-              );
+              try {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DrugDetailScreen(selectedDrug: drug),
+                  ),
+                );
+              } catch (e) {
+                print('Error navigating to drug details: $e');
+                ErrorHandler.showErrorSnackBar(
+                  context,
+                  ErrorHandler.getErrorMessage(e),
+                );
+              }
             },
-            onAutoComplete: (query) =>
-                provider.fetchAutoCompleteSuggestions(query),
-            itemBuilder: (drug) => Card(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 2,
-              child: InkWell(
-                onTap: () {
-                  provider.fetchDrugDetails(drug.cid);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const DrugDetailScreen(),
+            onAutoComplete: (query) async {
+              try {
+                return await provider.fetchAutoCompleteSuggestions(query);
+              } catch (e) {
+                print('Error during autocomplete: $e');
+                if (e is SocketException) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(ErrorHandler.getErrorMessage(e)),
+                      backgroundColor: Theme.of(context).colorScheme.error,
                     ),
                   );
+                }
+                return [];
+              }
+            },
+            itemBuilder: (drug) => Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              elevation: 1,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: InkWell(
+                onTap: () {
+                  try {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            DrugDetailScreen(selectedDrug: drug),
+                      ),
+                    );
+                  } catch (e) {
+                    print('Error navigating to drug details: $e');
+                    ErrorHandler.showErrorSnackBar(
+                      context,
+                      ErrorHandler.getErrorMessage(e),
+                    );
+                  }
                 },
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
@@ -442,20 +485,56 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                                 ),
                               ),
                             ),
-                            errorWidget: (context, error, stackTrace) =>
-                                Container(
-                              width: 120,
-                              height: 120,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
-                              child: Icon(
-                                Icons.image_not_supported,
+                            errorWidget: (context, error, stackTrace) {
+                              // Improved error handling for image loading
+                              print('Error loading drug image: $error');
+                              String errorMessage = 'Image not available';
+
+                              if (error is SocketException ||
+                                  ErrorHandler.isNetworkError(error)) {
+                                errorMessage = 'Network error';
+                              }
+
+                              return Container(
+                                width: 120,
+                                height: 120,
                                 color: Theme.of(context)
                                     .colorScheme
-                                    .onSurfaceVariant,
-                              ),
-                            ),
+                                    .surfaceContainerHighest,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.image_not_supported,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                                    if (errorMessage.isNotEmpty)
+                                      Text(
+                                        errorMessage,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
+                            // Add retries for network issues
+                            maxHeightDiskCache: 250,
+                            maxWidthDiskCache: 250,
+                            memCacheWidth: 250,
+                            memCacheHeight: 250,
+                            useOldImageOnUrlChange: true,
+                            fadeInDuration: const Duration(milliseconds: 300),
+                            errorListener: (e) {
+                              print('CachedNetworkImage error: $e');
+                            },
                           ),
                         ),
                       ),

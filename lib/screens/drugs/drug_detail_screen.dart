@@ -11,16 +11,22 @@ import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/detail_widgets.dart';
 import '../../widgets/chemistry_widgets.dart';
+import '../../utils/error_handler.dart';
 
 class DrugDetailScreen extends StatelessWidget {
   final Drug? selectedDrug;
 
   const DrugDetailScreen({Key? key, this.selectedDrug}) : super(key: key);
 
-  Future<void> _launchUrl(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (!await launchUrl(uri)) {
-      throw Exception('Could not launch $url');
+  Future<void> _launchUrl(BuildContext context, String url) async {
+    try {
+      final Uri uri = Uri.parse(url);
+      if (!await launchUrl(uri)) {
+        throw Exception('Could not launch $url');
+      }
+    } catch (e) {
+      ErrorHandler.showErrorSnackBar(
+          context, 'Could not open URL: ${ErrorHandler.getErrorMessage(e)}');
     }
   }
 
@@ -91,7 +97,12 @@ class DrugDetailScreen extends StatelessWidget {
         } catch (e) {
           // Just log the error, don't crash
           debugPrint('Error fetching drug details: $e');
-          // We'll still show the UI with the selectedDrug we already have
+
+          // Show a snackbar with the error if we have access to the context
+          if (context.mounted) {
+            ErrorHandler.showErrorSnackBar(
+                context, ErrorHandler.getErrorMessage(e));
+          }
         }
       });
     }
@@ -142,7 +153,7 @@ class DrugDetailScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Error: ${provider.error}',
+                          'Error: ${ErrorHandler.getErrorMessage(provider.error)}',
                           style: GoogleFonts.poppins(
                             color: theme.colorScheme.error,
                             fontSize: 16,
@@ -717,7 +728,7 @@ class DrugDetailScreen extends StatelessWidget {
                   context,
                   title: 'View on PubChem',
                   icon: Icons.public,
-                  onTap: () => _launchUrl(drug.pubChemUrl),
+                  onTap: () => _launchUrl(context, drug.pubChemUrl),
                 ),
                 DetailWidgets.buildActionButton(
                   context,
@@ -793,7 +804,7 @@ class DrugDetailScreen extends StatelessWidget {
           if (url != null && urlText != null) ...[
             const SizedBox(height: 12),
             InkWell(
-              onTap: () => _launchUrl(url),
+              onTap: () => _launchUrl(context, url),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

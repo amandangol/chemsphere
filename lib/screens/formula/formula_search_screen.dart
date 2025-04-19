@@ -2,11 +2,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:io'; // Import for SocketException
 import '../compounds/compound_details_screen.dart';
 import '../compounds/provider/compound_provider.dart';
 import 'provider/formula_search_provider.dart';
 import '../../services/search_history_service.dart';
 import '../../widgets/custom_search_screen.dart';
+import '../../utils/error_handler.dart';
 
 class FormulaSearchScreen extends StatefulWidget {
   const FormulaSearchScreen({Key? key}) : super(key: key);
@@ -399,42 +401,45 @@ class _FormulaSearchScreenState extends State<FormulaSearchScreen> {
   Widget build(BuildContext context) {
     return Consumer<FormulaSearchProvider>(
       builder: (context, provider, child) {
-        return Scaffold(
-          body: CustomSearchScreen(
-            title: 'Formula Search',
-            hintText: 'Enter a molecular formula (e.g., H2O)',
-            searchIcon: Icons.science_outlined,
-            quickSearchItems: _quickSearchItems,
-            historyItems: _searchHistory,
-            isLoading: provider.isLoading,
-            error: provider.error,
-            items: provider.searchResults,
-            imageUrl:
-                'https://img.freepik.com/free-photo/3d-atom-structure-science-background_1048-5589.jpg',
-            customHeader: Column(
-              children: [
-                // Educational info card
-                _buildInfoCard(),
-
-                // Formula writing tips
-                if (_showInfoCard) _buildFormulaTips(),
-
-                // Common formulas
-                if (_showInfoCard) _buildCommonFormulas(),
-              ],
-            ),
-            onSearch: (query) async {
+        return CustomSearchScreen(
+          title: 'Molecular Formula Search',
+          hintText: 'Enter a formula (e.g., H2O, C6H12O6)',
+          searchIcon: Icons.science_outlined,
+          quickSearchItems: _quickSearchItems,
+          historyItems: _searchHistory,
+          isLoading: provider.isLoading,
+          error: provider.error != null
+              ? ErrorHandler.getErrorMessage(provider.error)
+              : null,
+          items: provider.searchResults,
+          imageUrl:
+              'https://img.freepik.com/premium-photo/blue-poster-with-blue-background-with-blue-orange-design_978521-27809.jpg',
+          customHeader: Column(
+            children: [
+              _buildInfoCard(),
+              if (_showInfoCard) _buildFormulaTips(),
+              if (_showInfoCard) _buildCommonFormulas(),
+            ],
+          ),
+          onSearch: (query) async {
+            try {
               if (query.isNotEmpty) {
                 await _searchHistoryService.addToSearchHistory(
                     query, SearchType.formula);
                 await _loadSearchHistory();
-                provider.searchByFormula(query);
+                await provider.searchByFormula(query);
               }
-            },
-            onClear: () {
-              provider.clearSearchResults();
-            },
-            onItemTap: (compound) async {
+            } catch (e) {
+              print('Error during formula search: $e');
+              ErrorHandler.showErrorSnackBar(
+                  context, ErrorHandler.getErrorMessage(e));
+            }
+          },
+          onClear: () {
+            provider.clearSearchResults();
+          },
+          onItemTap: (compound) async {
+            try {
               final compoundProvider =
                   Provider.of<CompoundProvider>(context, listen: false);
               await compoundProvider.fetchCompoundDetails(compound.cid);
@@ -442,20 +447,30 @@ class _FormulaSearchScreenState extends State<FormulaSearchScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const CompoundDetailsScreen(),
+                    builder: (context) => CompoundDetailsScreen(
+                      selectedCompound: compound,
+                    ),
                   ),
                 );
               }
-            },
-            onAutoComplete: (query) => Future.value([]),
-            itemBuilder: (compound) => Card(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 2,
-              child: InkWell(
-                onTap: () async {
+            } catch (e) {
+              print('Error navigating to compound details: $e');
+              if (context.mounted) {
+                ErrorHandler.showErrorSnackBar(
+                    context, ErrorHandler.getErrorMessage(e));
+              }
+            }
+          },
+          onAutoComplete: (query) => Future.value([]),
+          itemBuilder: (compound) => Card(
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 2,
+            child: InkWell(
+              onTap: () async {
+                try {
                   final compoundProvider =
                       Provider.of<CompoundProvider>(context, listen: false);
                   await compoundProvider.fetchCompoundDetails(compound.cid);
@@ -467,153 +482,195 @@ class _FormulaSearchScreenState extends State<FormulaSearchScreen> {
                       ),
                     );
                   }
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 70,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 4,
-                              offset: Offset(2, 2),
-                            )
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: CachedNetworkImage(
-                            imageUrl:
-                                'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${compound.cid}/PNG',
-                            fit: BoxFit.contain,
-                            placeholder: (context, url) => Container(
-                              width: 120,
-                              height: 120,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            ),
-                            errorWidget: (context, error, stackTrace) =>
-                                Container(
-                              width: 120,
-                              height: 120,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
-                              child: Icon(
-                                Icons.image_not_supported,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
+                } catch (e) {
+                  print('Error navigating to compound details: $e');
+                  if (context.mounted) {
+                    ErrorHandler.showErrorSnackBar(
+                        context, ErrorHandler.getErrorMessage(e));
+                  }
+                }
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 4,
+                            offset: Offset(2, 2),
+                          )
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: CachedNetworkImage(
+                          imageUrl:
+                              'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${compound.cid}/PNG',
+                          fit: BoxFit.contain,
+                          placeholder: (context, url) => Container(
+                            width: 120,
+                            height: 120,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              compound.title,
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
+                          errorWidget: (context, error, stackTrace) {
+                            // Improved error handling for image loading
+                            print('Error loading formula image: $error');
+                            String errorMessage = 'Image not available';
+
+                            if (error is SocketException ||
+                                ErrorHandler.isNetworkError(error)) {
+                              errorMessage = 'Network error';
+                            }
+
+                            return Container(
+                              width: 120,
+                              height: 120,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.image_not_supported,
                                     color: Theme.of(context)
                                         .colorScheme
-                                        .tertiaryContainer,
-                                    borderRadius: BorderRadius.circular(4),
+                                        .onSurfaceVariant,
                                   ),
-                                  child: Text(
-                                    compound.molecularFormula,
-                                    style: GoogleFonts.robotoMono(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onTertiaryContainer,
+                                  if (errorMessage.isNotEmpty)
+                                    Text(
+                                      errorMessage,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                      textAlign: TextAlign.center,
                                     ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'CID: ${compound.cid}',
-                                  style: GoogleFonts.poppins(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.5),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'MW: ${compound.molecularWeight.toStringAsFixed(2)} g/mol',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.7),
+                                ],
                               ),
-                            ),
-                          ],
+                            );
+                          },
+                          // Add retries for network issues
+                          maxHeightDiskCache: 250,
+                          maxWidthDiskCache: 250,
+                          memCacheWidth: 250,
+                          memCacheHeight: 250,
+                          useOldImageOnUrlChange: true,
+                          fadeInDuration: const Duration(milliseconds: 300),
+                          errorListener: (e) {
+                            print('CachedNetworkImage error: $e');
+                          },
                         ),
                       ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            compound.title,
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .tertiaryContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  compound.molecularFormula,
+                                  style: GoogleFonts.robotoMono(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onTertiaryContainer,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'CID: ${compound.cid}',
+                                style: GoogleFonts.poppins(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.5),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'MW: ${compound.molecularWeight.toStringAsFixed(2)} g/mol',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.7),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ],
                 ),
               ),
             ),
-            emptyMessage: 'Ready to Search by Formula',
-            emptySubMessage:
-                'Enter a molecular formula to find matching compounds',
-            emptyIcon: Icons.science,
-            actions: [
-              IconButton(
-                icon: Icon(
-                  _showInfoCard ? Icons.info : Icons.info_outline,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _showInfoCard = !_showInfoCard;
-                  });
-                },
-              ),
-            ],
           ),
+          emptyMessage: 'Ready to Search by Formula',
+          emptySubMessage:
+              'Enter a molecular formula to find matching compounds',
+          emptyIcon: Icons.science,
+          actions: [
+            IconButton(
+              icon: Icon(
+                _showInfoCard ? Icons.info : Icons.info_outline,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              onPressed: () {
+                setState(() {
+                  _showInfoCard = !_showInfoCard;
+                });
+              },
+            ),
+          ],
         );
       },
     );

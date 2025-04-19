@@ -4,6 +4,8 @@ import '../../../providers/pubchem_impl_mixin.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 import 'dart:convert';
+import 'dart:io'; // Import for SocketException
+import '../../../utils/error_handler.dart'; // Import ErrorHandler
 
 class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
   List<Drug> _drugs = [];
@@ -12,12 +14,21 @@ class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
   List<Drug> get drugs => _drugs;
   Drug? get selectedDrug => _selectedDrug;
 
+  String _lastQuery = '';
+  bool _hasSearched = false;
+  String get lastQuery => _lastQuery;
+  bool get hasSearched => _hasSearched;
+
   Future<void> searchDrugs(String query) async {
     setLoading(true);
     clearError();
     notifyListeners();
 
     try {
+      // Store the query for potential retry
+      _lastQuery = query;
+      _hasSearched = true;
+
       // Use base provider's method to fetch CIDs
       final cids = await fetchCids(query);
 
@@ -27,7 +38,7 @@ class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
       _drugs = properties.map((e) {
         final json = Map<String, dynamic>.from(e);
         return Drug(
-          name: json['Name'] ?? '',
+          name: json['Title'] ?? '',
           cid: json['CID'] ?? 0,
           title: json['Title'] ?? '',
           molecularFormula: json['MolecularFormula'] ?? '',
@@ -73,9 +84,19 @@ class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
         );
       }).toList();
     } catch (e) {
-      setError(e.toString());
+      print('Error in searchDrugs: $e');
+
+      // Use ErrorHandler to get a user-friendly error message
+      if (e is SocketException) {
+        setError(ErrorHandler.getErrorMessage(e));
+      } else {
+        setError(e.toString());
+      }
+
+      _drugs = []; // Clear any partial results
     } finally {
       setLoading(false);
+      notifyListeners();
     }
   }
 
@@ -420,7 +441,13 @@ class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
       print('Clearance: ${_selectedDrug?.clearance}');
     } catch (e) {
       print('Error in fetchDrugDetails: $e');
-      setError(e.toString());
+
+      // Use ErrorHandler to get a user-friendly error message
+      if (e is SocketException) {
+        setError(ErrorHandler.getErrorMessage(e));
+      } else {
+        setError(e.toString());
+      }
     } finally {
       setLoading(false);
     }
@@ -443,6 +470,11 @@ class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
       return json.decode(response.body);
     } catch (e) {
       print('Error fetching PUG View data: $e');
+
+      // Handle SocketException
+      if (e is SocketException) {
+        throw Exception(ErrorHandler.getErrorMessage(e));
+      }
       rethrow;
     }
   }
@@ -516,6 +548,9 @@ class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
 
   void clearDrugs() {
     _drugs = [];
+    _lastQuery = '';
+    _hasSearched = false;
+    clearError();
     notifyListeners();
   }
 }

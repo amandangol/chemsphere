@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io';
 import 'provider/chemical_search_provider.dart';
 import 'compound_details_screen.dart';
 import 'provider/compound_provider.dart';
+import '../../utils/error_handler.dart';
 
 class SimilarCompoundsScreen extends StatefulWidget {
   final int cid;
@@ -45,9 +47,38 @@ class _SimilarCompoundsScreenState extends State<SimilarCompoundsScreen> {
     try {
       final compoundProvider =
           Provider.of<CompoundProvider>(context, listen: false);
+
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text('Loading compound details...'),
+              ],
+            ),
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      // Fetch details
       await compoundProvider.fetchCompoundDetails(cid);
 
       if (!mounted) return;
+
+      // Dismiss any snackbars
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       Navigator.push(
         context,
@@ -57,6 +88,9 @@ class _SimilarCompoundsScreenState extends State<SimilarCompoundsScreen> {
       );
     } catch (e) {
       if (!mounted) return;
+
+      // Dismiss loading snackbar
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -71,10 +105,12 @@ class _SimilarCompoundsScreenState extends State<SimilarCompoundsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: false,
         title: Text(
           'Similar to ${widget.compoundName}',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
         ),
       ),
@@ -195,9 +231,52 @@ class _SimilarCompoundsScreenState extends State<SimilarCompoundsScreen> {
                                         child: CircularProgressIndicator(
                                             strokeWidth: 2),
                                       ),
-                                      errorWidget: (context, url, error) =>
-                                          const Icon(Icons.image_not_supported),
+                                      errorWidget: (context, url, error) {
+                                        // Improved error handling for image loading
+                                        print(
+                                            'Error loading compound image: $error');
+                                        String errorMessage =
+                                            'Image not available';
+
+                                        if (error is SocketException ||
+                                            ErrorHandler.isNetworkError(
+                                                error)) {
+                                          errorMessage = 'Network error';
+                                        }
+
+                                        return Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.image_not_supported,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                            if (errorMessage.isNotEmpty)
+                                              Text(
+                                                errorMessage,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                          ],
+                                        );
+                                      },
                                       fit: BoxFit.contain,
+                                      // Add better caching options
+                                      maxHeightDiskCache: 250,
+                                      maxWidthDiskCache: 250,
+                                      memCacheWidth: 250,
+                                      memCacheHeight: 250,
+                                      useOldImageOnUrlChange: true,
+                                      fadeInDuration:
+                                          const Duration(milliseconds: 300),
                                     ),
                                   ),
                                 ),

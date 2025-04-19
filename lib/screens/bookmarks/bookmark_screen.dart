@@ -48,6 +48,7 @@ class _BookmarkScreenState extends State<BookmarkScreen>
       appBar: AppBar(
         title: const Text('Bookmarks'),
         centerTitle: true,
+        backgroundColor: theme.colorScheme.primary.withOpacity(0.5),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -72,8 +73,8 @@ class _BookmarkScreenState extends State<BookmarkScreen>
             ? null
             : TabBar(
                 controller: _tabController,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.grey,
+                labelColor: theme.colorScheme.primary,
+                unselectedLabelColor: Colors.white,
                 indicatorColor: theme.colorScheme.primary,
                 labelStyle: const TextStyle(
                   fontWeight: FontWeight.bold,

@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import '../model/compound.dart';
 import '../../../providers/base_pubchem_provider.dart';
 import '../../../providers/pubchem_impl_mixin.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:xml/xml.dart';
+import 'dart:io'; // Import for SocketException
+import '../../../utils/error_handler.dart'; // Import ErrorHandler
 
 class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
   List<Compound> _compounds = [];
@@ -37,7 +41,13 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
     } catch (e, stackTrace) {
       print('Error during compound search: $e');
       print('Stack trace: $stackTrace');
-      setError(e.toString());
+
+      // Use ErrorHandler to get a user-friendly error message
+      if (e is SocketException) {
+        setError(ErrorHandler.getErrorMessage(e));
+      } else {
+        setError(e.toString());
+      }
     } finally {
       setLoading(false);
     }
@@ -145,10 +155,18 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
         print('Title from properties: $title');
       }
 
-      // Use base provider's method to fetch synonyms
+      // Use base provider's method to fetch synonyms with proper error handling
       print('Fetching synonyms...');
-      final synonyms = await fetchSynonyms(cid);
-      print('Synonyms fetched: ${synonyms.length}');
+      List<String> synonyms = [];
+      try {
+        synonyms = await fetchSynonyms(cid);
+        print('Synonyms fetched: ${synonyms.length}');
+      } catch (e) {
+        // Log error but continue processing - synonyms aren't critical
+        print('Warning: Error fetching synonyms: $e');
+        // Don't throw the error, just use an empty list
+        synonyms = [];
+      }
 
       // Create the compound object with empty safety and biological data
       _selectedCompound = Compound(
@@ -244,7 +262,13 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
       print('Chemical Properties: ${_selectedCompound?.physicalProperties}');
     } catch (e) {
       print('Error in fetchCompoundDetails: $e');
-      setError(e.toString());
+
+      // Use ErrorHandler to get a user-friendly error message
+      if (e is SocketException) {
+        setError(ErrorHandler.getErrorMessage(e));
+      } else {
+        setError(e.toString());
+      }
     } finally {
       setLoading(false);
     }
@@ -397,10 +421,18 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
         }
       }
 
+      _compounds = compounds;
+      notifyListeners();
       return compounds;
     } catch (e) {
       print('Error in fetchCompoundsByCriteria: $e');
-      setError(e.toString());
+
+      // Use ErrorHandler to get a user-friendly error message
+      if (e is SocketException) {
+        setError(ErrorHandler.getErrorMessage(e));
+      } else {
+        setError(e.toString());
+      }
       return [];
     } finally {
       setLoading(false);
@@ -431,6 +463,67 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
           .toList();
     } catch (e) {
       print('Error getting headings: $e');
+      return [];
+    }
+  }
+
+  // Override the fetchSynonyms method in the base class to add better error handling
+  @override
+  Future<List<String>> fetchSynonyms(int cid) async {
+    try {
+      final url = Uri.parse(
+          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/synonyms/JSON');
+
+      // Add timeout to prevent long waits
+      final response = await http.get(url).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Network timeout while fetching synonyms');
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Failed to fetch synonyms: HTTP Status ${response.statusCode}');
+      }
+
+      if (response.body.isEmpty) {
+        print('Warning: Empty response body when fetching synonyms');
+        return [];
+      }
+
+      try {
+        final data = json.decode(response.body);
+        final synonymsList = data['InformationList']?['Information'] ?? [];
+
+        if (synonymsList.isEmpty) {
+          print('No synonyms found for compound $cid');
+          return [];
+        }
+
+        if (synonymsList.isNotEmpty && synonymsList[0]['Synonym'] != null) {
+          // Limit to maximum 50 synonyms to improve performance
+          final allSynonyms = List<String>.from(synonymsList[0]['Synonym']);
+          return allSynonyms.take(50).toList();
+        }
+
+        return [];
+      } catch (e) {
+        print('Error parsing synonym data: $e');
+        return [];
+      }
+    } catch (e) {
+      // If it's a network error, provide a clearer message but don't throw
+      if (e is SocketException) {
+        print(
+            'Network error while fetching synonyms: ${ErrorHandler.getErrorMessage(e)}');
+      } else if (e.toString().contains('timeout')) {
+        print('Timeout while fetching synonyms: $e');
+      } else {
+        print('Error fetching synonyms: $e');
+      }
+
+      // Return empty list instead of throwing to prevent entire compound loading from failing
       return [];
     }
   }

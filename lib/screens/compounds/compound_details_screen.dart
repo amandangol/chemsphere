@@ -4,13 +4,13 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'provider/compound_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../utils/error_handler.dart';
 import '../bookmarks/provider/bookmark_provider.dart';
 import 'model/compound.dart';
 import '../../widgets/detail_widgets.dart';
 import '../../widgets/chemistry_widgets.dart';
 import 'similar_compounds_screen.dart';
 import 'provider/chemical_search_provider.dart';
-import '../formula/formula_search_screen.dart';
 
 class CompoundDetailsScreen extends StatefulWidget {
   final Compound? selectedCompound;
@@ -40,7 +40,12 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
         } catch (e) {
           // Just log the error, don't crash
           debugPrint('Error fetching compound details: $e');
-          // We'll still show the UI with the selectedCompound we already have
+
+          // Show a snackbar with the error if we have access to the context
+          if (mounted) {
+            ErrorHandler.showErrorSnackBar(
+                context, ErrorHandler.getErrorMessage(e));
+          }
         }
       });
     }
@@ -58,7 +63,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
       await Future.delayed(const Duration(seconds: 1));
     } catch (e) {
       setState(() {
-        _3dError = 'Failed to load 3D structure: $e';
+        _3dError = ErrorHandler.getErrorMessage(e);
       });
     } finally {
       setState(() {
@@ -73,9 +78,14 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
   }
 
   Future<void> _launchUrl(String url) async {
-    final Uri uri = Uri.parse(url);
-    if (!await launchUrl(uri)) {
-      throw Exception('Could not launch $url');
+    try {
+      final Uri uri = Uri.parse(url);
+      if (!await launchUrl(uri)) {
+        throw Exception('Could not launch $url');
+      }
+    } catch (e) {
+      ErrorHandler.showErrorSnackBar(
+          context, 'Could not open URL: ${ErrorHandler.getErrorMessage(e)}');
     }
   }
 
@@ -112,8 +122,35 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
             }
 
             if (provider.isLoading) {
-              return const ChemistryLoadingWidget(
-                  message: 'Loading compound details...');
+              // Make sure this loading indicator is visible at the top of the screen
+              return SafeArea(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Back button
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.arrow_back,
+                              color: theme.colorScheme.primary,
+                            ),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      const ChemistryLoadingWidget(
+                        message: 'Loading compound details...',
+                      ),
+                      const Spacer(),
+                    ],
+                  ),
+                ),
+              );
             }
 
             if (provider.error != null) {
@@ -132,7 +169,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Error: ${provider.error}',
+                          'Error: ${ErrorHandler.getErrorMessage(provider.error)}',
                           style: GoogleFonts.poppins(
                             color: theme.colorScheme.error,
                             fontSize: 16,
@@ -925,6 +962,28 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                             ),
                           ),
                         ],
+                      ],
+                    ),
+                  )
+                else
+                  DetailWidgets.buildSection(
+                    context,
+                    title: 'Synonyms',
+                    icon: Icons.text_fields,
+                    content: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            'No synonyms available for this compound',
+                            style: GoogleFonts.poppins(
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.7),
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),

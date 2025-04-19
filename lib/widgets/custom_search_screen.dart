@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'dart:io'; // Import for SocketException
+import '../utils/error_handler.dart';
 
 class CustomSearchScreen extends StatefulWidget {
   final String title;
@@ -215,6 +217,51 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                           imageUrl: widget.imageUrl ??
                               'https://i.pinimg.com/736x/52/5d/a0/525da07405f9bd105c0263a319ddcee0.jpg',
                           fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: theme.colorScheme.primaryContainer,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, error, stackTrace) {
+                            // Improved error handling for background image
+                            print('Error loading background image: $error');
+                            if (error is SocketException ||
+                                ErrorHandler.isNetworkError(error)) {
+                              // For network errors, use a gradient background instead
+                              return Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      theme.colorScheme.primary
+                                          .withOpacity(0.9),
+                                      theme.colorScheme.primaryContainer,
+                                    ],
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.wifi_off,
+                                    color: theme.colorScheme.onPrimary
+                                        .withOpacity(0.3),
+                                    size: 40,
+                                  ),
+                                ),
+                              );
+                            }
+
+                            // For other errors, show a simple colored background
+                            return Container(
+                              color: theme.colorScheme.primaryContainer,
+                            );
+                          },
+                          // Add better error handling for the background image
+                          fadeInDuration: const Duration(milliseconds: 300),
+                          useOldImageOnUrlChange: true,
                         ),
                       ),
                     ),

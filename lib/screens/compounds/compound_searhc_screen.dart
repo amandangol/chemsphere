@@ -2,9 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:io'; // Import for SocketException
 import 'provider/compound_provider.dart';
 import '../../services/search_history_service.dart';
 import '../../widgets/custom_search_screen.dart';
+import '../../utils/error_handler.dart'; // Import ErrorHandler
 import 'compound_details_screen.dart';
 
 class CompoundSearchScreen extends StatefulWidget {
@@ -473,10 +475,22 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
               ),
               onSearch: (query) async {
                 if (query.isNotEmpty) {
-                  await _searchHistoryService.addToSearchHistory(
-                      query, SearchType.compound);
-                  await _loadSearchHistory();
-                  compoundProvider.searchCompounds(query);
+                  try {
+                    await _searchHistoryService.addToSearchHistory(
+                        query, SearchType.compound);
+                    await _loadSearchHistory();
+                    await compoundProvider.searchCompounds(query);
+                  } catch (e) {
+                    print('Error during search: $e');
+                    if (e is SocketException) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(ErrorHandler.getErrorMessage(e)),
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                        ),
+                      );
+                    }
+                  }
                 }
               },
               onClear: () {
@@ -484,27 +498,50 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
               },
               onItemTap: (item) async {
                 final compound = item;
-                await compoundProvider.fetchCompoundDetails(compound.cid);
-                if (compoundProvider.error == null &&
-                    compoundProvider.selectedCompound != null) {
-                  Navigator.push(
+                try {
+                  await compoundProvider.fetchCompoundDetails(compound.cid);
+                  if (compoundProvider.error == null &&
+                      compoundProvider.selectedCompound != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CompoundDetailsScreen(),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(compoundProvider.error ??
+                            'Failed to load compound details'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  print('Error tapping item: $e');
+                  ErrorHandler.showErrorSnackBar(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const CompoundDetailsScreen(),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(compoundProvider.error ??
-                          'Failed to load compound details'),
-                      backgroundColor: Theme.of(context).colorScheme.error,
-                    ),
+                    ErrorHandler.getErrorMessage(e),
                   );
                 }
               },
-              onAutoComplete: (query) =>
-                  compoundProvider.fetchAutoCompleteSuggestions(query),
+              onAutoComplete: (query) async {
+                try {
+                  return await compoundProvider
+                      .fetchAutoCompleteSuggestions(query);
+                } catch (e) {
+                  print('Error during autocomplete: $e');
+                  if (e is SocketException) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ErrorHandler.getErrorMessage(e)),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                  }
+                  return [];
+                }
+              },
               itemBuilder: (item) => Card(
                 margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 shape: RoundedRectangleBorder(
@@ -514,13 +551,21 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                 child: InkWell(
                   onTap: () {
                     final compound = item;
-                    compoundProvider.fetchCompoundDetails(compound.cid);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CompoundDetailsScreen(),
-                      ),
-                    );
+                    try {
+                      compoundProvider.fetchCompoundDetails(compound.cid);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CompoundDetailsScreen(),
+                        ),
+                      );
+                    } catch (e) {
+                      print('Error navigating to details: $e');
+                      ErrorHandler.showErrorSnackBar(
+                        context,
+                        ErrorHandler.getErrorMessage(e),
+                      );
+                    }
                   },
                   borderRadius: BorderRadius.circular(16),
                   child: Padding(
@@ -559,20 +604,56 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                                   ),
                                 ),
                               ),
-                              errorWidget: (context, error, stackTrace) =>
-                                  Container(
-                                width: 120,
-                                height: 120,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
-                                child: Icon(
-                                  Icons.image_not_supported,
+                              errorWidget: (context, error, stackTrace) {
+                                // Improved error handling for image loading
+                                print('Error loading image: $error');
+                                String errorMessage = 'Image not available';
+
+                                if (error is SocketException ||
+                                    ErrorHandler.isNetworkError(error)) {
+                                  errorMessage = 'Network error';
+                                }
+
+                                return Container(
+                                  width: 120,
+                                  height: 120,
                                   color: Theme.of(context)
                                       .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                              ),
+                                      .surfaceContainerHighest,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.image_not_supported,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                      if (errorMessage.isNotEmpty)
+                                        Text(
+                                          errorMessage,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
+                              // Add retries for network issues
+                              maxHeightDiskCache: 250,
+                              maxWidthDiskCache: 250,
+                              memCacheWidth: 250,
+                              memCacheHeight: 250,
+                              useOldImageOnUrlChange: true,
+                              fadeInDuration: const Duration(milliseconds: 300),
+                              errorListener: (e) {
+                                print('CachedNetworkImage error: $e');
+                              },
                             ),
                           ),
                         ),

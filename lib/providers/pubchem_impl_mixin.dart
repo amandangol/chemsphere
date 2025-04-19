@@ -10,9 +10,25 @@ mixin PubChemImplMixin {
           'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/$name/cids/JSON');
       final cidResponse = await http.get(cidUrl);
 
-      if (cidResponse.statusCode != 200) {
+      if (cidResponse.statusCode == 404) {
         throw Exception(
-            'Failed to fetch compound information. Status: ${cidResponse.statusCode}');
+            'No compounds found with the name "$name". Please try another search term.');
+      } else if (cidResponse.statusCode != 200) {
+        switch (cidResponse.statusCode) {
+          case 400:
+            throw Exception('Invalid request. Please check your search term.');
+          case 429:
+            throw Exception('Too many requests. Please try again later.');
+          case 500:
+          case 501:
+          case 502:
+          case 503:
+          case 504:
+            throw Exception('PubChem server error. Please try again later.');
+          default:
+            throw Exception(
+                'Failed to fetch compound information. Status: ${cidResponse.statusCode}');
+        }
       }
 
       final cidData = json.decode(cidResponse.body);
@@ -24,6 +40,9 @@ mixin PubChemImplMixin {
 
       return cids.map((cid) => cid as int).toList();
     } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
       throw Exception('Error fetching CIDs: $e');
     }
   }
@@ -37,15 +56,33 @@ mixin PubChemImplMixin {
 
       final propertiesResponse = await http.get(propertiesUrl);
 
-      if (propertiesResponse.statusCode != 200) {
-        throw Exception(
-            'Failed to fetch properties. Status: ${propertiesResponse.statusCode}');
+      if (propertiesResponse.statusCode == 404) {
+        throw Exception('Properties not found for the selected compounds.');
+      } else if (propertiesResponse.statusCode != 200) {
+        switch (propertiesResponse.statusCode) {
+          case 400:
+            throw Exception('Invalid request for properties.');
+          case 429:
+            throw Exception('Too many requests. Please try again later.');
+          case 500:
+          case 501:
+          case 502:
+          case 503:
+          case 504:
+            throw Exception('PubChem server error. Please try again later.');
+          default:
+            throw Exception(
+                'Failed to fetch properties. Status: ${propertiesResponse.statusCode}');
+        }
       }
 
       final propertiesData = json.decode(propertiesResponse.body);
       return List<Map<String, dynamic>>.from(
           propertiesData['PropertyTable']['Properties']);
     } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
       throw Exception('Error fetching properties: $e');
     }
   }
@@ -175,13 +212,32 @@ mixin PubChemImplMixin {
 
       final response = await http.get(sdfUrl);
 
-      if (response.statusCode != 200) {
-        throw Exception('Failed to fetch 3D structure: ${response.statusCode}');
+      if (response.statusCode == 404) {
+        throw Exception('3D structure not available for this compound.');
+      } else if (response.statusCode != 200) {
+        switch (response.statusCode) {
+          case 400:
+            throw Exception('Invalid request for 3D structure.');
+          case 429:
+            throw Exception('Too many requests. Please try again later.');
+          case 500:
+          case 501:
+          case 502:
+          case 503:
+          case 504:
+            throw Exception('PubChem server error. Please try again later.');
+          default:
+            throw Exception(
+                'Failed to fetch 3D structure: ${response.statusCode}');
+        }
       }
 
       return response.body;
     } catch (e) {
       print('Error fetching 3D structure: $e');
+      if (e is Exception) {
+        rethrow;
+      }
       throw Exception('Error fetching 3D structure: $e');
     }
   }

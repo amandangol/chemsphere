@@ -4,6 +4,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import '../screens/compounds/provider/compound_provider.dart';
 import '../screens/compounds/compound_details_screen.dart';
+import '../utils/error_handler.dart';
 import 'dart:async';
 
 class Molecule3DViewer extends StatefulWidget {
@@ -58,7 +59,7 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
             if (mounted) {
               setState(() {
                 _isLoading = false;
-                _error = 'Failed to load 3D viewer: ${error.description}';
+                _error = ErrorHandler.getErrorMessage(error);
                 _isStructureAvailable = false;
               });
             }
@@ -151,7 +152,7 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
         if (mounted) {
           setState(() {
             _isLoading = false;
-            _error = 'Error rendering molecule: $error';
+            _error = ErrorHandler.getErrorMessage(error);
             _isStructureAvailable = false;
           });
         }
@@ -160,7 +161,7 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _error = 'Failed to load molecule data: $e';
+          _error = ErrorHandler.getErrorMessage(e);
           _isStructureAvailable = false;
         });
       }
@@ -345,12 +346,15 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
                     size: 48,
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    _error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      _error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(

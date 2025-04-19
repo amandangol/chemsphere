@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io'; // Import for SocketException
 import '../../../providers/base_pubchem_provider.dart';
 import '../../compounds/model/related_compound.dart';
+import '../../../utils/error_handler.dart'; // Import ErrorHandler
 
 /// Provider for searching compounds by molecular formula.
 /// This provider extends BasePubChemProvider to utilize common PubChem API methods.
@@ -59,7 +61,14 @@ class FormulaSearchProvider extends BasePubChemProvider {
 
       setLoading(false);
     } catch (e) {
-      setError('Error searching by formula: $e');
+      print('Error searching by formula: $e');
+
+      // Use ErrorHandler to get a user-friendly error message
+      if (e is SocketException) {
+        setError(ErrorHandler.getErrorMessage(e));
+      } else {
+        setError(e.toString());
+      }
       setLoading(false);
     }
   }
@@ -93,6 +102,10 @@ class FormulaSearchProvider extends BasePubChemProvider {
 
       return cids.map((cid) => cid as int).toList();
     } catch (e) {
+      // Handle SocketException
+      if (e is SocketException) {
+        throw Exception(ErrorHandler.getErrorMessage(e));
+      }
       throw Exception('Error fetching CIDs: $e');
     }
   }
@@ -116,6 +129,10 @@ class FormulaSearchProvider extends BasePubChemProvider {
       return List<Map<String, dynamic>>.from(
           propertiesData['PropertyTable']['Properties']);
     } catch (e) {
+      // Handle SocketException
+      if (e is SocketException) {
+        throw Exception(ErrorHandler.getErrorMessage(e));
+      }
       throw Exception('Error fetching properties: $e');
     }
   }
@@ -359,6 +376,11 @@ class FormulaSearchProvider extends BasePubChemProvider {
       return List<int>.from(cids);
     } catch (e) {
       print('Error searching by formula: $e');
+
+      // Handle SocketException
+      if (e is SocketException) {
+        throw Exception(ErrorHandler.getErrorMessage(e));
+      }
       return [];
     }
   }

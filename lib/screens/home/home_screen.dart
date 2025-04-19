@@ -589,7 +589,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   _buildFeatureCard(
                     context,
-                    imagePath: 'assets/svgs/formula-search.svg',
+                    imagePath: 'assets/svgs/formula.svg',
                     title: 'Formula Search',
                     description: 'Search for chemical formulas',
                     color: Colors.teal.withOpacity(0.1),
@@ -603,7 +603,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   _buildFeatureCard(
                     context,
-                    imagePath: 'assets/svgs/reaction.svg',
+                    imagePath: 'assets/svgs/molecule.svg',
                     title: 'Chemical Reactions',
                     description: 'Study and explore chemical reactions',
                     color: Colors.teal.withOpacity(0.1),

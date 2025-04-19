@@ -6,6 +6,7 @@ import 'package:flip_card/flip_card.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Import FontAwesome
 
 import 'provider/element_provider.dart';
+import '../../utils/error_handler.dart';
 import '../../widgets/chemistry_widgets.dart'; // Import custom chemistry widgets
 import 'model/periodic_element.dart'; // Import PeriodicElement model
 
@@ -48,12 +49,23 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
         _displayElements = []; // Clear existing while loading
       });
     }
-    await provider.fetchFlashcardElements(forceRefresh: forceRefresh);
-    if (mounted) {
-      _updateDisplayList();
-      setState(() {
-        _initialLoad = false;
-      });
+
+    try {
+      await provider.fetchFlashcardElements(forceRefresh: forceRefresh);
+      if (mounted) {
+        _updateDisplayList();
+        setState(() {
+          _initialLoad = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorHandler.showErrorSnackBar(
+            context, ErrorHandler.getErrorMessage(e));
+        setState(() {
+          _initialLoad = false;
+        });
+      }
     }
   }
 
@@ -161,32 +173,15 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
         child: Consumer<ElementProvider>(
           builder: (context, provider, child) {
             if (provider.isLoading && _initialLoad) {
-              return const ChemistryLoadingWidget(message: 'Loading flashcards...');
+              return const ChemistryLoadingWidget(
+                  message: 'Loading flashcards...');
             }
 
             if (provider.error != null && _displayElements.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline,
-                        color: theme.colorScheme.error, size: 60),
-                    const SizedBox(height: 16),
-                    Text('Error loading flashcards:',
-                        style: TextStyle(
-                            color: theme.colorScheme.error, fontSize: 16)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(provider.error!, textAlign: TextAlign.center),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                      onPressed: () => _loadElements(forceRefresh: true),
-                    )
-                  ],
-                ),
+              return ErrorHandler.buildErrorWidget(
+                errorMessage: ErrorHandler.getErrorMessage(provider.error),
+                onRetry: () => _loadElements(forceRefresh: true),
+                iconColor: theme.colorScheme.error,
               );
             }
 
