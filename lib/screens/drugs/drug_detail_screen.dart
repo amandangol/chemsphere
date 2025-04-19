@@ -782,7 +782,7 @@ class DrugDetailScreen extends StatelessWidget {
     BuildContext context, {
     required String title,
     required String content,
-    bool initiallyExpanded = false,
+    bool initiallyExpanded = true,
     Widget? customContent,
     String? url,
     String? urlText,

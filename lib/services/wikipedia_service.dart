@@ -318,7 +318,8 @@ class WikipediaService {
       RegExp(
           r'(TV|television|series|movie|film|book|novel|game|show|episode|cartoon|character)',
           caseSensitive: false),
-      RegExp(r'(band|musician|artist|singer|actor|actress|politician|athlete)',
+      RegExp(
+          r'(band|musician|artist|singer|actor|actress|politician|athlete|band)',
           caseSensitive: false),
       RegExp(r'(company|corporation|business|product|software)',
           caseSensitive: false)

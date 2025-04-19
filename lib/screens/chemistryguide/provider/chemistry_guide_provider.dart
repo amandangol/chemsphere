@@ -195,11 +195,9 @@ class ChemistryGuideProvider with ChangeNotifier {
   Future<ChemistryTopic?> getArticleSummary(String title) async {
     // Check if we already have this topic cached
     final cacheKey = title.toLowerCase();
-    if (_topicCache.containsKey(cacheKey)) {
-      _selectedTopic = _topicCache[cacheKey];
-      notifyListeners();
-      return _selectedTopic;
-    }
+    final bool wasCached = _topicCache.containsKey(cacheKey);
+    final bool wasFavorite =
+        wasCached ? _topicCache[cacheKey]!.isFavorite : false;
 
     try {
       _setLoading();
@@ -248,6 +246,8 @@ class ChemistryGuideProvider with ChangeNotifier {
         sections: sections,
         relatedImages: relatedImages,
         examples: examples,
+        // Preserve favorite status if this topic was already cached
+        isFavorite: wasFavorite,
       );
 
       // Cache the topic for future use
@@ -257,9 +257,16 @@ class ChemistryGuideProvider with ChangeNotifier {
       // Add to topics list if not already there
       if (!_topics.any((t) => t.id == topic.id)) {
         _topics.add(topic);
-        // Save to persistent cache whenever we add a new topic
-        _saveToCache();
+      } else {
+        // Update the existing topic in the list
+        final existingIndex = _topics.indexWhere((t) => t.id == topic.id);
+        if (existingIndex >= 0) {
+          _topics[existingIndex] = topic;
+        }
       }
+
+      // Save to persistent cache whenever we update a topic
+      _saveToCache();
 
       _setLoaded();
       return topic;
@@ -273,16 +280,23 @@ class ChemistryGuideProvider with ChangeNotifier {
   Future<void> toggleFavorite(String topicId) async {
     final index = _topics.indexWhere((t) => t.id == topicId);
     if (index >= 0) {
+      // Use original topic data to ensure we don't lose any fields
+      final originalTopic = _topics[index];
+
+      // Create a copy with just the favorite status updated
+      final updatedTopic = originalTopic.copyWith(
+        isFavorite: !originalTopic.isFavorite,
+      );
+
       // Update the topic in the list
-      _topics[index] =
-          _topics[index].copyWith(isFavorite: !_topics[index].isFavorite);
+      _topics[index] = updatedTopic;
 
       // Update the cache
-      _topicCache[_topics[index].id.toLowerCase()] = _topics[index];
+      _topicCache[updatedTopic.id.toLowerCase()] = updatedTopic;
 
       // If this is the selected topic, update that too
       if (_selectedTopic?.id == topicId) {
-        _selectedTopic = _topics[index];
+        _selectedTopic = updatedTopic;
       }
 
       // Save changes to persistent storage

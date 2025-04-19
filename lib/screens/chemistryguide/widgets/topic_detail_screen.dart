@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chem_explore/widgets/chemistry_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -40,7 +41,8 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
   }
 
   Future<void> _fetchArticleSummary() async {
-    if (_fetchedContent) return;
+    // Don't fetch multiple times in rapid succession
+    if (_isLoading) return;
 
     setState(() {
       _isLoading = true;
@@ -48,25 +50,31 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
 
     final provider =
         Provider.of<ChemistryGuideProvider>(context, listen: false);
-    await provider.getArticleSummary(widget.topic.title);
+
+    // Force a fresh fetch from the provider to avoid cache issues
+    final updatedTopic = await provider.getArticleSummary(widget.topic.title);
 
     setState(() {
       _isLoading = false;
       _fetchedContent = true;
+
+      // Set a timer to allow future refreshes if needed
+      Future.delayed(const Duration(seconds: 30), () {
+        if (mounted) {
+          setState(() {
+            _fetchedContent = false;
+          });
+        }
+      });
     });
   }
 
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Could not open $url')),
-          );
-        }
+      final Uri uri = Uri.parse(url);
+      if (!await launchUrl(uri)) {
+        throw Exception('Could not launch $url');
       }
     } catch (e) {
       if (mounted) {
@@ -87,6 +95,10 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
           final topic = provider.selectedTopic?.title == widget.topic.title
               ? provider.selectedTopic!
               : widget.topic;
+
+          // Debug to check what properties may be missing
+          debugPrint(
+              'Topic: ${topic.title}, Examples: ${topic.examples.length}, Images: ${topic.relatedImages.length}');
 
           if (_isLoading || provider.isLoading) {
             return const Center(
@@ -185,18 +197,21 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
         Provider.of<ChemistryGuideProvider>(context, listen: false);
     final relatedTopics = _getRelatedTopics(widget.topic.title);
 
+    // Use a variable to track if navigation is in progress
+    bool isNavigating = false;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => DraggableScrollableSheet(
+      builder: (bottomSheetContext) => DraggableScrollableSheet(
         initialChildSize: 0.4,
         maxChildSize: 0.8,
         minChildSize: 0.2,
         expand: false,
-        builder: (context, scrollController) => Column(
+        builder: (_, scrollController) => Column(
           children: [
             Container(
               width: 40,
@@ -222,67 +237,25 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                 controller: scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: relatedTopics.length,
-                itemBuilder: (context, index) {
+                itemBuilder: (_, index) {
                   final topic = relatedTopics[index];
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
                       title: Text(topic),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () async {
-                        Navigator.of(context).pop();
+                      onTap: () {
+                        // First, pop the bottom sheet and set flag
+                        Navigator.pop(bottomSheetContext);
+                        isNavigating = true;
 
-                        // Show loading indicator
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (context) => const Center(
-                            child: Card(
-                              child: Padding(
-                                padding: EdgeInsets.all(20),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    CircularProgressIndicator(),
-                                    SizedBox(height: 16),
-                                    Text('Loading related topic...'),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
+                        // Wait a bit for the bottom sheet to close completely
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          if (!mounted) return;
 
-                        try {
-                          final relatedTopic =
-                              await provider.getArticleSummary(topic);
-
-                          if (mounted) {
-                            Navigator.of(context)
-                                .pop(); // Dismiss loading dialog
-
-                            if (relatedTopic != null) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TopicDetailScreen(
-                                    topic: relatedTopic,
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            Navigator.of(context)
-                                .pop(); // Dismiss loading dialog
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content:
-                                      Text('Error loading related topic: $e')),
-                            );
-                          }
-                        }
+                          // Now use the root navigator to show a loading overlay
+                          _loadRelatedTopic(topic);
+                        });
                       },
                     ),
                   );
@@ -293,6 +266,69 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
         ),
       ),
     );
+  }
+
+  // Separate method to handle loading related topics
+  Future<void> _loadRelatedTopic(String topic) async {
+    if (!mounted) return;
+
+    // Use a clean BuildContext directly from the widget tree here
+    // Show a loading dialog
+    final overlayEntry = OverlayEntry(
+      builder: (overlayContext) => Container(
+        color: Colors.black.withOpacity(0.5),
+        child: const Center(
+          child: ChemistryLoadingWidget(message: 'Loading related topic...'),
+        ),
+      ),
+    );
+
+    // Insert the loading overlay
+    if (!mounted) return;
+    final overlay = Overlay.of(context);
+    overlay.insert(overlayEntry);
+
+    try {
+      final provider =
+          Provider.of<ChemistryGuideProvider>(context, listen: false);
+      final relatedTopic = await provider.getArticleSummary(topic);
+
+      // Remove the loading overlay
+      overlayEntry.remove();
+
+      if (!mounted) return;
+
+      if (relatedTopic != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TopicDetailScreen(
+              topic: relatedTopic,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Remove the loading overlay
+      overlayEntry.remove();
+
+      // Show an error message if still mounted
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to load topic: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
   }
 
   List<String> _getRelatedTopics(String title) {
@@ -464,6 +500,21 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
       );
     }
 
+    // Check if examples or images are missing but should be present
+    // This might happen after toggling favorite state
+    if ((topic.examples.isEmpty || topic.relatedImages.isEmpty) &&
+        topic.content.isNotEmpty &&
+        !_isLoading) {
+      // Only fetch if we haven't recently fetched
+      if (!_fetchedContent) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          debugPrint(
+              'Re-fetching article data for ${topic.title} as some properties are missing');
+          _fetchArticleSummary();
+        });
+      }
+    }
+
     return NestedScrollView(
       controller: _scrollController,
       headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -486,9 +537,6 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
                 onPressed: () {
                   provider.toggleFavorite(topic.id);
                 },
-                tooltip: topic.isFavorite
-                    ? 'Remove from favorites'
-                    : 'Add to favorites',
               ),
 
               // Text size control

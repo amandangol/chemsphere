@@ -186,10 +186,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       ),
                                     ],
                                   ),
-                                  child: Icon(
-                                    Icons.science_rounded,
+                                  child: Image.asset(
+                                    'assets/images/chemlogo.png',
                                     color: theme.colorScheme.onPrimary,
-                                    size: 24,
+                                    width: 24,
+                                    height: 24,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
