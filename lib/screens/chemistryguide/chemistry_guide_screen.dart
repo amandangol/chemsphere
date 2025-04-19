@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io'; // Import for SocketException
+import '../../utils/error_handler.dart';
+import '../../widgets/chemistry_widgets.dart';
 import 'provider/chemistry_guide_provider.dart';
 import 'model/chemistry_guide.dart';
-import 'widgets/elements_topic_screen.dart';
+import 'widgets/topic_search_screen.dart';
 import 'widgets/topic_detail_screen.dart';
+import 'widgets/recommended_topics_widget.dart';
 
 class ChemistryGuideScreen extends StatefulWidget {
   const ChemistryGuideScreen({Key? key}) : super(key: key);
@@ -15,6 +20,15 @@ class ChemistryGuideScreen extends StatefulWidget {
 }
 
 class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearchExpanded = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   final List<GuideCategory> _categories = [
     GuideCategory(
       title: 'Fundamentals',
@@ -26,59 +40,56 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
           description: 'The basic building blocks of matter',
           icon: Icons.circle_outlined,
           screenBuilder: (context) =>
-              const ElementsTopicScreen(title: 'Atoms and Elements'),
+              const TopicSearchScreen(title: 'Atoms and Elements'),
         ),
         GuideTopic(
           title: 'Periodic Table',
           description: 'Organization and trends of elements',
           icon: Icons.grid_on,
           screenBuilder: (context) =>
-              const ElementsTopicScreen(title: 'Periodic Table'),
+              const TopicSearchScreen(title: 'Periodic Table'),
         ),
         GuideTopic(
           title: 'Chemical Bonds',
           description: 'How atoms connect to form molecules',
           icon: Icons.link,
-          screenBuilder: (context) => TopicDetailScreen(
-              topic: ChemistryTopic(
-            id: 'chemical_bonds',
-            title: 'Chemical Bonds',
-            description: 'How atoms connect to form molecules',
-            content:
-                'Chemical bonds are the forces that hold atoms together to form compounds.',
-            headingKey: 'Chemical Bonds',
-          )),
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Chemical Bonds'),
+        ),
+        GuideTopic(
+          title: 'Nuclear Chemistry',
+          description: 'Study of radioactive decay and nuclear processes',
+          icon: Icons.radio_button_checked,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Nuclear Chemistry'),
         ),
       ],
     ),
     GuideCategory(
       title: 'Matter & Solutions',
       icon: Icons.opacity,
-      color: Colors.purple,
+      color: Colors.teal,
       topics: [
         GuideTopic(
           title: 'States of Matter',
           description: 'Solids, liquids, gases, and phase transitions',
           icon: Icons.change_history,
-          screenBuilder: (context) => TopicDetailScreen(
-              topic: ChemistryTopic(
-            id: 'states_of_matter',
-            title: 'States of Matter',
-            description: 'Solids, liquids, gases, and phase transitions',
-            content:
-                'Matter exists in different states depending on temperature and pressure.',
-            headingKey: 'States of Matter',
-          )),
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'States of Matter'),
         ),
         GuideTopic(
           title: 'Solutions & Mixtures',
           description: 'How substances dissolve and mix',
           icon: Icons.bubble_chart,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Solutions and Mixtures'),
         ),
         GuideTopic(
           title: 'Concentration',
           description: 'Measuring amounts in solutions',
           icon: Icons.science,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Chemical Concentration'),
         ),
       ],
     ),
@@ -91,16 +102,22 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
           title: 'Chemical Equations',
           description: 'Balancing and interpreting reactions',
           icon: Icons.sync_alt,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Chemical Equations'),
         ),
         GuideTopic(
           title: 'Reaction Types',
           description: 'Categories of chemical reactions',
           icon: Icons.category,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Chemical Reaction Types'),
         ),
         GuideTopic(
           title: 'Equilibrium',
           description: 'When reactions reach balance',
           icon: Icons.balance,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Chemical Equilibrium'),
         ),
       ],
     ),
@@ -113,16 +130,22 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
           title: 'Thermochemistry',
           description: 'Heat energy in chemical reactions',
           icon: Icons.whatshot,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Thermochemistry'),
         ),
         GuideTopic(
           title: 'Reaction Rates',
           description: 'How fast reactions occur',
           icon: Icons.speed,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Chemical Reaction Rates'),
         ),
         GuideTopic(
           title: 'Catalysts',
           description: 'Substances that speed up reactions',
           icon: Icons.fast_forward,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Chemical Catalysts'),
         ),
       ],
     ),
@@ -135,41 +158,22 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
           title: 'Carbon Compounds',
           description: 'The foundation of organic chemistry',
           icon: Icons.hexagon,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Carbon Compounds'),
         ),
         GuideTopic(
           title: 'Functional Groups',
           description: 'Important molecular structures',
           icon: Icons.category,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Functional Groups'),
         ),
         GuideTopic(
           title: 'Organic Reactions',
           description: 'How organic molecules transform',
           icon: Icons.transform,
-        ),
-      ],
-    ),
-    GuideCategory(
-      title: 'Biochemical Pathways',
-      icon: Icons.route,
-      color: Colors.amber,
-      topics: [
-        GuideTopic(
-          title: 'Metabolic Pathways',
-          description: 'Chemical processes in living organisms',
-          icon: Icons.account_tree,
-          isPathway: true,
-        ),
-        GuideTopic(
-          title: 'Enzymatic Reactions',
-          description: 'Protein catalysts in biochemistry',
-          icon: Icons.biotech,
-          isPathway: true,
-        ),
-        GuideTopic(
-          title: 'Cell Signaling',
-          description: 'Chemical communication within cells',
-          icon: Icons.swap_calls,
-          isPathway: true,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Organic Reactions'),
         ),
       ],
     ),
@@ -186,221 +190,411 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
     });
   }
 
+  Future<void> _searchWikipedia() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return;
+
+    setState(() {
+      _isSearchExpanded = false;
+    });
+
+    final provider =
+        Provider.of<ChemistryGuideProvider>(context, listen: false);
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Searching Wikipedia...'),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      await provider.searchWikipediaArticles(query);
+
+      if (provider.searchResults.isNotEmpty && mounted) {
+        // Dismiss loading dialog
+        Navigator.pop(context);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => _SearchResultsScreen(
+              query: query,
+              results: provider.searchResults,
+            ),
+          ),
+        );
+      } else {
+        if (mounted) {
+          // Dismiss loading dialog
+          Navigator.pop(context);
+
+          // Show no results message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No results found for "$query"'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        // Dismiss loading dialog
+        Navigator.pop(context);
+
+        // Show error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error searching: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chemistry Guide'),
-        centerTitle: true,
-      ),
-      body:
-          Consumer<ChemistryGuideProvider>(builder: (context, provider, child) {
-        return AnimationLimiter(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildHeader(context, provider),
-              const SizedBox(height: 24),
-              ...List.generate(
-                _categories.length,
-                (index) => AnimationConfiguration.staggeredList(
-                  position: index,
-                  duration: const Duration(milliseconds: 375),
-                  child: SlideAnimation(
-                    verticalOffset: 50.0,
-                    child: FadeInAnimation(
-                      child: _buildCategoryCard(
-                          context, _categories[index], provider),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      }),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, ChemistryGuideProvider provider) {
-    final isElementsLoaded =
-        provider.elementsState == ChemistryGuideLoadingState.loaded;
-    final elementsCount = provider.elements.length;
-    final categoriesCount = provider.elementCategories.length;
-    final pathwaysCount = provider.pathways.length;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withOpacity(0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.menu_book,
-                size: 32,
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Chemistry Guide',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Explore fundamental chemistry concepts through our comprehensive guides and tutorials.',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.9),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildStatCard(
-                context,
-                isElementsLoaded ? elementsCount.toString() : '...',
-                'Elements',
-                Icons.category,
-              ),
-              const SizedBox(width: 8),
-              _buildStatCard(
-                context,
-                isElementsLoaded ? categoriesCount.toString() : '...',
-                'Categories',
-                Icons.topic,
-              ),
-              const SizedBox(width: 8),
-              _buildStatCard(
-                context,
-                isElementsLoaded ? pathwaysCount.toString() : '0',
-                'Pathways',
-                Icons.route,
-              ),
-            ],
-          ),
-
-          // Loading indicator or error message if applicable
-          if (provider.isLoading)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Loading data from PubChem...',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onPrimary
-                          .withOpacity(0.8),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          if (provider.error != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 16,
-                    color: Colors.red.shade300,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Error: ${provider.error}',
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              expandedHeight: 200.0,
+              floating: false,
+              pinned: true,
+              centerTitle: true,
+              title: innerBoxIsScrolled
+                  ? Text(
+                      'Chemistry Guide',
                       style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.red.shade300,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    )
+                  : null,
+              flexibleSpace: FlexibleSpaceBar(
+                title: AnimatedOpacity(
+                  opacity: innerBoxIsScrolled ? 0.0 : 1.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: Text(
+                    'Chemistry Guide',
+                    style: GoogleFonts.poppins(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
+                ),
+                centerTitle: false,
+                background: Stack(
+                  children: [
+                    // Background molecular pattern with CachedNetworkImage
+                    Positioned.fill(
+                      child: CachedNetworkImage(
+                        imageUrl:
+                            'https://cdn.vectorstock.com/i/2000v/25/34/alchemy-cartoon-vector-36742534.avif',
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Theme.of(context).colorScheme.primary,
+                                Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.7),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, error, stackTrace) {
+                          // Improved error handling for background image
+                          print('Error loading background image: $error');
+                          if (error is SocketException ||
+                              ErrorHandler.isNetworkError(error)) {
+                            // For network errors, use a gradient background instead
+                            return Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Theme.of(context).colorScheme.primary,
+                                    Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withOpacity(0.7),
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.wifi_off,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimary
+                                      .withOpacity(0.3),
+                                  size: 40,
+                                ),
+                              ),
+                            );
+                          }
+
+                          // For other errors, show a simple gradient background
+                          return Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Theme.of(context).colorScheme.primary,
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withOpacity(0.7),
+                                ],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                            ),
+                          );
+                        },
+                        fadeInDuration: const Duration(milliseconds: 300),
+                        useOldImageOnUrlChange: true,
+                      ),
+                    ),
+                    // Gradient overlay for better readability
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.4),
+                              Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.8),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: Icon(_isSearchExpanded ? Icons.close : Icons.search),
+                  onPressed: () {
+                    setState(() {
+                      _isSearchExpanded = !_isSearchExpanded;
+                      if (!_isSearchExpanded) {
+                        _searchController.clear();
+                      }
+                    });
+                  },
+                ),
+              ],
+              bottom: _isSearchExpanded
+                  ? PreferredSize(
+                      preferredSize: const Size.fromHeight(70),
+                      child: Container(
+                        height: 70,
+                        padding: const EdgeInsets.all(10),
+                        color: Theme.of(context).colorScheme.surface,
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText:
+                                'Search Wikipedia for chemistry topics...',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.send),
+                              onPressed: _searchWikipedia,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surface,
+                          ),
+                          onSubmitted: (_) => _searchWikipedia(),
+                          autofocus: true,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+          ];
+        },
+        body: Consumer<ChemistryGuideProvider>(
+          builder: (context, provider, child) {
+            return AnimationLimiter(
+              child: ListView(
+                padding: const EdgeInsets.all(0),
+                children: [
+                  // Welcome message
+                  Card(
+                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.science,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Welcome to Chemistry Explorer',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Discover the fascinating world of chemistry through interactive guides, detailed topics, and Wikipedia integration.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.8),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.8),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Browse categories below or use search to find specific topics',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    fontStyle: FontStyle.italic,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.7),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Recommended topics carousel
+                  const RecommendedTopicsWidget(),
+
+                  // Categories header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.category,
+                          size: 22,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Browse by Category',
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Categories
+                  ...List.generate(
+                    _categories.length,
+                    (index) => AnimationConfiguration.staggeredList(
+                      position: index,
+                      duration: const Duration(milliseconds: 375),
+                      child: SlideAnimation(
+                        verticalOffset: 50.0,
+                        child: FadeInAnimation(
+                          child: _buildCategoryCard(
+                              context, _categories[index], provider),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
                 ],
               ),
-            ),
-        ],
+            );
+          },
+        ),
       ),
-    );
-  }
-
-  Widget _buildStatCard(
-    BuildContext context,
-    String value,
-    String label,
-    IconData icon,
-  ) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 18,
-              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.9),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
-            ),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.9),
-              ),
-            ),
-          ],
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          PrimaryScrollController.of(context).animateTo(
+            0,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        },
+        child: const Icon(Icons.arrow_upward),
+        tooltip: 'Scroll to top',
       ),
     );
   }
@@ -408,7 +602,7 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
   Widget _buildCategoryCard(BuildContext context, GuideCategory category,
       ChemistryGuideProvider provider) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -421,6 +615,7 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
         collapsedShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
+        backgroundColor: category.color.withOpacity(0.05),
         title: Row(
           children: [
             Container(
@@ -446,92 +641,156 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
         ),
         childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
         children: [
-          ...category.topics
-              .map((topic) => _buildTopicItem(context, topic, provider)),
+          ...category.topics.map((topic) =>
+              _buildTopicItem(context, topic, provider, category.color)),
         ],
       ),
     );
   }
 
-  Widget _buildTopicItem(
-      BuildContext context, GuideTopic topic, ChemistryGuideProvider provider) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      leading: Icon(
-        topic.icon,
-        color: Theme.of(context).colorScheme.primary,
-      ),
-      title: Text(
-        topic.title,
-        style: GoogleFonts.poppins(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      subtitle: Text(
-        topic.description,
-        style: GoogleFonts.poppins(
-          fontSize: 12,
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-        ),
-      ),
+  Widget _buildTopicItem(BuildContext context, GuideTopic topic,
+      ChemistryGuideProvider provider, Color categoryColor) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      trailing: topic.isPathway
-          ? const Chip(
-              label: Text('Pathway'),
-              backgroundColor: Colors.amber,
-              labelStyle: TextStyle(fontSize: 10, color: Colors.black),
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-            )
-          : null,
-      onTap: () {
-        if (topic.screenBuilder != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => topic.screenBuilder!(context),
-            ),
-          );
-        } else if (topic.isPathway) {
-          // If this is a pathway topic
-          final availablePathways = provider.pathways;
-          if (availablePathways.isNotEmpty) {
-            // Just use the first pathway as an example
+      elevation: 1,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        leading: CircleAvatar(
+          backgroundColor: categoryColor.withOpacity(0.1),
+          child: Icon(
+            topic.icon,
+            color: categoryColor,
+          ),
+        ),
+        title: Text(
+          topic.title,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          topic.description,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: categoryColor,
+        ),
+        onTap: () {
+          if (topic.screenBuilder != null) {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => PathwayDetailScreen(
-                  pathway: availablePathways.first,
-                ),
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                    'Pathway data is still loading. Please try again later.'),
+                builder: (context) => topic.screenBuilder!(context),
               ),
             );
           }
-        } else {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TopicDetailScreen(
-                  topic: ChemistryTopic(
-                id: topic.title.toLowerCase().replaceAll(' ', '_'),
-                title: topic.title,
-                description: topic.description,
-                content: 'Content for ${topic.title} is being developed.',
-                headingKey: topic.title,
-              )),
+        },
+      ),
+    );
+  }
+}
+
+// Search results screen as a private class within the file
+class _SearchResultsScreen extends StatelessWidget {
+  final String query;
+  final List<String> results;
+
+  const _SearchResultsScreen({
+    Key? key,
+    required this.query,
+    required this.results,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Results for "$query"'),
+        centerTitle: true,
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: results.length,
+        itemBuilder: (context, index) {
+          final result = results[index];
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 1,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              title: Text(
+                result,
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () async {
+                // Show loading indicator
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) =>
+                      const Center(child: ChemistryLoadingWidget()),
+                );
+
+                try {
+                  final provider = Provider.of<ChemistryGuideProvider>(context,
+                      listen: false);
+                  final topic = await provider.getArticleSummary(result);
+
+                  if (context.mounted) {
+                    // Dismiss loading dialog
+                    Navigator.pop(context);
+
+                    if (topic != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => TopicDetailScreen(
+                            topic: topic,
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    // Dismiss loading dialog
+                    Navigator.pop(context);
+
+                    // Show error
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error loading article: $e'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
+              },
             ),
           );
-        }
-      },
+        },
+      ),
     );
   }
 }
@@ -564,208 +823,4 @@ class GuideTopic {
     this.screenBuilder,
     this.isPathway = false,
   });
-}
-
-class PathwayDetailScreen extends StatelessWidget {
-  final ChemistryPathway pathway;
-
-  const PathwayDetailScreen({
-    Key? key,
-    required this.pathway,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(pathway.name),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Pathway header with source
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.route,
-                        size: 36,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              pathway.name,
-                              style: GoogleFonts.poppins(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Source: ${pathway.source}',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    pathway.description,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Pathway diagram if available
-            if (pathway.diagramUrl != null) ...[
-              Text(
-                'Pathway Diagram',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  pathway.diagramUrl!,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 200,
-                    width: double.infinity,
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.image_not_supported,
-                            size: 48,
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Diagram not available',
-                            style: GoogleFonts.poppins(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-
-            // Related compounds
-            Text(
-              'Related Compounds',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            pathway.relatedCompoundCids.isEmpty
-                ? Text(
-                    'No related compounds found',
-                    style: GoogleFonts.poppins(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.7),
-                    ),
-                  )
-                : ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: pathway.relatedCompoundCids.length,
-                    itemBuilder: (context, index) {
-                      final cid = pathway.relatedCompoundCids[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: Image.network(
-                            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/PNG',
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => Icon(
-                              Icons.image_not_supported,
-                              size: 50,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                          ),
-                          title: Text('Compound CID: $cid'),
-                          trailing:
-                              const Icon(Icons.arrow_forward_ios, size: 16),
-                          onTap: () {
-                            // Navigate to compound details when implemented
-                          },
-                        ),
-                      );
-                    },
-                  ),
-
-            const SizedBox(height: 24),
-
-            // External link button if available
-            if (pathway.externalUrl != null)
-              Center(
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.open_in_new),
-                  label: Text('View in ${pathway.source}'),
-                  onPressed: () {
-                    // Open external URL in browser
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Opening ${pathway.externalUrl}'),
-                      ),
-                    );
-                  },
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }

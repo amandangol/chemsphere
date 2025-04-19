@@ -1,186 +1,356 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../model/chemistry_guide.dart';
-import '../../../services/chemistry_api_service.dart';
-
-enum ChemistryGuideLoadingState {
-  idle,
-  loading,
-  loaded,
-  error,
-}
+import '../../../services/wikipedia_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChemistryGuideProvider with ChangeNotifier {
-  final ChemistryApiService _apiService = ChemistryApiService();
+  final WikipediaService _wikipediaService = WikipediaService();
 
-  // Data storage
-  List<ChemistryElement> _elements = [];
-  Map<String, List<ChemistryElement>> _elementCategories = {};
-  List<ChemicalCompound> _commonCompounds = [];
-  List<ChemistryPathway> _pathways = [];
-  final List<ChemistryTopic> _topics = [];
-  ChemistryElement? _selectedElement;
-  ChemicalCompound? _selectedCompound;
-
-  // State tracking
-  ChemistryGuideLoadingState _elementsState = ChemistryGuideLoadingState.idle;
-  ChemistryGuideLoadingState _compoundsState = ChemistryGuideLoadingState.idle;
-  ChemistryGuideLoadingState _pathwaysState = ChemistryGuideLoadingState.idle;
-  String? _error;
-
-  // Getters
-  List<ChemistryElement> get elements => _elements;
-  Map<String, List<ChemistryElement>> get elementCategories =>
-      _elementCategories;
-  List<ChemicalCompound> get commonCompounds => _commonCompounds;
-  List<ChemistryPathway> get pathways => _pathways;
+  // Topics and search state
+  List<ChemistryTopic> _topics = [];
   List<ChemistryTopic> get topics => _topics;
-  ChemistryElement? get selectedElement => _selectedElement;
-  ChemicalCompound? get selectedCompound => _selectedCompound;
-  ChemistryGuideLoadingState get elementsState => _elementsState;
-  ChemistryGuideLoadingState get compoundsState => _compoundsState;
-  ChemistryGuideLoadingState get pathwaysState => _pathwaysState;
+
+  // Favorite topics
+  List<ChemistryTopic> get favoriteTopics =>
+      _topics.where((topic) => topic.isFavorite).toList();
+
+  // Element categories and pathways
+  List<String> _elementCategories = [];
+  List<String> get elementCategories => _elementCategories;
+
+  List<ChemistryPathway> _pathways = [];
+  List<ChemistryPathway> get pathways => _pathways;
+
+  // Elements data
+  List<ChemistryElement> _elements = [];
+  List<ChemistryElement> get elements => _elements;
+
+  // Search results
+  List<String> _searchResults = [];
+  List<String> get searchResults => _searchResults;
+
+  // Topic cache to avoid redundant fetches
+  final Map<String, ChemistryTopic> _topicCache = {};
+
+  ChemistryTopic? _selectedTopic;
+  ChemistryTopic? get selectedTopic => _selectedTopic;
+
+  // Loading state
+  ChemistryGuideLoadingState _loadingState = ChemistryGuideLoadingState.initial;
+  ChemistryGuideLoadingState get loadingState => _loadingState;
+
+  bool get isLoading => _loadingState == ChemistryGuideLoadingState.loading;
+  String? _error;
   String? get error => _error;
-  bool get isLoading =>
-      _elementsState == ChemistryGuideLoadingState.loading ||
-      _compoundsState == ChemistryGuideLoadingState.loading ||
-      _pathwaysState == ChemistryGuideLoadingState.loading;
 
-  // Initialize data
+  // Initialize with persistent cache
   Future<void> initialize() async {
-    await loadElements();
-    await loadCommonCompounds();
-    await loadPathways();
-  }
+    _setLoading();
 
-  // Load all elements from the periodic table
-  Future<void> loadElements() async {
-    if (_elementsState == ChemistryGuideLoadingState.loading) return;
+    // Load cached data if available
+    await _loadCachedData();
 
-    _elementsState = ChemistryGuideLoadingState.loading;
-    _error = null;
-    notifyListeners();
-
-    try {
-      _elements = await _apiService.getAllElements();
-      _elementCategories = await _apiService.getElementCategories();
-      _elementsState = ChemistryGuideLoadingState.loaded;
-    } catch (e) {
-      _error = e.toString();
-      _elementsState = ChemistryGuideLoadingState.error;
+    // Set default data if nothing was cached
+    if (_elementCategories.isEmpty) {
+      _elementCategories = [
+        'Metals',
+        'Nonmetals',
+        'Metalloids',
+        'Noble Gases',
+        'Halogens',
+        'Transition Metals'
+      ];
     }
 
-    notifyListeners();
-  }
-
-  // Load common chemical compounds
-  Future<void> loadCommonCompounds() async {
-    if (_compoundsState == ChemistryGuideLoadingState.loading) return;
-
-    _compoundsState = ChemistryGuideLoadingState.loading;
-    notifyListeners();
-
-    try {
-      _commonCompounds = await _apiService.getCommonCompounds();
-      _compoundsState = ChemistryGuideLoadingState.loaded;
-    } catch (e) {
-      _error = e.toString();
-      _compoundsState = ChemistryGuideLoadingState.error;
-    }
-
-    notifyListeners();
-  }
-
-  // Load biochemical pathways
-  Future<void> loadPathways() async {
-    if (_pathwaysState == ChemistryGuideLoadingState.loading) return;
-
-    _pathwaysState = ChemistryGuideLoadingState.loading;
-    notifyListeners();
-
-    try {
-      // Example pathway data - in a real app, this would come from the API
-      // The API would need to be extended to fetch pathway data from PubChem
+    // Add sample pathways if none were cached
+    if (_pathways.isEmpty) {
       _pathways = [
         ChemistryPathway(
-          id: 'glycolysis',
-          source: 'Reactome',
-          name: 'Glycolysis',
+          id: 'photosynthesis',
+          name: 'Photosynthesis',
           description:
-              'The metabolic pathway that converts glucose into pyruvate, releasing energy in the form of ATP.',
-          relatedCompoundCids: [5793, 5589, 5950],
-          diagramUrl:
-              'https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Glycolysis.svg/500px-Glycolysis.svg.png',
-          externalUrl: 'https://reactome.org/content/detail/R-HSA-70171',
+              'The process used by plants to convert light energy into chemical energy.',
+          source: 'Wikipedia',
+          relatedCompoundCids: [5460162, 5462222], // CO2, O2
         ),
         ChemistryPathway(
-          id: 'citric_acid_cycle',
-          source: 'KEGG',
-          name: 'Citric Acid Cycle',
+          id: 'krebs_cycle',
+          name: 'Krebs Cycle',
           description:
-              'Also known as the TCA cycle or Krebs cycle, it is a series of chemical reactions used by all aerobic organisms to release energy.',
-          relatedCompoundCids: [767, 311, 6228],
-          externalUrl: 'https://www.genome.jp/kegg/pathway/map/map00020.html',
+              'A series of chemical reactions used by aerobic organisms to release energy.',
+          source: 'Wikipedia',
+          relatedCompoundCids: [643757, 439153], // ATP, Acetyl-CoA
         ),
       ];
-      _pathwaysState = ChemistryGuideLoadingState.loaded;
-    } catch (e) {
-      _error = e.toString();
-      _pathwaysState = ChemistryGuideLoadingState.error;
     }
 
-    notifyListeners();
+    _setLoaded();
   }
 
-  // Select an element for detailed view
-  Future<void> selectElement(String symbol) async {
+  // Load cached data from SharedPreferences
+  Future<void> _loadCachedData() async {
     try {
-      _selectedElement = await _apiService.getElementBySymbol(symbol);
-      notifyListeners();
+      final prefs = await SharedPreferences.getInstance();
+
+      // Load cached topics
+      final cachedTopicsJson = prefs.getString('cached_topics');
+      if (cachedTopicsJson != null) {
+        final List<dynamic> topicsData = jsonDecode(cachedTopicsJson);
+        _topics =
+            topicsData.map((json) => ChemistryTopic.fromJson(json)).toList();
+
+        // Also rebuild the cache map
+        for (final topic in _topics) {
+          _topicCache[topic.id.toLowerCase()] = topic;
+        }
+      }
+
+      // Load cached pathways
+      final cachedPathwaysJson = prefs.getString('cached_pathways');
+      if (cachedPathwaysJson != null) {
+        final List<dynamic> pathwaysData = jsonDecode(cachedPathwaysJson);
+        _pathways = pathwaysData
+            .map((json) => ChemistryPathway.fromJson(json))
+            .toList();
+      }
+
+      // Load cached element categories
+      final cachedCategories = prefs.getStringList('element_categories');
+      if (cachedCategories != null && cachedCategories.isNotEmpty) {
+        _elementCategories = cachedCategories;
+      }
+
+      // Load favorite topics
+      final favorites = prefs.getStringList('favorite_topics');
+      if (favorites != null && favorites.isNotEmpty) {
+        // Update favorite status in cached topics
+        for (var topicId in favorites) {
+          final topicIndex = _topics.indexWhere((t) => t.id == topicId);
+          if (topicIndex >= 0) {
+            _topics[topicIndex] =
+                _topics[topicIndex].copyWith(isFavorite: true);
+            // Update cache
+            _topicCache[_topics[topicIndex].id.toLowerCase()] =
+                _topics[topicIndex];
+          }
+        }
+      }
     } catch (e) {
-      _error = e.toString();
+      debugPrint('Error loading cached data: $e');
+      // Continue with default data if cache loading fails
+    }
+  }
+
+  // Save data to cache
+  Future<void> _saveToCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Cache topics
+      if (_topics.isNotEmpty) {
+        final topicsJson = jsonEncode(_topics.map((t) => t.toJson()).toList());
+        await prefs.setString('cached_topics', topicsJson);
+      }
+
+      // Cache pathways
+      if (_pathways.isNotEmpty) {
+        final pathwaysJson =
+            jsonEncode(_pathways.map((p) => p.toJson()).toList());
+        await prefs.setString('cached_pathways', pathwaysJson);
+      }
+
+      // Cache element categories
+      if (_elementCategories.isNotEmpty) {
+        await prefs.setStringList('element_categories', _elementCategories);
+      }
+
+      // Cache favorite topics
+      final favorites =
+          _topics.where((t) => t.isFavorite).map((t) => t.id).toList();
+      await prefs.setStringList('favorite_topics', favorites);
+    } catch (e) {
+      debugPrint('Error saving to cache: $e');
+    }
+  }
+
+  // Method to search Wikipedia articles
+  Future<void> searchWikipediaArticles(String query) async {
+    if (query.isEmpty) {
+      _searchResults = [];
+      notifyListeners();
+      return;
+    }
+
+    try {
+      _setLoading();
+      _searchResults = await _wikipediaService.searchArticles(query);
+      _setLoaded();
+    } catch (e) {
+      _setError('Failed to search Wikipedia: $e');
+    }
+  }
+
+  // Method to get a detailed article summary
+  Future<ChemistryTopic?> getArticleSummary(String title) async {
+    // Check if we already have this topic cached
+    final cacheKey = title.toLowerCase();
+    if (_topicCache.containsKey(cacheKey)) {
+      _selectedTopic = _topicCache[cacheKey];
+      notifyListeners();
+      return _selectedTopic;
+    }
+
+    try {
+      _setLoading();
+
+      // Get basic article summary
+      final data = await _wikipediaService.getArticleSummary(title);
+
+      // Also fetch related images
+      List<String> relatedImages =
+          await _wikipediaService.getTopicImages(title);
+
+      // Get examples related to this topic
+      final examplesData = await _wikipediaService.getTopicExamples(title);
+      final List<TopicExample> examples = examplesData
+          .map((e) => TopicExample(
+                title: e['title'] ?? '',
+                description: e['description'] ?? '',
+                type: e['type'] ?? 'general',
+              ))
+          .toList();
+
+      // Convert sections from API to our model
+      List<TopicSection> sections = [];
+      if (data['sections'] != null && data['sections'] is List) {
+        for (var sectionData in data['sections']) {
+          sections.add(TopicSection(
+            title: _cleanHtmlContent(sectionData['title'] ?? ''),
+            level: sectionData['level'] ?? 2,
+            content: (sectionData['content'] as List<dynamic>)
+                .map((c) => _cleanHtmlContent(c.toString()))
+                .toList(),
+          ));
+        }
+      }
+
+      final topic = ChemistryTopic(
+        id: title.toLowerCase().replaceAll(' ', '_'),
+        title: data['title'] ?? title,
+        description: data['extract'] ?? '',
+        content: data['extractHtml'] ?? data['extract'] ?? '',
+        headingKey: title,
+        wikipediaUrl: data['pageUrl'],
+        thumbnailUrl: data['thumbnailUrl'],
+        categories: data['categories'] ?? [],
+        lastUpdated: DateTime.now(),
+        sections: sections,
+        relatedImages: relatedImages,
+        examples: examples,
+      );
+
+      // Cache the topic for future use
+      _topicCache[cacheKey] = topic;
+      _selectedTopic = topic;
+
+      // Add to topics list if not already there
+      if (!_topics.any((t) => t.id == topic.id)) {
+        _topics.add(topic);
+        // Save to persistent cache whenever we add a new topic
+        _saveToCache();
+      }
+
+      _setLoaded();
+      return topic;
+    } catch (e) {
+      _setError('Failed to load article: $e');
+      return null;
+    }
+  }
+
+  // Toggle favorite status for a topic
+  Future<void> toggleFavorite(String topicId) async {
+    final index = _topics.indexWhere((t) => t.id == topicId);
+    if (index >= 0) {
+      // Update the topic in the list
+      _topics[index] =
+          _topics[index].copyWith(isFavorite: !_topics[index].isFavorite);
+
+      // Update the cache
+      _topicCache[_topics[index].id.toLowerCase()] = _topics[index];
+
+      // If this is the selected topic, update that too
+      if (_selectedTopic?.id == topicId) {
+        _selectedTopic = _topics[index];
+      }
+
+      // Save changes to persistent storage
+      _saveToCache();
+
       notifyListeners();
     }
   }
 
-  // Select a compound for detailed view
-  Future<void> selectCompound(int cid) async {
+  // Get related topics for a given topic
+  Future<List<String>> getRelatedTopics(String topicName) async {
     try {
-      _selectedCompound = await _apiService.getCompoundByCid(cid);
-      notifyListeners();
+      _setLoading();
+      final relatedTopics =
+          await _wikipediaService.getRelatedArticles(topicName);
+      _setLoaded();
+      return relatedTopics;
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-    }
-  }
-
-  // Search for compounds by name
-  Future<List<ChemicalCompound>> searchCompounds(String query) async {
-    if (query.isEmpty) return [];
-
-    try {
-      return await _apiService.searchCompoundsByName(query);
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
+      _setError('Failed to load related topics: $e');
       return [];
     }
   }
 
-  // Get elements by category
-  List<ChemistryElement> getElementsByCategory(String category) {
-    return _elementCategories[category] ?? [];
-  }
-
-  // Clear selection
-  void clearSelection() {
-    _selectedElement = null;
-    _selectedCompound = null;
+  // Clear search results
+  void clearSearch() {
+    _searchResults = [];
     notifyListeners();
   }
 
-  // Clear errors
+  // Clear any errors
   void clearError() {
     _error = null;
+    notifyListeners();
+  }
+
+  // Clean HTML content
+  String _cleanHtmlContent(String content) {
+    if (content.startsWith('<')) {
+      // Very basic HTML cleanup - remove tags
+      return content
+          .replaceAll(RegExp(r'<[^>]*>'), '')
+          .replaceAll('&nbsp;', ' ')
+          .replaceAll('&amp;', '&')
+          .replaceAll('&lt;', '<')
+          .replaceAll('&gt;', '>')
+          .replaceAll('\n\n', '\n');
+    }
+    return content;
+  }
+
+  // Set state to loading
+  void _setLoading() {
+    _loadingState = ChemistryGuideLoadingState.loading;
+    _error = null;
+    notifyListeners();
+  }
+
+  // Set state to loaded
+  void _setLoaded() {
+    _loadingState = ChemistryGuideLoadingState.loaded;
+    notifyListeners();
+  }
+
+  // Set error state with message
+  void _setError(String errorMessage) {
+    _loadingState = ChemistryGuideLoadingState.error;
+    _error = errorMessage;
+    debugPrint('Chemistry Guide Error: $errorMessage');
     notifyListeners();
   }
 }

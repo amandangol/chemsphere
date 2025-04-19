@@ -346,12 +346,41 @@ class DrugDetailScreen extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (drug.iupacName.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              'IUPAC Name:',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: theme.colorScheme.onSurface
+                                    .withOpacity(0.7),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 300,
+                              child: Text(
+                                drug.iupacName,
+                                maxLines: 2,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.7),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           Chip(
                             label: Text(
-                              'MW: ${drug.molecularWeight} g/mol',
+                              'MW: ${drug.molecularWeight.toStringAsFixed(2)} g/mol',
                               style: GoogleFonts.poppins(fontSize: 13),
                             ),
                             backgroundColor:
@@ -365,15 +394,14 @@ class DrugDetailScreen extends StatelessWidget {
                             label: Text(
                               drug.molecularFormula,
                               style: GoogleFonts.poppins(
-                                fontSize: 13,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 13,
                               ),
                             ),
                             backgroundColor:
                                 theme.colorScheme.tertiaryContainer,
                             labelStyle: TextStyle(
                               color: theme.colorScheme.onTertiaryContainer,
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],

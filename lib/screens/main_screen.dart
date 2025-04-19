@@ -1,3 +1,4 @@
+import 'package:chem_explore/screens/chemistryguide/chemistry_guide_screen.dart';
 import 'package:chem_explore/screens/elements/element_flashcard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -123,7 +124,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
           // Profile Screen (placeholder)
           Center(
-            child: Text('Profile Screen Coming Soon'),
+            child: ChemistryGuideScreen(),
           ),
         ],
       ),
@@ -189,7 +190,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   _buildNavItem(Icons.home_rounded, 'Home'),
                   _buildNavItem(Icons.flash_on_rounded, 'Flashcards'),
                   _buildNavItem(Icons.bookmark_rounded, 'Saved'),
-                  _buildNavItem(Icons.person_rounded, 'Profile'),
+                  _buildNavItem(Icons.book_rounded, 'Readbook'),
                 ],
                 currentIndex: _currentIndex,
                 onTap: (index) {

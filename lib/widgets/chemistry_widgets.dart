@@ -4,7 +4,6 @@ import 'package:lottie/lottie.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:math';
 
-/// A chemistry-themed loading widget with animated elements
 class ChemistryLoadingWidget extends StatelessWidget {
   final String message;
 
@@ -18,82 +17,72 @@ class ChemistryLoadingWidget extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Atom loading animation
-          SizedBox(
-            height: 100,
-            width: 100,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Use Lottie animation if available, otherwise fallback to CircularProgressIndicator
-                Lottie.asset(
-                  'assets/lottie/atom_loading.json',
-                  fit: BoxFit.contain,
-                  frameRate: FrameRate.max,
-                  errorBuilder: (context, error, stackTrace) =>
-                      CircularProgressIndicator(
-                    color: theme.colorScheme.primary,
-                    strokeWidth: 4,
-                  ),
-                ),
-                // Nucleus dot
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.4),
-                        blurRadius: 8,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 32),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const SizedBox(height: 24),
-          // Loading text with chemistry-themed style
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.7),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 5,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.science,
-                  size: 20,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  message,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.primary,
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Atom loading animation
+            SizedBox(
+              height: 70,
+              width: 70,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Use Lottie animation if available, otherwise fallback to CircularProgressIndicator
+                  Lottie.asset(
+                    'assets/lottie/atom_loading.json',
+                    fit: BoxFit.contain,
+                    frameRate: FrameRate.max,
+                    errorBuilder: (context, error, stackTrace) =>
+                        CircularProgressIndicator(
+                      color: theme.colorScheme.primary,
+                      strokeWidth: 4,
+                    ),
                   ),
-                ),
-              ],
+                  // Nucleus dot
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withOpacity(0.4),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            // Loading text with chemistry-themed style
+            Text(
+              message,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
