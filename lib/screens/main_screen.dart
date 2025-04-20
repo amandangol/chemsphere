@@ -139,9 +139,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           // Compounds Screen - Search and explore chemical compounds
           CompoundSearchScreen(),
 
-          // Learn Screen - Educational content and flashcards
-          ChemistryGuideScreen(),
-
           // Favorites/Bookmarks Screen - Saved content
           BookmarkScreen(),
         ],
@@ -209,7 +206,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                   _buildNavItem(Icons.table_chart_rounded, 'Elements'),
                   _buildNavItem(Icons.air_rounded, 'Air Quality'),
                   _buildNavItem(Icons.science_rounded, 'Compounds'),
-                  _buildNavItem(Icons.school_rounded, 'Learn'),
                   _buildNavItem(Icons.bookmark_rounded, 'Saved'),
                 ],
                 currentIndex: _currentIndex,

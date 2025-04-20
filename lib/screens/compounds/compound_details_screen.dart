@@ -37,6 +37,9 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
           final compoundProvider =
               Provider.of<CompoundProvider>(context, listen: false);
           compoundProvider.fetchCompoundDetails(widget.selectedCompound!.cid);
+
+          // Start loading 3D structure
+          _load3DStructure(widget.selectedCompound!.cid);
         } catch (e) {
           // Just log the error, don't crash
           debugPrint('Error fetching compound details: $e');
@@ -109,46 +112,33 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
         ),
         child: Consumer<CompoundProvider>(
           builder: (context, provider, child) {
-            // If we have a selectedCompound from constructor and provider is still loading
-            // or had an error, we can show the selectedCompound directly
-            if ((provider.isLoading || provider.error != null) &&
-                widget.selectedCompound != null) {
-              return _buildCompoundDetailContent(
-                context,
-                widget.selectedCompound!,
-                bookmarkProvider,
-                theme,
-              );
-            }
-
+            // Show loading indicator when provider is loading
             if (provider.isLoading) {
-              // Make sure this loading indicator is visible at the top of the screen
               return SafeArea(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Back button
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.arrow_back,
-                              color: theme.colorScheme.primary,
-                            ),
-                            onPressed: () => Navigator.of(context).pop(),
+                child: Column(
+                  children: [
+                    // Back button at the top
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.arrow_back,
+                            color: theme.colorScheme.primary,
                           ),
+                          onPressed: () => Navigator.of(context).pop(),
                         ),
                       ),
-                      const Spacer(),
-                      const ChemistryLoadingWidget(
-                        message: 'Loading compound details...',
+                    ),
+                    const Expanded(
+                      child: Center(
+                        child: ChemistryLoadingWidget(
+                          message: 'Loading compound details...',
+                        ),
                       ),
-                      const Spacer(),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               );
             }
@@ -505,10 +495,52 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
                         width: 1,
                       ),
                     ),
-                    child: DetailWidgets.build3DViewer(
-                      context,
-                      cid: compound.cid,
-                      title: compound.title,
+                    child: Column(
+                      children: [
+                        if (_isLoading3D)
+                          const Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Center(
+                              child: ChemistryLoadingWidget(
+                                message: 'Loading 3D structure...',
+                              ),
+                            ),
+                          )
+                        else if (_3dError != null)
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: theme.colorScheme.error,
+                                    size: 40,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _3dError!,
+                                    style: TextStyle(
+                                        color: theme.colorScheme.error),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        _load3DStructure(compound.cid),
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          DetailWidgets.build3DViewer(
+                            context,
+                            cid: compound.cid,
+                            title: compound.title,
+                          ),
+                      ],
                     ),
                   ),
                 ),

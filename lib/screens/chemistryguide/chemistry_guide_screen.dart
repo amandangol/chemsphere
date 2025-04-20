@@ -11,6 +11,7 @@ import 'model/chemistry_guide.dart';
 import 'widgets/topic_search_screen.dart';
 import 'widgets/topic_detail_screen.dart';
 import 'widgets/recommended_topics_widget.dart';
+import '../elements/element_flashcard_screen.dart';
 
 class ChemistryGuideScreen extends StatefulWidget {
   const ChemistryGuideScreen({Key? key}) : super(key: key);
@@ -566,6 +567,155 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
                             ],
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+
+                  // Flashcard Navigation Widget
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const ElementFlashcardScreen(),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        height: 90,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              theme.colorScheme.tertiary.withOpacity(0.8),
+                              theme.colorScheme.primary.withOpacity(0.7),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Stack(
+                          children: [
+                            // Decorative elements
+                            Positioned(
+                              top: -15,
+                              right: -10,
+                              child: Icon(
+                                Icons.science,
+                                size: 80,
+                                color: Colors.white.withOpacity(0.1),
+                              ),
+                            ),
+                            // Animated element
+                            Positioned(
+                              bottom: -5,
+                              left: 20,
+                              child: TweenAnimationBuilder(
+                                tween: Tween<double>(begin: 0, end: 1),
+                                duration: const Duration(seconds: 2),
+                                curve: Curves.elasticOut,
+                                builder: (context, value, child) {
+                                  return Transform.rotate(
+                                    angle: value * 0.1 * 3.14,
+                                    child: child,
+                                  );
+                                },
+                                child: Icon(
+                                  Icons.school,
+                                  size: 40,
+                                  color: Colors.white.withOpacity(0.2),
+                                ),
+                              ),
+                            ),
+                            // Content
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  // Flashcard icon with animation
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        // Front of card
+                                        TweenAnimationBuilder(
+                                          tween:
+                                              Tween<double>(begin: 0, end: 1),
+                                          duration: const Duration(seconds: 3),
+                                          curve: Curves.easeInOutBack,
+                                          builder: (context, value, child) {
+                                            return Transform(
+                                              alignment: Alignment.center,
+                                              transform: Matrix4.identity()
+                                                ..setEntry(3, 2, 0.001)
+                                                ..rotateY(value * 6.28),
+                                              child: const Icon(
+                                                Icons.flip,
+                                                color: Colors.white,
+                                                size: 30,
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Text content
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Study with Flashcards',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Master elements the fun way!',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            color:
+                                                Colors.white.withOpacity(0.9),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Arrow indicator
+                                  const Icon(
+                                    Icons.arrow_forward,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

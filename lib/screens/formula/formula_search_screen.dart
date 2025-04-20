@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:io'; // Import for SocketException
 import '../compounds/compound_details_screen.dart';
 import '../compounds/provider/compound_provider.dart';
+import '../compounds/model/compound.dart';
 import 'provider/formula_search_provider.dart';
 import '../../services/search_history_service.dart';
 import '../../widgets/custom_search_screen.dart';
@@ -442,19 +443,56 @@ class _FormulaSearchScreenState extends State<FormulaSearchScreen> {
             try {
               final compoundProvider =
                   Provider.of<CompoundProvider>(context, listen: false);
-              await compoundProvider.fetchCompoundDetails(compound.cid);
+
+              // Set loading state before navigation to ensure loading indicator shows
+              compoundProvider.setLoading(true);
+
+              // Convert RelatedCompound to Compound
+              final selectedCompound = Compound(
+                cid: compound.cid,
+                title: compound.title,
+                molecularFormula: compound.molecularFormula,
+                molecularWeight: compound.molecularWeight,
+                smiles: compound.smiles,
+                xLogP: 0.0,
+                hBondDonorCount: 0,
+                hBondAcceptorCount: 0,
+                rotatableBondCount: 0,
+                heavyAtomCount: 0,
+                atomStereoCount: 0,
+                bondStereoCount: 0,
+                complexity: 0.0,
+                iupacName: '',
+                description: '',
+                descriptionSource: '',
+                descriptionUrl: '',
+                synonyms: [],
+                physicalProperties: {},
+                safetyData: {},
+                biologicalData: {},
+                pubChemUrl: compound.pubChemUrl,
+              );
+
+              // Push the navigation first so the loading state is visible
               if (context.mounted) {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => CompoundDetailsScreen(
-                      selectedCompound: compound,
+                      selectedCompound: selectedCompound,
                     ),
                   ),
                 );
               }
+
+              // Then fetch the details (loading indicator will show during this operation)
+              await compoundProvider.fetchCompoundDetails(compound.cid);
             } catch (e) {
               print('Error navigating to compound details: $e');
+              final compoundProvider =
+                  Provider.of<CompoundProvider>(context, listen: false);
+              compoundProvider.setLoading(false);
+
               if (context.mounted) {
                 ErrorHandler.showErrorSnackBar(
                     context, ErrorHandler.getErrorMessage(e));
@@ -473,17 +511,56 @@ class _FormulaSearchScreenState extends State<FormulaSearchScreen> {
                 try {
                   final compoundProvider =
                       Provider.of<CompoundProvider>(context, listen: false);
-                  await compoundProvider.fetchCompoundDetails(compound.cid);
+
+                  // Set loading state before navigation
+                  compoundProvider.setLoading(true);
+
+                  // Convert RelatedCompound to Compound
+                  final selectedCompound = Compound(
+                    cid: compound.cid,
+                    title: compound.title,
+                    molecularFormula: compound.molecularFormula,
+                    molecularWeight: compound.molecularWeight,
+                    smiles: compound.smiles,
+                    xLogP: 0.0,
+                    hBondDonorCount: 0,
+                    hBondAcceptorCount: 0,
+                    rotatableBondCount: 0,
+                    heavyAtomCount: 0,
+                    atomStereoCount: 0,
+                    bondStereoCount: 0,
+                    complexity: 0.0,
+                    iupacName: '',
+                    description: '',
+                    descriptionSource: '',
+                    descriptionUrl: '',
+                    synonyms: [],
+                    physicalProperties: {},
+                    safetyData: {},
+                    biologicalData: {},
+                    pubChemUrl: compound.pubChemUrl,
+                  );
+
+                  // Navigate first so loading state is visible
                   if (context.mounted) {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const CompoundDetailsScreen(),
+                        builder: (context) => CompoundDetailsScreen(
+                          selectedCompound: selectedCompound,
+                        ),
                       ),
                     );
                   }
+
+                  // Then fetch the details
+                  await compoundProvider.fetchCompoundDetails(compound.cid);
                 } catch (e) {
                   print('Error navigating to compound details: $e');
+                  final compoundProvider =
+                      Provider.of<CompoundProvider>(context, listen: false);
+                  compoundProvider.setLoading(false);
+
                   if (context.mounted) {
                     ErrorHandler.showErrorSnackBar(
                         context, ErrorHandler.getErrorMessage(e));

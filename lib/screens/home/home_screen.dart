@@ -1,3 +1,4 @@
+import 'package:chem_explore/screens/elements/modern_periodic_table_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
@@ -533,7 +534,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ElementFlashcardScreen(),
+                      builder: (context) => const ChemistryGuideScreen(),
                     ),
                   ),
                 ),
@@ -591,30 +592,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  _buildSecondaryFeatureCard(
-                    context,
-                    title: 'Chemical Reactions',
-                    icon: Icons.bolt_rounded,
-                    color: Colors.deepOrange,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ReactionScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildSecondaryFeatureCard(
-                    context,
-                    title: 'Chemistry Guide',
-                    icon: Icons.book_rounded,
-                    color: Colors.purple,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ChemistryGuideScreen(),
-                      ),
-                    ),
-                  ),
+                  // _buildSecondaryFeatureCard(
+                  //   context,
+                  //   title: 'Chemical Reactions',
+                  //   icon: Icons.bolt_rounded,
+                  //   color: Colors.deepOrange,
+                  //   onTap: () => Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //       builder: (context) => const ReactionScreen(),
+                  //     ),
+                  //   ),
+                  // ),
                   _buildSecondaryFeatureCard(
                     context,
                     title: 'Formula Search',
@@ -624,6 +613,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const FormulaSearchScreen(),
+                      ),
+                    ),
+                  ),
+
+                  _buildSecondaryFeatureCard(
+                    context,
+                    title: 'Periodic Table',
+                    icon: Icons.book_rounded,
+                    color: Colors.purple,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ModernPeriodicTableScreen(),
+                      ),
+                    ),
+                  ),
+
+                  _buildSecondaryFeatureCard(
+                    context,
+                    title: 'Chemical Reactions',
+                    icon: Icons.bolt_rounded,
+                    color: Colors.deepOrange,
+                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Coming soon!'),
                       ),
                     ),
                   ),
@@ -776,6 +790,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               const SizedBox(height: 8),
               Text(
                 title,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 12,

@@ -7,7 +7,7 @@ import '../../utils/error_handler.dart';
 import 'provider/element_provider.dart';
 import 'model/periodic_element.dart';
 import 'element_detail_screen.dart';
-import 'traditional_periodic_table_screen.dart';
+import 'modern_periodic_table_screen.dart';
 
 class PeriodicTableScreen extends StatefulWidget {
   const PeriodicTableScreen({Key? key}) : super(key: key);
@@ -152,7 +152,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              const TraditionalPeriodicTableScreen(),
+                              const ModernPeriodicTableScreen(),
                         ),
                       );
                     },
@@ -179,7 +179,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Try the Traditional View to explore elements arranged by period and group!',
+                              'Try the modern view to explore elements arranged by period and group!',
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
                                 color: theme.colorScheme.onSecondaryContainer,
@@ -197,7 +197,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) =>
-                                      const TraditionalPeriodicTableScreen(),
+                                      const ModernPeriodicTableScreen(),
                                 ),
                               );
                             },
@@ -253,7 +253,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.science_outlined,
+                              Icons.table_chart_rounded,
                               size: 64,
                               color: theme.colorScheme.primary.withOpacity(0.5),
                             ),
@@ -351,7 +351,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                 ),
                 padding: const EdgeInsets.all(8),
                 child: const Icon(
-                  Icons.science,
+                  Icons.table_chart_rounded,
                   color: Colors.white,
                   size: 24,
                 ),
@@ -396,8 +396,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            const TraditionalPeriodicTableScreen(),
+                        builder: (context) => const ModernPeriodicTableScreen(),
                       ),
                     );
                   },
