@@ -117,6 +117,7 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Consumer<ChemistryGuideProvider>(
       builder: (context, provider, child) {
         final favoriteTopics = provider.favoriteTopics;
@@ -125,19 +126,19 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+              padding: const EdgeInsets.fromLTRB(14, 20, 14, 6),
               child: Row(
                 children: [
                   Icon(
                     Icons.lightbulb_outline,
-                    size: 22,
-                    color: Theme.of(context).colorScheme.primary,
+                    size: 18,
+                    color: theme.colorScheme.primary,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Text(
                     'Explore Topics',
                     style: GoogleFonts.poppins(
-                      fontSize: 20,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -149,10 +150,10 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
                     indicatorSize: TabBarIndicatorSize.label,
                     labelStyle: GoogleFonts.poppins(
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                     unselectedLabelStyle: GoogleFonts.poppins(
-                      fontSize: 12,
+                      fontSize: 11,
                     ),
                     tabs: const [
                       Tab(text: "Recommended"),
@@ -175,8 +176,9 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
   }
 
   Widget _buildRecommendedCarousel() {
+    final theme = Theme.of(context);
     return SizedBox(
-      height: 250,
+      height: 220,
       child: AnimationLimiter(
         child: ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -188,7 +190,7 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
               position: index,
               duration: const Duration(milliseconds: 375),
               child: SlideAnimation(
-                horizontalOffset: 50.0,
+                horizontalOffset: 30.0,
                 child: FadeInAnimation(
                   child: _buildTopicCard(context, topic),
                 ),
@@ -202,31 +204,32 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
 
   Widget _buildFavoritesCarousel(
       List<ChemistryTopic> favoriteTopics, ChemistryGuideProvider provider) {
+    final theme = Theme.of(context);
     if (favoriteTopics.isEmpty) {
       return Container(
-        height: 220,
+        height: 200,
         alignment: Alignment.center,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.favorite_border,
-              size: 48,
+              size: 40,
               color: Colors.grey.shade400,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
               'No favorite topics yet',
               style: GoogleFonts.poppins(
-                fontSize: 16,
+                fontSize: 15,
                 color: Colors.grey.shade600,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               'Add topics to favorites by tapping the heart icon',
               style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 13,
                 color: Colors.grey.shade500,
               ),
               textAlign: TextAlign.center,
@@ -237,7 +240,7 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
     }
 
     return SizedBox(
-      height: 220,
+      height: 200,
       child: AnimationLimiter(
         child: ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -249,7 +252,7 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
               position: index,
               duration: const Duration(milliseconds: 375),
               child: SlideAnimation(
-                horizontalOffset: 50.0,
+                horizontalOffset: 30.0,
                 child: FadeInAnimation(
                   child: _buildFavoriteTopicCard(context, topic, provider),
                 ),
@@ -262,22 +265,23 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
   }
 
   Widget _buildTopicCard(BuildContext context, Map<String, String> topic) {
+    final theme = Theme.of(context);
     final IconData icon = _getIconForName(topic['icon'] ?? 'science');
-    final Color color =
-        _getColorForCategory(topic['category'] ?? 'fundamentals');
+    final Color color = _getThemedColorForCategory(
+        context, topic['category'] ?? 'fundamentals');
 
     return GestureDetector(
       onTap: () => _loadTopicDetail(context, topic['title']!),
       child: Card(
         clipBehavior: Clip.antiAlias,
-        margin: const EdgeInsets.all(8),
+        margin: const EdgeInsets.all(6),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
         ),
-        elevation: 3,
+        elevation: 2,
         child: Container(
-          width: 160,
-          height: 220, // Fixed height for consistency
+          width: 150,
+          height: 200, // Fixed height for consistency
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -293,25 +297,25 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
             children: [
               // Icon container
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(14),
                 child: Center(
                   child: Container(
-                    width: 60,
-                    height: 60,
+                    width: 50,
+                    height: 50,
                     decoration: BoxDecoration(
                       color: color.withOpacity(0.15),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
                           color: color.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
                     child: Icon(
                       icon,
-                      size: 32,
+                      size: 26,
                       color: color,
                     ),
                   ),
@@ -320,11 +324,11 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
 
               // Title
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Text(
                   topic['title']!,
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
@@ -334,15 +338,12 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
 
               // Description
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                padding: const EdgeInsets.fromLTRB(10, 4, 10, 10),
                 child: Text(
                   topic['description']!,
                   style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.7),
+                    fontSize: 11,
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -354,18 +355,18 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
 
               // View Topic button
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                      const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(100),
                     boxShadow: [
                       BoxShadow(
                         color: color.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
+                        blurRadius: 3,
+                        offset: const Offset(0, 1),
                       ),
                     ],
                   ),
@@ -374,14 +375,14 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
                     children: [
                       Icon(
                         Icons.remove_red_eye,
-                        size: 12,
+                        size: 10,
                         color: color,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'View Topic',
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 9,
                           color: color,
                           fontWeight: FontWeight.w500,
                         ),
@@ -399,8 +400,9 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
 
   Widget _buildFavoriteTopicCard(BuildContext context, ChemistryTopic topic,
       ChemistryGuideProvider provider) {
+    final theme = Theme.of(context);
     final Color color =
-        _getColorForCategory(_getCategoryFromTitle(topic.title));
+        _getThemedColorForCategory(context, _getCategoryFromTitle(topic.title));
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -411,13 +413,13 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
       ),
       child: Card(
         clipBehavior: Clip.antiAlias,
-        margin: const EdgeInsets.all(8),
+        margin: const EdgeInsets.all(6),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
         ),
-        elevation: 3,
+        elevation: 2,
         child: Container(
-          width: 160,
+          width: 150,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -435,66 +437,68 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
                 children: [
                   // Image or icon
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(14),
                     alignment: Alignment.center,
                     child: topic.thumbnailUrl != null
                         ? ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                             child: CachedNetworkImage(
                               imageUrl: topic.thumbnailUrl!,
-                              width: 80,
-                              height: 80,
+                              width: 70,
+                              height: 70,
                               fit: BoxFit.cover,
                               placeholder: (context, url) => Container(
                                 color: color.withOpacity(0.1),
                                 child: const Center(
-                                  child: CircularProgressIndicator(),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 ),
                               ),
                               errorWidget: (context, url, error) => Container(
-                                width: 80,
-                                height: 80,
+                                width: 70,
+                                height: 70,
                                 decoration: BoxDecoration(
                                   color: color.withOpacity(0.15),
                                   shape: BoxShape.rectangle,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
                                   _getIconForTitle(topic.title),
-                                  size: 32,
+                                  size: 26,
                                   color: color,
                                 ),
                               ),
                             ),
                           )
                         : Container(
-                            width: 80,
-                            height: 80,
+                            width: 70,
+                            height: 70,
                             decoration: BoxDecoration(
                               color: color.withOpacity(0.15),
                               shape: BoxShape.rectangle,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(10),
                               boxShadow: [
                                 BoxShadow(
                                   color: color.withOpacity(0.2),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
                             child: Icon(
                               _getIconForTitle(topic.title),
-                              size: 32,
+                              size: 26,
                               color: color,
                             ),
                           ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Text(
                       topic.title,
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
@@ -502,15 +506,12 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                    padding: const EdgeInsets.fromLTRB(10, 4, 10, 10),
                     child: Text(
                       topic.description,
                       style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.7),
+                        fontSize: 11,
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -520,8 +521,8 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
               ),
               // Remove from favorites button
               Positioned(
-                top: 8,
-                right: 8,
+                top: 6,
+                right: 6,
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.8),
@@ -535,13 +536,13 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
                     onPressed: () {
                       provider.toggleFavorite(topic.id);
                     },
-                    iconSize: 18,
+                    iconSize: 16,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
-                      minWidth: 30,
-                      minHeight: 30,
+                      minWidth: 26,
+                      minHeight: 26,
                     ),
-                    splashRadius: 20,
+                    splashRadius: 18,
                   ),
                 ),
               ),
@@ -661,20 +662,22 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
     return Icons.science;
   }
 
-  Color _getColorForCategory(String category) {
+  Color _getThemedColorForCategory(BuildContext context, String category) {
+    final theme = Theme.of(context);
+
     switch (category) {
       case 'fundamentals':
-        return Colors.blue;
+        return theme.colorScheme.primary;
       case 'reactions':
-        return Colors.orange;
+        return Color(0xFFE67700); // Themed orange
       case 'organic':
-        return Colors.green;
+        return Color(0xFF2E7D32); // Themed green
       case 'energy':
-        return Colors.red;
+        return Color(0xFFB82E2E); // Themed red
       case 'matter':
-        return Colors.teal;
+        return theme.colorScheme.secondary;
       default:
-        return Colors.purple;
+        return theme.colorScheme.tertiary;
     }
   }
 

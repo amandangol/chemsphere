@@ -158,6 +158,39 @@ class PeriodicElement {
     );
   }
 
+  // Common color method used across the app for consistent element coloring
+  static Color getElementColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'nonmetal':
+      case 'diatomic nonmetal':
+      case 'polyatomic nonmetal':
+        return const Color(0xFF4CAF50); // Green
+      case 'alkali metal':
+        return const Color(0xFFF44336); // Red
+      case 'alkaline earth metal':
+        return const Color(0xFFFF9800); // Orange
+      case 'transition metal':
+        return const Color(0xFFFFD600); // Yellow/Amber
+      case 'metalloid':
+        return const Color(0xFF673AB7); // Deep Purple
+      case 'post-transition metal':
+        return const Color(0xFF2196F3); // Blue
+      case 'halogen':
+        return const Color(0xFF00BCD4); // Cyan
+      case 'noble gas':
+        return const Color(0xFF3F51B5); // Indigo
+      case 'lanthanide':
+        return const Color(0xFF9C27B0); // Purple
+      case 'actinide':
+        return const Color(0xFF009688); // Teal
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Get the standardized color for this element based on its group
+  Color get standardColor => PeriodicElement.getElementColor(groupBlock);
+
   // Example helper for display
   String get formattedAtomicMass => atomicMass.toStringAsFixed(4);
 }

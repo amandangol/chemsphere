@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../models/pollutant.dart';
 import '../../providers/pollutant_info_provider.dart';
 
@@ -16,12 +17,35 @@ class PollutantDetailScreen extends StatefulWidget {
   State<PollutantDetailScreen> createState() => _PollutantDetailScreenState();
 }
 
-class _PollutantDetailScreenState extends State<PollutantDetailScreen> {
+class _PollutantDetailScreenState extends State<PollutantDetailScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  bool _isRefreshing = false;
+
   @override
   void initState() {
     super.initState();
+
+    // Add animation controller
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
+    _controller.forward();
+
     // Fetch the pollutant details when the screen is initialized with retry
     _fetchPollutantDetails();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   // Add a method to fetch pollutant details with retry
@@ -51,6 +75,27 @@ class _PollutantDetailScreenState extends State<PollutantDetailScreen> {
     });
   }
 
+  // Method to refresh data, with loading state
+  Future<void> _refreshData() async {
+    if (_isRefreshing) return;
+
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    try {
+      final provider =
+          Provider.of<PollutantInfoProvider>(context, listen: false);
+      await provider.fetchPollutantDetails(widget.pollutant);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -70,6 +115,21 @@ class _PollutantDetailScreenState extends State<PollutantDetailScreen> {
         backgroundColor: theme.colorScheme.primary.withOpacity(0.5),
         foregroundColor: theme.colorScheme.onSurface,
         actions: [
+          // Add refresh button with loading indicator
+          IconButton(
+            icon: _isRefreshing
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _isRefreshing ? null : _refreshData,
+            tooltip: 'Refresh data',
+          ),
           IconButton(
             icon: const Icon(Icons.info_outline, color: Colors.white),
             onPressed: () {
@@ -78,201 +138,224 @@ class _PollutantDetailScreenState extends State<PollutantDetailScreen> {
           ),
         ],
       ),
-      body: Consumer<PollutantInfoProvider>(
-        builder: (context, provider, child) {
-          // If overall loading is happening on first fetch, show full screen loading
-          if (provider.isLoading &&
-              !provider.isDetailLoaded(widget.pollutant.cid)) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+      body: FadeTransition(
+        opacity: _animation,
+        child: Consumer<PollutantInfoProvider>(
+          builder: (context, provider, child) {
+            // If overall loading is happening on first fetch, show full screen loading
+            if (provider.isLoading &&
+                !provider.isDetailLoaded(widget.pollutant.cid) &&
+                !_isRefreshing) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
 
-          if (provider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: Colors.red,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error: ${provider.error}',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
+            if (provider.error != null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
                       color: Colors.red,
+                      size: 48,
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      provider.fetchPollutantDetails(widget.pollutant);
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          // Determine if any section is loading
-          final bool isSectionLoading =
-              provider.isSectionLoading(widget.pollutant.cid);
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header with compound name and current value
-                _buildHeader(theme),
-
-                const SizedBox(height: 24),
-
-                // Health Impact
-                _buildSection(
-                  theme,
-                  title: 'Health Impact',
-                  icon: Icons.health_and_safety,
-                  color: Colors.red.shade400,
-                  isLoading: isSectionLoading,
-                  content:
-                      isSectionLoading && widget.pollutant.healthEffects == null
-                          ? const Text('Loading health impact information...')
-                          : Text(
-                              widget.pollutant.healthEffects ??
-                                  widget.pollutant.getHealthImpact(),
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                              ),
-                            ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Safety Information
-                _buildSection(
-                  theme,
-                  title: 'Safety Advice',
-                  icon: Icons.security,
-                  color: Colors.green.shade600,
-                  isLoading: isSectionLoading,
-                  content:
-                      isSectionLoading && widget.pollutant.safetyInfo == null
-                          ? const Text('Loading safety advice...')
-                          : Text(
-                              widget.pollutant.safetyInfo ??
-                                  'No safety information available.',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                              ),
-                            ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Sources
-                _buildSection(
-                  theme,
-                  title: 'Common Sources',
-                  icon: Icons.source,
-                  color: Colors.amber.shade800,
-                  isLoading: isSectionLoading,
-                  content: isSectionLoading && widget.pollutant.sources == null
-                      ? const Text('Loading source information...')
-                      : Text(
-                          widget.pollutant.sources ??
-                              'Source information not available.',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                          ),
-                        ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Chemical Properties
-                _buildSection(
-                  theme,
-                  title: 'Chemical Properties',
-                  icon: Icons.science,
-                  color: Colors.purple.shade400,
-                  isLoading: isSectionLoading,
-                  content: isSectionLoading &&
-                          widget.pollutant.chemicalProperties == null
-                      ? const Text('Loading chemical properties...')
-                      : _buildPropertiesTable(
-                          theme,
-                          widget.pollutant.chemicalProperties ?? {},
-                        ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Description from static data
-                _buildSection(
-                  theme,
-                  title: 'Description',
-                  icon: Icons.description,
-                  color: Colors.blue.shade600,
-                  isLoading: isSectionLoading,
-                  content: isSectionLoading &&
-                          widget.pollutant.detailedDescription == null
-                      ? const Text('Loading description...')
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _getDetailedDescription(),
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                              ),
-                            ),
-                            // Source info is now static, so we can use a generic source
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                'Source: Environmental and health agencies',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontStyle: FontStyle.italic,
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Reference links instead of PubChem button
-                if (provider.isDetailLoaded(widget.pollutant.cid))
-                  Center(
-                    child: ElevatedButton.icon(
-                      icon: const Icon(Icons.info_outline),
-                      label: const Text('More Information'),
-                      onPressed: () {
-                        _showInfoDialog(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error: ${provider.error}',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        color: Colors.red,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: _refreshData,
+                      child: _isRefreshing
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-                const SizedBox(height: 30),
-              ],
-            ),
-          );
-        },
+            // Determine if any section is loading
+            final bool isSectionLoading =
+                provider.isSectionLoading(widget.pollutant.cid);
+
+            return AnimationLimiter(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: AnimationConfiguration.toStaggeredList(
+                    duration: const Duration(milliseconds: 375),
+                    childAnimationBuilder: (widget) => SlideAnimation(
+                      verticalOffset: 50.0,
+                      child: FadeInAnimation(
+                        child: widget,
+                      ),
+                    ),
+                    children: [
+                      // Header with compound name and current value
+                      _buildHeader(theme),
+
+                      const SizedBox(height: 24),
+
+                      // Health Impact
+                      _buildSection(
+                        theme,
+                        title: 'Health Impact',
+                        icon: Icons.health_and_safety,
+                        color: Colors.red.shade400,
+                        isLoading: isSectionLoading,
+                        content: isSectionLoading &&
+                                widget.pollutant.healthEffects == null
+                            ? const Text('Loading health impact information...')
+                            : Text(
+                                widget.pollutant.healthEffects ??
+                                    widget.pollutant.getHealthImpact(),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                ),
+                              ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Safety Information
+                      _buildSection(
+                        theme,
+                        title: 'Safety Advice',
+                        icon: Icons.security,
+                        color: Colors.green.shade600,
+                        isLoading: isSectionLoading,
+                        content: isSectionLoading &&
+                                widget.pollutant.safetyInfo == null
+                            ? const Text('Loading safety advice...')
+                            : Text(
+                                widget.pollutant.safetyInfo ??
+                                    'No safety information available.',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                ),
+                              ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Sources
+                      _buildSection(
+                        theme,
+                        title: 'Common Sources',
+                        icon: Icons.source,
+                        color: Colors.amber.shade800,
+                        isLoading: isSectionLoading,
+                        content:
+                            isSectionLoading && widget.pollutant.sources == null
+                                ? const Text('Loading source information...')
+                                : Text(
+                                    widget.pollutant.sources ??
+                                        'Source information not available.',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Chemical Properties
+                      _buildSection(
+                        theme,
+                        title: 'Chemical Properties',
+                        icon: Icons.science,
+                        color: Colors.purple.shade400,
+                        isLoading: isSectionLoading,
+                        content: isSectionLoading &&
+                                widget.pollutant.chemicalProperties == null
+                            ? const Text('Loading chemical properties...')
+                            : _buildPropertiesTable(
+                                theme,
+                                widget.pollutant.chemicalProperties ?? {},
+                              ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Description from static data
+                      _buildSection(
+                        theme,
+                        title: 'Description',
+                        icon: Icons.description,
+                        color: Colors.blue.shade600,
+                        isLoading: isSectionLoading,
+                        content: isSectionLoading &&
+                                widget.pollutant.detailedDescription == null
+                            ? const Text('Loading description...')
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _getDetailedDescription(),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  // Source info is now static, so we can use a generic source
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Text(
+                                      'Source: Environmental and health agencies',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        fontStyle: FontStyle.italic,
+                                        color: theme.colorScheme.onSurface
+                                            .withOpacity(0.6),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Reference links instead of PubChem button
+                      if (provider.isDetailLoaded(widget.pollutant.cid))
+                        Center(
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.info_outline),
+                            label: const Text('More Information'),
+                            onPressed: () {
+                              _showInfoDialog(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

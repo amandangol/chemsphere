@@ -300,8 +300,8 @@ class _SplashScreenState extends State<SplashScreen>
                             text: 'Explore the ',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
-                              color: theme.colorScheme.onSurface
-                                  .withOpacity(0.8),
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
                           TextSpan(
@@ -316,8 +316,8 @@ class _SplashScreenState extends State<SplashScreen>
                             text: ' of ',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
-                              color: theme.colorScheme.onSurface
-                                  .withOpacity(0.8),
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.8),
                             ),
                           ),
                           TextSpan(

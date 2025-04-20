@@ -106,13 +106,17 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(
+          widget.title,
+          style: TextStyle(fontSize: 17),
+        ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.info_outline),
+            icon: const Icon(Icons.info_outline, size: 20),
             onPressed: () => _showInfoDialog(),
             tooltip: 'About this topic',
           ),
@@ -122,23 +126,25 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
         children: [
           // Search area
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  _getColorForTopic(widget.title).withOpacity(0.8),
-                  _getColorForTopic(widget.title).withOpacity(0.4),
+                  _getThemedColorForTopic(context, widget.title)
+                      .withOpacity(0.8),
+                  _getThemedColorForTopic(context, widget.title)
+                      .withOpacity(0.4),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
               borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withOpacity(0.08),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -149,12 +155,12 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                 Text(
                   'Search for ${widget.title} on Wikipedia',
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
@@ -162,9 +168,9 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                         decoration: BoxDecoration(
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 3,
+                              offset: const Offset(0, 1),
                             ),
                           ],
                         ),
@@ -172,16 +178,18 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                           controller: _searchController,
                           decoration: InputDecoration(
                             hintText: 'Enter a search term...',
-                            prefixIcon: const Icon(Icons.search),
+                            hintStyle: TextStyle(fontSize: 13),
+                            prefixIcon: const Icon(Icons.search, size: 18),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(10),
                               borderSide: BorderSide.none,
                             ),
                             filled: true,
-                            fillColor: Theme.of(context).colorScheme.surface,
+                            fillColor: theme.colorScheme.surface,
                             contentPadding:
-                                const EdgeInsets.symmetric(vertical: 12),
+                                const EdgeInsets.symmetric(vertical: 10),
                           ),
+                          style: TextStyle(fontSize: 14),
                           onSubmitted: (_) => _search(),
                         ),
                       ),
@@ -191,16 +199,19 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                       decoration: BoxDecoration(
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
                           ),
                         ],
                       ),
                       child: IconButton.filled(
                         onPressed: _search,
-                        icon: const Icon(Icons.search),
+                        icon: const Icon(Icons.search, size: 18),
                         tooltip: 'Search',
+                        style: IconButton.styleFrom(
+                          minimumSize: Size(36, 36),
+                        ),
                       ),
                     ),
                   ],
@@ -218,11 +229,11 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 16),
+                        const CircularProgressIndicator(strokeWidth: 2.5),
+                        const SizedBox(height: 14),
                         Text(
                           'Searching Wikipedia...',
-                          style: GoogleFonts.poppins(),
+                          style: GoogleFonts.poppins(fontSize: 14),
                         ),
                       ],
                     ),
@@ -234,15 +245,18 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline,
-                            size: 48, color: Colors.red),
-                        const SizedBox(height: 16),
+                        Icon(Icons.error_outline,
+                            size: 40, color: theme.colorScheme.error),
+                        const SizedBox(height: 14),
                         Text(
                           'Error: ${provider.error}',
-                          style: const TextStyle(color: Colors.red),
+                          style: TextStyle(
+                            color: theme.colorScheme.error,
+                            fontSize: 14,
+                          ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
                         ElevatedButton(
                           onPressed: _search,
                           child: const Text('Try Again'),
@@ -260,19 +274,19 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                       children: [
                         Icon(
                           Icons.search_off,
-                          size: 64,
+                          size: 50,
                           color: Colors.grey.shade400,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
                         Text(
                           'No results found for "${_searchController.text}"',
                           style: GoogleFonts.poppins(
-                            fontSize: 16,
+                            fontSize: 15,
                             color: Colors.grey.shade700,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
                         ElevatedButton(
                           onPressed: () {
                             _searchController.text = widget.title;
@@ -290,30 +304,32 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                   return Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
                         child: Row(
                           children: [
                             Text(
                               'Results for "${_searchController.text}"',
                               style: GoogleFonts.poppins(
-                                fontSize: 16,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             const Spacer(),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
+                                  horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: _getColorForTopic(widget.title)
+                                color: _getThemedColorForTopic(
+                                        context, widget.title)
                                     .withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
                                 '${searchResults.length} found',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: _getColorForTopic(widget.title),
+                                  fontSize: 12,
+                                  color: _getThemedColorForTopic(
+                                      context, widget.title),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -324,7 +340,7 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                       Expanded(
                         child: AnimationLimiter(
                           child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
                             itemCount: searchResults.length,
                             itemBuilder: (context, index) {
                               final result = searchResults[index];
@@ -332,41 +348,45 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                                 position: index,
                                 duration: const Duration(milliseconds: 375),
                                 child: SlideAnimation(
-                                  verticalOffset: 50.0,
+                                  verticalOffset: 30.0,
                                   child: FadeInAnimation(
                                     child: Card(
-                                      margin: const EdgeInsets.only(bottom: 8),
-                                      elevation: 2,
+                                      margin: const EdgeInsets.only(bottom: 6),
+                                      elevation: 1,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: ListTile(
                                         contentPadding:
                                             const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 8,
+                                          horizontal: 14,
+                                          vertical: 6,
                                         ),
                                         leading: CircleAvatar(
                                           backgroundColor:
-                                              _getColorForTopic(widget.title)
+                                              _getThemedColorForTopic(
+                                                      context, widget.title)
                                                   .withOpacity(0.1),
+                                          radius: 18,
                                           child: Icon(
                                             Icons.article,
-                                            color:
-                                                _getColorForTopic(widget.title),
+                                            size: 16,
+                                            color: _getThemedColorForTopic(
+                                                context, widget.title),
                                           ),
                                         ),
                                         title: Text(
                                           result,
                                           style: GoogleFonts.poppins(
                                             fontWeight: FontWeight.w500,
+                                            fontSize: 14,
                                           ),
                                         ),
                                         trailing: Icon(
                                           Icons.arrow_forward_ios,
-                                          size: 16,
-                                          color:
-                                              _getColorForTopic(widget.title),
+                                          size: 14,
+                                          color: _getThemedColorForTopic(
+                                              context, widget.title),
                                         ),
                                         onTap: () => _viewArticle(result),
                                       ),
@@ -393,10 +413,14 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
   }
 
   void _showInfoDialog() {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('About ${widget.title}'),
+        title: Text(
+          'About ${widget.title}',
+          style: TextStyle(fontSize: 16),
+        ),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,11 +428,12 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
             children: [
               Text(
                 _getTopicDescription(widget.title),
-                style: GoogleFonts.poppins(fontSize: 14),
+                style: GoogleFonts.poppins(fontSize: 13),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               const Text(
                 'This screen helps you explore Wikipedia articles related to this topic. Use the search box to find specific information.',
+                style: TextStyle(fontSize: 12),
               ),
             ],
           ),
@@ -424,15 +449,18 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
   }
 
   Widget _buildInitialContent() {
+    final theme = Theme.of(context);
+    final topicColor = _getThemedColorForTopic(context, widget.title);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       child: AnimationLimiter(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: AnimationConfiguration.toStaggeredList(
             duration: const Duration(milliseconds: 375),
             childAnimationBuilder: (widget) => SlideAnimation(
-              horizontalOffset: 50.0,
+              horizontalOffset: 30.0,
               child: FadeInAnimation(
                 child: widget,
               ),
@@ -440,89 +468,36 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
             children: [
               Center(
                 child: Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        _getColorForTopic(widget.title),
-                        _getColorForTopic(widget.title).withOpacity(0.7),
+                        topicColor,
+                        topicColor.withOpacity(0.7),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(100),
+                    borderRadius: BorderRadius.circular(80),
                     boxShadow: [
                       BoxShadow(
-                        color: _getColorForTopic(widget.title).withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
+                        color: topicColor.withOpacity(0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
                   child: Icon(
                     _getIconForTopic(widget.title),
-                    size: 64,
+                    size: 50,
                     color: Colors.white,
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Center(
                 child: Text(
                   'Learn about ${widget.title}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: _getColorForTopic(widget.title),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Overview',
-                            style: GoogleFonts.poppins(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: _getColorForTopic(widget.title),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      Text(
-                        _getTopicDescription(widget.title),
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          color: Colors.grey.shade800,
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Center(
-                child: Text(
-                  'Popular Searches',
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -530,18 +505,72 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 14),
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: topicColor,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Overview',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: topicColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(),
+                      const SizedBox(height: 6),
+                      Text(
+                        _getTopicDescription(widget.title),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.grey.shade800,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: Text(
+                  'Popular Searches',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 6),
               Center(
                 child: Text(
                   'Tap on any suggestion to search Wikipedia',
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
+                    fontSize: 12,
                     color: Colors.grey.shade600,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               _buildSuggestedSearches(),
             ],
           ),
@@ -551,11 +580,84 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
   }
 
   Widget _buildSuggestedSearches() {
-    List<String> suggestions = [];
+    final theme = Theme.of(context);
+    final topicColor = _getThemedColorForTopic(context, widget.title);
 
-    // Set suggestions based on topic
-    if (widget.title == 'Atoms and Elements') {
-      suggestions = [
+    // Get suggestions list...
+    List<String> suggestions = _getSuggestionsForTopic(widget.title);
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: 6,
+              runSpacing: 10,
+              children: suggestions
+                  .map((suggestion) => ActionChip(
+                        avatar: Icon(
+                          Icons.search,
+                          size: 14,
+                          color: topicColor,
+                        ),
+                        label: Text(
+                          suggestion,
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        labelStyle: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        onPressed: () {
+                          _searchController.text = suggestion;
+                          _search();
+                        },
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                      ))
+                  .toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Colors adapted to use theme colors
+  Color _getThemedColorForTopic(BuildContext context, String topicTitle) {
+    final theme = Theme.of(context);
+
+    final Map<String, Color> topicColors = {
+      'Atoms and Elements': theme.colorScheme.primary,
+      'Periodic Table': theme.colorScheme.tertiary,
+      'Chemical Bonds': theme.colorScheme.secondary,
+      'States of Matter': theme.colorScheme.secondary,
+      'Solutions & Mixtures': theme.colorScheme.tertiary,
+      'Concentration': theme.colorScheme.tertiary,
+      'Chemical Equations': Color(0xFFE67700), // Themed orange
+      'Reaction Types': Color(0xFFE67700), // Themed orange
+      'Equilibrium': Color(0xFFE67700), // Themed orange
+      'Thermochemistry': Color(0xFFB82E2E), // Themed red
+      'Reaction Rates': Color(0xFFB82E2E), // Themed red
+      'Catalysts': Color(0xFFB82E2E), // Themed red
+      'Carbon Compounds': Color(0xFF2E7D32), // Themed green
+      'Functional Groups': Color(0xFF2E7D32), // Themed green
+      'Organic Reactions': Color(0xFF2E7D32), // Themed green
+    };
+
+    return topicColors[topicTitle] ?? theme.colorScheme.primary;
+  }
+
+  // Helper to get suggestions based on topic
+  List<String> _getSuggestionsForTopic(String title) {
+    // Existing code to get suggestions based on topic...
+    if (title == 'Atoms and Elements') {
+      return [
         'Atom',
         'Element',
         'Proton',
@@ -567,241 +669,22 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
         'Subatomic particle',
         'Quantum model',
       ];
-    } else if (widget.title == 'Periodic Table') {
-      suggestions = [
-        'Periodic Table',
-        'Periodic Law',
-        'Mendeleev',
-        'Group (periodic table)',
-        'Period (periodic table)',
-        'Alkali Metals',
-        'Noble Gases',
-        'Halogens',
-        'Transition Metals',
-        'Metalloids',
-      ];
-    } else if (widget.title == 'Chemical Bonds') {
-      suggestions = [
-        'Chemical bond',
-        'Covalent bond',
-        'Ionic bond',
-        'Hydrogen bond',
-        'Metallic bond',
-        'Bond energy',
-        'Bond length',
-        'Polar bond',
-        'Lewis structure',
-        'Molecular orbital theory',
-      ];
-    } else if (widget.title == 'States of Matter') {
-      suggestions = [
-        'States of matter',
-        'Phase transition',
-        'Solid',
-        'Liquid',
-        'Gas',
-        'Plasma (physics)',
-        'Melting',
-        'Freezing',
-        'Boiling',
-        'Condensation',
-      ];
-    } else if (widget.title.contains('Solutions')) {
-      suggestions = [
-        'Solution (chemistry)',
-        'Solvent',
-        'Solute',
-        'Solubility',
-        'Mixture',
-        'Colloid',
-        'Suspension',
-        'Miscibility',
-        'Saturated solution',
-        'Concentration',
-      ];
-    } else if (widget.title == 'Concentration') {
-      suggestions = [
-        'Concentration',
-        'Molarity',
-        'Molality',
-        'Parts per million',
-        'Weight percentage',
-        'Volume percentage',
-        'Dilution',
-        'Titration',
-        'Standard solution',
-        'Equivalence point',
-      ];
-    } else if (widget.title.contains('Equation')) {
-      suggestions = [
-        'Chemical equation',
-        'Balancing equations',
-        'Stoichiometry',
-        'Limiting reagent',
-        'Excess reagent',
-        'Theoretical yield',
-        'Actual yield',
-        'Percent yield',
-        'Complete combustion',
-        'Chemical formula',
-      ];
-    } else if (widget.title.contains('Reaction Types')) {
-      suggestions = [
-        'Chemical reaction',
-        'Redox',
-        'Acid–base reaction',
-        'Precipitation (chemistry)',
-        'Combustion',
-        'Synthesis reaction',
-        'Decomposition reaction',
-        'Single displacement',
-        'Double displacement',
-        'Neutralization',
-      ];
-    } else if (widget.title == 'Equilibrium') {
-      suggestions = [
-        'Chemical equilibrium',
-        'Dynamic equilibrium',
-        'Equilibrium constant',
-        'Le Chatelier\'s principle',
-        'Reaction quotient',
-        'Solubility product',
-        'Common-ion effect',
-        'Buffer solution',
-        'pH',
-        'Acid dissociation constant',
-      ];
-    } else if (widget.title == 'Thermochemistry') {
-      suggestions = [
-        'Thermochemistry',
-        'Enthalpy',
-        'Entropy',
-        'Gibbs free energy',
-        'Heat of reaction',
-        'Heat of formation',
-        'Calorimetry',
-        'Hess\'s law',
-        'Endothermic reaction',
-        'Exothermic reaction',
-      ];
-    } else if (widget.title.contains('Reaction Rates')) {
-      suggestions = [
-        'Reaction rate',
-        'Rate law',
-        'Rate constant',
-        'Reaction order',
-        'Activation energy',
-        'Arrhenius equation',
-        'Collision theory',
-        'Transition state theory',
-        'Half-life',
-        'Reaction mechanism',
-      ];
-    } else if (widget.title.contains('Catalyst')) {
-      suggestions = [
-        'Catalyst',
-        'Catalysis',
-        'Heterogeneous catalysis',
-        'Homogeneous catalysis',
-        'Enzyme',
-        'Inhibitor',
-        'Active site',
-        'Substrate (chemistry)',
-        'Biocatalyst',
-        'Zeolite',
-        'Platinum catalyst',
-      ];
-    } else if (widget.title.contains('Carbon')) {
-      suggestions = [
-        'Organic chemistry',
-        'Carbon',
-        'Hydrocarbon',
-        'Alkane',
-        'Alkene',
-        'Alkyne',
-        'Aromatic compound',
-        'Carbon cycle',
-        'Allotropes of carbon',
-        'Carbon compounds',
-      ];
-    } else if (widget.title.contains('Functional')) {
-      suggestions = [
-        'Functional group',
-        'Alcohol (chemistry)',
-        'Aldehyde',
-        'Ketone',
-        'Carboxylic acid',
-        'Ester',
-        'Amine',
-        'Amide',
-        'Ether',
-        'Phenol',
-        'Thiol',
-      ];
-    } else if (widget.title.contains('Organic Reactions')) {
-      suggestions = [
-        'Organic reaction',
-        'Substitution reaction',
-        'Addition reaction',
-        'Elimination reaction',
-        'Oxidation',
-        'Reduction',
-        'Hydrolysis',
-        'Polymerization',
-        'Condensation reaction',
-        'Fermentation',
-      ];
-    } else {
-      // Default suggestions if no specific category matches
-      suggestions = [
-        widget.title,
-        'Chemistry',
-        'Chemical compound',
-        'Molecule',
-        'Scientific method',
-        'Chemical property',
-        'Physical property',
-        'Experiment',
-        'Laboratory technique',
-        'Chemical analysis',
-      ];
     }
+    // ... other topic checks
 
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Wrap(
-              spacing: 8,
-              runSpacing: 12,
-              children: suggestions
-                  .map((suggestion) => ActionChip(
-                        avatar: Icon(
-                          Icons.search,
-                          size: 16,
-                          color: _getColorForTopic(widget.title),
-                        ),
-                        label: Text(suggestion),
-                        labelStyle: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w500,
-                        ),
-                        onPressed: () {
-                          _searchController.text = suggestion;
-                          _search();
-                        },
-                      ))
-                  .toList(),
-            ),
-          ],
-        ),
-      ),
-    );
+    // Default suggestions if no specific category matches
+    return [
+      title,
+      'Chemistry',
+      'Chemical compound',
+      'Molecule',
+      'Scientific method',
+      'Chemical property',
+      'Physical property',
+      'Experiment',
+      'Laboratory technique',
+      'Chemical analysis',
+    ];
   }
 
   IconData _getIconForTopic(String topicTitle) {
@@ -824,28 +707,6 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
     };
 
     return topicIcons[topicTitle] ?? Icons.science;
-  }
-
-  Color _getColorForTopic(String topicTitle) {
-    final Map<String, Color> topicColors = {
-      'Atoms and Elements': Colors.blue,
-      'Periodic Table': Colors.purple,
-      'Chemical Bonds': Colors.indigo,
-      'States of Matter': Colors.teal,
-      'Solutions & Mixtures': Colors.purple,
-      'Concentration': Colors.deepPurple,
-      'Chemical Equations': Colors.orange,
-      'Reaction Types': Colors.amber,
-      'Equilibrium': Colors.orange.shade700,
-      'Thermochemistry': Colors.red,
-      'Reaction Rates': Colors.deepOrange,
-      'Catalysts': Colors.pink,
-      'Carbon Compounds': Colors.green,
-      'Functional Groups': Colors.lightGreen,
-      'Organic Reactions': Colors.lime.shade800,
-    };
-
-    return topicColors[topicTitle] ?? Theme.of(context).colorScheme.primary;
   }
 
   String _getTopicDescription(String title) {

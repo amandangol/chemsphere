@@ -102,7 +102,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
             image: const AssetImage('assets/images/chemistry_bg.png'),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
-              Colors.white.withOpacity(0.97),
+              Colors.white.withOpacity(0.95),
               BlendMode.luminosity,
             ),
           ),
@@ -360,7 +360,7 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
         SliverToBoxAdapter(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withOpacity(0.7),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(30),
                 topRight: Radius.circular(30),

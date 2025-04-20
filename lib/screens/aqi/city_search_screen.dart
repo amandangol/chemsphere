@@ -502,7 +502,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
             Navigator.of(context).pushReplacementNamed('/main');
           },
         ),
-        backgroundColor: theme.colorScheme.primary,
+        backgroundColor: theme.colorScheme.primary.withOpacity(0.7),
         foregroundColor: Colors.white,
         elevation: 0,
       ),

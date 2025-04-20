@@ -48,7 +48,8 @@ class ElementDetailScreen extends StatelessWidget {
       );
     }
 
-    final color = _getElementColor(currentElement.groupBlock);
+    // Use standardized color from PeriodicElement class
+    final color = currentElement.standardColor;
     final isBookmarked =
         bookmarkProvider.isBookmarked(currentElement, BookmarkType.element);
 
@@ -456,30 +457,5 @@ class ElementDetailScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color _getElementColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'nonmetal':
-        return Colors.green;
-      case 'alkali metal':
-        return Colors.red;
-      case 'alkaline earth metal':
-        return Colors.orange;
-      case 'transition metal':
-        return Colors.yellow.shade700;
-      case 'metalloid':
-        return Colors.purple;
-      case 'halogen':
-        return Colors.lightBlue;
-      case 'noble gas':
-        return Colors.blue;
-      case 'lanthanide':
-        return Colors.pink;
-      case 'actinide':
-        return Colors.deepPurple;
-      default:
-        return Colors.grey;
-    }
   }
 }

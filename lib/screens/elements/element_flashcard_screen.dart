@@ -146,13 +146,16 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Element Flashcards'),
-        backgroundColor: theme.colorScheme.primary.withOpacity(0.5),
+        title: const Text(
+          'Element Flashcards',
+          style: TextStyle(fontSize: 17),
+        ),
+        backgroundColor: theme.colorScheme.primary.withOpacity(0.7),
         actions: [
           // Toggle Shuffle Button
           IconButton(
-            icon:
-                Icon(_isShuffled ? Icons.shuffle : Icons.format_list_numbered),
+            icon: Icon(_isShuffled ? Icons.shuffle : Icons.format_list_numbered,
+                size: 20),
             tooltip: _isShuffled ? 'Order by Number' : 'Shuffle Elements',
             onPressed: _toggleShuffle,
           ),
@@ -186,7 +189,12 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
             }
 
             if (_displayElements.isEmpty) {
-              return const Center(child: Text('No flashcards available.'));
+              return Center(
+                child: Text(
+                  'No flashcards available.',
+                  style: TextStyle(fontSize: 14),
+                ),
+              );
             }
 
             // Main content: PageView with FlipCards
@@ -209,7 +217,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                         scale: scale,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                              vertical: 20.0, horizontal: 8.0),
+                              vertical: 16.0, horizontal: 8.0),
                           child: FlipCard(
                             fill: Fill.fillBack,
                             direction: FlipDirection.HORIZONTAL,
@@ -224,17 +232,17 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                 ),
                 // Page indicator with chemistry styling
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
+                  padding: const EdgeInsets.only(bottom: 14.0),
                   child: Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.05),
-                          blurRadius: 5,
+                          blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
                       ],
@@ -244,14 +252,14 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                       children: [
                         Icon(
                           Icons.science,
-                          size: 18,
+                          size: 16,
                           color: theme.colorScheme.primary,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Text(
                           '${_currentPage + 1} / ${_displayElements.length}',
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: theme.colorScheme.primary,
                           ),
@@ -318,16 +326,17 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
 
   // Combined card content builder
   Widget _buildCardContent(PeriodicElement element, {required bool isFront}) {
-    final cardColor = element.color;
+    final theme = Theme.of(context);
+    final cardColor = _getThemeAdjustedColor(element.color);
     // Adjust back card color slightly
     final bgColor = isFront ? cardColor : cardColor.withOpacity(0.95);
     final textColor =
         bgColor.computeLuminance() > 0.45 ? Colors.black : Colors.white;
 
     return Card(
-      elevation: 6,
+      elevation: 4,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Container(
         decoration: BoxDecoration(
           // Use gradient only for front
@@ -357,12 +366,12 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
             bottom: -40,
             child: Text(element.symbol,
                 style: GoogleFonts.poppins(
-                    fontSize: 200,
+                    fontSize: 180,
                     fontWeight: FontWeight.bold,
                     color: Colors.white.withOpacity(0.1)))),
         // Main Content Area
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 20.0),
+          padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 18.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -372,18 +381,18 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                 children: [
                   Text(element.symbol,
                       style: GoogleFonts.poppins(
-                          fontSize: 70,
+                          fontSize: 65,
                           fontWeight: FontWeight.bold,
                           color: textColor,
                           height: 0.95)),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text('#${element.atomicNumber}',
                             style: GoogleFonts.lato(
-                                fontSize: 26,
+                                fontSize: 22,
                                 fontWeight: FontWeight.w300,
                                 color: textColor.withOpacity(0.9))),
                         const SizedBox(height: 4),
@@ -394,11 +403,11 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                                 _getPhaseIcon(
                                     _formatValue(element.standardState)),
                                 color: textColor.withOpacity(0.8),
-                                size: 16),
+                                size: 14),
                             const SizedBox(width: 6),
                             Text(_formatValue(element.standardState),
                                 style: GoogleFonts.lato(
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     color: textColor.withOpacity(0.8))),
                           ],
                         ),
@@ -407,7 +416,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               // Middle Section: Details Chips (similar to previous swipe card)
               _buildDetailRow('E. Config:',
                   _formatValue(element.electronConfiguration), textColor,
@@ -415,7 +424,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                   maxLines: 1,
                   icon: _getPropertyIcon('E. Config'),
                   useChipStyle: true),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
@@ -424,7 +433,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                           '${_formatValue(element.atomicRadius)} pm',
                           textColor,
                           _getPropertyIcon('Atomic Radius'))),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: _buildDetailChip(
                         'EN',
@@ -434,7 +443,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                   )
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               Row(
                 children: [
                   Expanded(
@@ -443,7 +452,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                           '${_formatValue(element.density)} ${element.standardState.toLowerCase() == "gas" ? "g/L" : "g/cm³"}',
                           textColor,
                           _getPropertyIcon('Density'))),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Expanded(
                       child: _buildDetailChip(
                           'Oxidation',
@@ -461,10 +470,10 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                   children: [
                     Text("Tap for Details",
                         style: GoogleFonts.lato(
-                            fontSize: 12, color: textColor.withOpacity(0.6))),
+                            fontSize: 11, color: textColor.withOpacity(0.6))),
                     const SizedBox(width: 4),
                     FaIcon(FontAwesomeIcons.handPointUp,
-                        color: textColor.withOpacity(0.6), size: 14),
+                        color: textColor.withOpacity(0.6), size: 12),
                   ],
                 ),
               ),
@@ -475,13 +484,13 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                 children: [
                   Text(element.name,
                       style: GoogleFonts.lato(
-                          fontSize: 34,
+                          fontSize: 30,
                           fontWeight: FontWeight.w600,
                           color: textColor,
                           height: 1.1),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 5),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -491,13 +500,13 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                           children: [
                             Text(_formatValue(element.groupBlock),
                                 style: GoogleFonts.lato(
-                                    fontSize: 18,
+                                    fontSize: 16,
                                     color: textColor.withOpacity(0.85))),
                             const SizedBox(height: 2),
                             Text(
                                 '${_formatValue(element.formattedAtomicMass)} u',
                                 style: GoogleFonts.lato(
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w300,
                                     color: textColor.withOpacity(0.8))),
                           ],
@@ -505,7 +514,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
                         Text(
                             'Discovered: ${_formatValue(element.yearDiscovered)}',
                             style: GoogleFonts.lato(
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w500,
                                 color: textColor.withOpacity(0.7))),
                       ]),
@@ -521,7 +530,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
   // Layout for the BACK of the card (list view)
   Widget _buildBackLayout(PeriodicElement element, Color textColor) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 14.0),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,12 +538,12 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
             Text(
               'Details: ${element.name}',
               style: GoogleFonts.lato(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: textColor.withOpacity(0.9)),
             ),
             Divider(
-                height: 16, thickness: 0.5, color: textColor.withOpacity(0.3)),
+                height: 14, thickness: 0.5, color: textColor.withOpacity(0.3)),
             _buildDetailItem(
                 'Atomic Mass',
                 '${_formatValue(element.formattedAtomicMass)} u',
@@ -610,21 +619,21 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
     return Tooltip(
       message: '$label: $value', // Tooltip always useful
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
         decoration: BoxDecoration(
           color: textColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(7),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(icon, size: 14, color: textColor.withOpacity(0.8)),
-            const SizedBox(width: 6),
+            FaIcon(icon, size: 12, color: textColor.withOpacity(0.8)),
+            const SizedBox(width: 5),
             Expanded(
               child: Text(
                 value.isEmpty ? 'N/A' : value,
                 style: GoogleFonts.lato(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: textColor,
                     fontWeight: FontWeight.w400),
                 overflow: TextOverflow.ellipsis,
@@ -653,13 +662,13 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FaIcon(icon, size: 16, color: textColor.withOpacity(0.9)),
-          const SizedBox(width: 8),
+          FaIcon(icon, size: 14, color: textColor.withOpacity(0.9)),
+          const SizedBox(width: 7),
           Expanded(
             child: Text(
               value.isEmpty ? 'N/A' : value,
               style:
-                  GoogleFonts.lato(fontSize: 14, color: textColor, height: 1.2),
+                  GoogleFonts.lato(fontSize: 13, color: textColor, height: 1.2),
               textAlign: TextAlign.left,
               softWrap: allowWrap,
               maxLines: maxLines,
@@ -676,23 +685,23 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
       String label, String value, Color textColor, IconData icon,
       {bool allowWrap = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: Row(
         crossAxisAlignment:
             allowWrap ? CrossAxisAlignment.start : CrossAxisAlignment.center,
         children: [
           FaIcon(
             icon,
-            size: 16,
+            size: 14,
             color: textColor.withOpacity(0.8),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Text('$label:',
               style: GoogleFonts.lato(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: textColor.withOpacity(0.9))),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Expanded(
             child: Text(
               value.isEmpty ? 'N/A' : value,
@@ -700,11 +709,40 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
               softWrap: allowWrap,
               maxLines: allowWrap ? 4 : 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.lato(fontSize: 14, color: textColor),
+              style: GoogleFonts.lato(fontSize: 13, color: textColor),
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Helper to adjust colors to be more theme-aligned
+  Color _getThemeAdjustedColor(Color originalColor) {
+    final theme = Theme.of(context);
+
+    // If it's a standard element group color, use a more theme-appropriate version
+    if (originalColor == Colors.green ||
+        originalColor.value == Color(0xFF4CAF50).value) {
+      return Color(0xFF2E7D32); // Themed green
+    } else if (originalColor == Colors.red ||
+        originalColor.value == Color(0xFFF44336).value) {
+      return Color(0xFFB82E2E); // Themed red
+    } else if (originalColor == Colors.blue ||
+        originalColor.value == Color(0xFF2196F3).value) {
+      return theme.colorScheme.primary; // App primary
+    } else if (originalColor == Colors.deepPurple ||
+        originalColor.value == Color(0xFF673AB7).value) {
+      return theme.colorScheme.tertiary; // App tertiary
+    } else if (originalColor == Colors.orange ||
+        originalColor.value == Color(0xFFFF9800).value) {
+      return Color(0xFFE67700); // Themed orange
+    } else if (originalColor == Colors.teal ||
+        originalColor.value == Color(0xFF009688).value) {
+      return theme.colorScheme.secondary; // App secondary
+    }
+
+    // For other colors, just return the original
+    return originalColor;
   }
 }

@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'bookmarks/bookmark_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/aqi/city_search_screen.dart';
+import '../screens/elements/periodic_table_screen.dart';
+import '../screens/compounds/compound_searhc_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final int initialIndex;
@@ -125,20 +127,23 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
       body: IndexedStack(
         index: _currentIndex,
         children: const [
-          // Home Screen
+          // Home Screen - Dashboard with quick access to popular features
           HomeScreen(),
 
-          // Flashcards Screen
-          ElementFlashcardScreen(),
+          // Explore Screen - Direct access to periodic table
+          PeriodicTableScreen(),
 
-          // AQI City Search Screen
+          // City Search Screen - Air Quality Map
           CitySearchScreen(),
 
-          // Favorites Screen
-          BookmarkScreen(),
+          // Compounds Screen - Search and explore chemical compounds
+          CompoundSearchScreen(),
 
-          // Chemistry Guide Screen
+          // Learn Screen - Educational content and flashcards
           ChemistryGuideScreen(),
+
+          // Favorites/Bookmarks Screen - Saved content
+          BookmarkScreen(),
         ],
       ),
       bottomNavigationBar: Container(
@@ -201,10 +206,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 type: BottomNavigationBarType.fixed,
                 items: [
                   _buildNavItem(Icons.home_rounded, 'Home'),
-                  _buildNavItem(Icons.flash_on_rounded, 'Learn'),
+                  _buildNavItem(Icons.table_chart_rounded, 'Elements'),
                   _buildNavItem(Icons.air_rounded, 'Air Quality'),
+                  _buildNavItem(Icons.science_rounded, 'Compounds'),
+                  _buildNavItem(Icons.school_rounded, 'Learn'),
                   _buildNavItem(Icons.bookmark_rounded, 'Saved'),
-                  _buildNavItem(Icons.book_rounded, 'Guide'),
                 ],
                 currentIndex: _currentIndex,
                 onTap: (index) {
@@ -254,14 +260,16 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     switch (label) {
       case 'Home':
         return theme.colorScheme.primary;
-      case 'Learn':
-        return Colors.orange;
+      case 'Elements':
+        return Colors.indigo;
       case 'Air Quality':
         return Colors.blue;
+      case 'Compounds':
+        return Colors.teal;
+      case 'Learn':
+        return Colors.orange;
       case 'Saved':
         return Colors.green;
-      case 'Guide':
-        return Colors.purple;
       default:
         return theme.colorScheme.primary;
     }

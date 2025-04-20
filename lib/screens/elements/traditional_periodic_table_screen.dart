@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'provider/element_provider.dart';
 import 'model/periodic_element.dart';
 import 'element_detail_screen.dart';
@@ -15,25 +16,33 @@ class TraditionalPeriodicTableScreen extends StatefulWidget {
 }
 
 class _TraditionalPeriodicTableScreenState
-    extends State<TraditionalPeriodicTableScreen> {
+    extends State<TraditionalPeriodicTableScreen>
+    with SingleTickerProviderStateMixin {
   late TransformationController _transformationController;
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
+  int? _selectedElementId;
+  bool _isLoading = false;
 
   // Element cell size and padding
   final double _cellSize = 58.0;
   final double _cellPadding = 1.0;
 
-  // Color scheme for different element categories
+  // Color scheme for different element categories - using standardized colors
   final Map<String, Color> _categoryColors = {
-    'alkali metal': const Color(0xFFE91E63), // Bright pink (Group 1)
-    'alkaline earth metal': const Color(0xFFF44336), // Red (Group 2)
-    'transition metal': const Color(0xFFFF9800), // Orange (d-block)
-    'post-transition metal': const Color(0xFF2196F3), // Blue
-    'metalloid': const Color(0xFF673AB7), // Deep Purple
-    'nonmetal': const Color(0xFF4CAF50), // Green
-    'halogen': const Color(0xFF00BCD4), // Cyan
-    'noble gas': const Color(0xFF3F51B5), // Indigo
-    'lanthanide': const Color(0xFF9C27B0), // Purple
-    'actinide': const Color(0xFF009688), // Teal
+    'alkali metal': PeriodicElement.getElementColor('alkali metal'),
+    'alkaline earth metal':
+        PeriodicElement.getElementColor('alkaline earth metal'),
+    'transition metal': PeriodicElement.getElementColor('transition metal'),
+    'post-transition metal':
+        PeriodicElement.getElementColor('post-transition metal'),
+    'metalloid': PeriodicElement.getElementColor('metalloid'),
+    'nonmetal': PeriodicElement.getElementColor('nonmetal'),
+    'halogen': PeriodicElement.getElementColor('halogen'),
+    'noble gas': PeriodicElement.getElementColor('noble gas'),
+    'lanthanide': PeriodicElement.getElementColor('lanthanide'),
+    'actinide': PeriodicElement.getElementColor('actinide'),
   };
 
   // Mapping to store element positions (periodNumber, groupNumber)
@@ -148,14 +157,42 @@ class _TraditionalPeriodicTableScreenState
     super.initState();
     _transformationController = TransformationController();
 
+    // Add animation controller
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeInOut,
+    );
+
+    _animController.forward();
+
     // Set initial scale and position
     _transformationController.value = Matrix4.identity()..scale(0.8);
 
     // Fetch elements if not already loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() => _isLoading = true);
+
       final provider = context.read<ElementProvider>();
       if (provider.elements.isEmpty) {
-        provider.fetchFlashcardElements();
+        provider.fetchFlashcardElements().then((_) {
+          if (mounted) {
+            setState(() => _isLoading = false);
+          }
+        }).catchError((error) {
+          if (mounted) {
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error loading elements: $error')),
+            );
+          }
+        });
+      } else {
+        setState(() => _isLoading = false);
       }
     });
   }
@@ -163,11 +200,35 @@ class _TraditionalPeriodicTableScreenState
   @override
   void dispose() {
     _transformationController.dispose();
+    _animController.dispose();
     super.dispose();
+  }
+
+  void _selectElement(PeriodicElement element) {
+    setState(() {
+      _selectedElementId = element.atomicNumber;
+    });
+
+    Future.delayed(const Duration(milliseconds: 200), () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ElementDetailScreen(element: element),
+        ),
+      ).then((_) {
+        if (mounted) {
+          setState(() {
+            _selectedElementId = null;
+          });
+        }
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -178,8 +239,6 @@ class _TraditionalPeriodicTableScreenState
           ),
         ),
         actions: [
-          // Debug toggle
-
           // Reset view button
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -193,83 +252,101 @@ class _TraditionalPeriodicTableScreenState
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top legend for element categories
-            _buildLegend(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : FadeTransition(
+              opacity: _fadeAnimation,
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    // Top legend for element categories
+                    AnimationLimiter(
+                      child: _buildLegend(),
+                    ),
 
-            // Main periodic table
-            Expanded(
-              child: Consumer<ElementProvider>(
-                builder: (context, provider, child) {
-                  if (provider.isLoading) {
-                    return const ChemistryLoadingWidget(
-                      message: 'Loading elements data...',
-                    );
-                  }
+                    // Main periodic table with InteractiveViewer
+                    Expanded(
+                      child: Container(
+                        color: Colors.grey.shade100,
+                        child: Center(
+                          child: InteractiveViewer(
+                            transformationController: _transformationController,
+                            constrained: false,
+                            minScale: 0.4,
+                            maxScale: 2.5,
+                            child: Container(
+                              margin: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              ),
+                              child: Consumer<ElementProvider>(
+                                builder: (context, provider, child) {
+                                  if (provider.isLoading) {
+                                    return const ChemistryLoadingWidget(
+                                      message: 'Loading elements data...',
+                                    );
+                                  }
 
-                  if (provider.error != null) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            color: Theme.of(context).colorScheme.error,
-                            size: 48,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Error loading elements',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                              fontWeight: FontWeight.bold,
+                                  if (provider.error != null) {
+                                    return Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.error_outline,
+                                            color: theme.colorScheme.error,
+                                            size: 48,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'Error loading elements',
+                                            style: GoogleFonts.poppins(
+                                              color: theme.colorScheme.error,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 18,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            provider.error ?? 'Unknown error',
+                                            textAlign: TextAlign.center,
+                                            style: GoogleFonts.poppins(),
+                                          ),
+                                          const SizedBox(height: 24),
+                                          ElevatedButton.icon(
+                                            onPressed: () =>
+                                                provider.fetchFlashcardElements(
+                                                    forceRefresh: true),
+                                            icon: const Icon(Icons.refresh),
+                                            label: const Text('Retry'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+
+                                  return _buildPeriodicTable(provider.elements);
+                                },
+                              ),
                             ),
                           ),
-                          ElevatedButton(
-                            onPressed: () => provider.fetchFlashcardElements(
-                                forceRefresh: true),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return Container(
-                    color: Colors.grey.shade100,
-                    child: Center(
-                      child: InteractiveViewer(
-                        transformationController: _transformationController,
-                        constrained: false,
-                        minScale: 0.4,
-                        maxScale: 2.5,
-                        child: Container(
-                          margin: const EdgeInsets.all(16),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                          child: _buildPeriodicTable(provider.elements),
                         ),
                       ),
                     ),
-                  );
-                },
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showDialog(
@@ -292,6 +369,11 @@ class _TraditionalPeriodicTableScreenState
                     const SizedBox(height: 12),
                     Text(
                       'Elements are arranged in rows (periods) and columns (groups) with similar properties.',
+                      style: GoogleFonts.poppins(fontSize: 14),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Use pinch gestures to zoom in and out, and drag to move around the table.',
                       style: GoogleFonts.poppins(fontSize: 14),
                     ),
                   ],
@@ -335,31 +417,43 @@ class _TraditionalPeriodicTableScreenState
             ),
           ),
           // Legend items
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _buildLegendItem(
-                      'Alkali metals', _categoryColors['alkali metal']!),
-                  _buildLegendItem('Alkaline earth',
-                      _categoryColors['alkaline earth metal']!),
-                  _buildLegendItem('Transition metals',
-                      _categoryColors['transition metal']!),
-                  _buildLegendItem('Post-transition',
-                      _categoryColors['post-transition metal']!),
-                  _buildLegendItem('Metalloids', _categoryColors['metalloid']!),
-                  _buildLegendItem('Nonmetals', _categoryColors['nonmetal']!),
-                  _buildLegendItem('Halogens', _categoryColors['halogen']!),
-                  _buildLegendItem(
-                      'Noble gases', _categoryColors['noble gas']!),
-                  _buildLegendItem(
-                      'Lanthanides', _categoryColors['lanthanide']!),
-                  _buildLegendItem('Actinides', _categoryColors['actinide']!),
-                ],
+          AnimationLimiter(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: AnimationConfiguration.toStaggeredList(
+                    duration: const Duration(milliseconds: 375),
+                    childAnimationBuilder: (widget) => SlideAnimation(
+                      horizontalOffset: 25.0,
+                      child: FadeInAnimation(child: widget),
+                    ),
+                    children: [
+                      _buildLegendItem(
+                          'Alkali metals', _categoryColors['alkali metal']!),
+                      _buildLegendItem('Alkaline earth',
+                          _categoryColors['alkaline earth metal']!),
+                      _buildLegendItem('Transition metals',
+                          _categoryColors['transition metal']!),
+                      _buildLegendItem('Post-transition',
+                          _categoryColors['post-transition metal']!),
+                      _buildLegendItem(
+                          'Metalloids', _categoryColors['metalloid']!),
+                      _buildLegendItem(
+                          'Nonmetals', _categoryColors['nonmetal']!),
+                      _buildLegendItem('Halogens', _categoryColors['halogen']!),
+                      _buildLegendItem(
+                          'Noble gases', _categoryColors['noble gas']!),
+                      _buildLegendItem(
+                          'Lanthanides', _categoryColors['lanthanide']!),
+                      _buildLegendItem(
+                          'Actinides', _categoryColors['actinide']!),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -374,7 +468,14 @@ class _TraditionalPeriodicTableScreenState
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
         border: Border.all(color: color, width: 1),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -382,13 +483,17 @@ class _TraditionalPeriodicTableScreenState
           Container(
             width: 12,
             height: 12,
-            color: color,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
           const SizedBox(width: 6),
           Text(
             text,
             style: GoogleFonts.poppins(
               fontSize: 12,
+              fontWeight: FontWeight.w500,
               color: Colors.black87,
             ),
           ),
@@ -401,6 +506,11 @@ class _TraditionalPeriodicTableScreenState
     // Create a grid with 18 columns (for the 18 groups)
     return Stack(
       children: [
+        // Background grid pattern
+        Container(
+          color: Colors.grey.shade50,
+        ),
+
         // Main table
         Table(
           defaultColumnWidth: FixedColumnWidth(_cellSize),
@@ -605,37 +715,10 @@ class _TraditionalPeriodicTableScreenState
     }
   }
 
-  Color _getElementColor(PeriodicElement element) {
-    String category = element.groupBlock.toLowerCase();
-
-    if (category.contains('alkali') && !category.contains('earth')) {
-      return _categoryColors['alkali metal']!;
-    } else if (category.contains('alkaline earth')) {
-      return _categoryColors['alkaline earth metal']!;
-    } else if (category.contains('transition')) {
-      return _categoryColors['transition metal']!;
-    } else if (category.contains('post-transition') ||
-        category.contains('poor metal')) {
-      return _categoryColors['post-transition metal']!;
-    } else if (category.contains('metalloid')) {
-      return _categoryColors['metalloid']!;
-    } else if (category.contains('nonmetal') && !category.contains('halogen')) {
-      return _categoryColors['nonmetal']!;
-    } else if (category.contains('halogen')) {
-      return _categoryColors['halogen']!;
-    } else if (category.contains('noble gas')) {
-      return _categoryColors['noble gas']!;
-    } else if (category.contains('lanthanide')) {
-      return _categoryColors['lanthanide']!;
-    } else if (category.contains('actinide')) {
-      return _categoryColors['actinide']!;
-    }
-
-    return Colors.grey;
-  }
-
   Widget _buildElementCell(PeriodicElement element) {
-    Color elementColor = _getElementColor(element);
+    // Use the element's standardized color
+    Color elementColor = element.standardColor;
+    final bool isSelected = _selectedElementId == element.atomicNumber;
 
     return Container(
       padding: EdgeInsets.all(_cellPadding),
@@ -645,78 +728,113 @@ class _TraditionalPeriodicTableScreenState
         child: InkWell(
           onTap: () {
             // Navigate to element details page
-            Provider.of<ElementProvider>(context, listen: false)
-                .setSelectedElement(element.symbol);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ElementDetailScreen(element: element),
-              ),
-            );
+            _selectElement(element);
           },
-          child: Ink(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  elementColor,
-                  elementColor.withOpacity(0.8),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: elementColor.withOpacity(0.3),
-                  blurRadius: 2,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(2.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Atomic number
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      '${element.atomicNumber}',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 1.0, end: isSelected ? 1.1 : 1.0),
+            duration: const Duration(milliseconds: 200),
+            builder: (context, scale, child) {
+              return Transform.scale(
+                scale: scale,
+                child: Ink(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        elementColor,
+                        elementColor.withOpacity(0.8),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: elementColor.withOpacity(isSelected ? 0.5 : 0.3),
+                        blurRadius: isSelected ? 4 : 2,
+                        offset: const Offset(0, 1),
                       ),
-                    ),
+                    ],
+                    borderRadius: BorderRadius.circular(isSelected ? 6 : 2),
                   ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(2.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Atomic number
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            '${element.atomicNumber}',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
 
-                  // Element symbol
-                  Text(
-                    element.symbol,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                        // Element symbol
+                        Text(
+                          element.symbol,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
 
-                  // Element name
-                  Text(
-                    element.name,
-                    style: const TextStyle(
-                      fontSize: 9,
-                      color: Colors.white,
+                        // Element name
+                        Text(
+                          element.name,
+                          style: const TextStyle(
+                            fontSize: 9,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),
     );
   }
+}
+
+class GridPainter extends CustomPainter {
+  final double cellSize;
+  final Color color;
+
+  GridPainter({required this.cellSize, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 0.5;
+
+    final int rowCount = (size.height / cellSize).ceil();
+    final int colCount = (size.width / cellSize).ceil();
+
+    // Draw horizontal lines
+    for (int i = 0; i <= rowCount; i++) {
+      final double dy = i * cellSize;
+      canvas.drawLine(Offset(0, dy), Offset(size.width, dy), paint);
+    }
+
+    // Draw vertical lines
+    for (int i = 0; i <= colCount; i++) {
+      final double dx = i * cellSize;
+      canvas.drawLine(Offset(dx, 0), Offset(dx, size.height), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

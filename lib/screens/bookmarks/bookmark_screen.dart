@@ -46,12 +46,15 @@ class _BookmarkScreenState extends State<BookmarkScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bookmarks'),
+        title: const Text(
+          'Bookmarks',
+          style: TextStyle(fontSize: 17),
+        ),
         centerTitle: true,
         backgroundColor: theme.colorScheme.primary.withOpacity(0.5),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, size: 20),
             tooltip: 'Reload bookmarks',
             onPressed: () async {
               await bookmarkProvider.reloadBookmarks();
@@ -78,19 +81,19 @@ class _BookmarkScreenState extends State<BookmarkScreen>
                 indicatorColor: theme.colorScheme.primary,
                 labelStyle: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 14,
                 ),
                 tabs: [
                   Tab(
-                    icon: const Icon(Icons.medication),
-                    text: 'Drugs (${bookmarkedDrugs.length}),',
+                    icon: const Icon(Icons.medication, size: 20),
+                    text: 'Drugs (${bookmarkedDrugs.length})',
                   ),
                   Tab(
-                    icon: const Icon(Icons.science),
+                    icon: const Icon(Icons.science, size: 20),
                     text: 'Compounds (${bookmarkedCompounds.length})',
                   ),
                   Tab(
-                    icon: const Icon(Icons.api),
+                    icon: const Icon(Icons.api, size: 20),
                     text: 'Elements (${bookmarkedElements.length})',
                   ),
                 ],
@@ -144,46 +147,44 @@ class _BookmarkScreenState extends State<BookmarkScreen>
   }
 
   Widget _buildErrorView(BuildContext context, BookmarkProvider provider) {
+    final theme = Theme.of(context);
     return Center(
       child: ChemistryCardBackground(
         backgroundColor: Colors.white.withOpacity(0.8),
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(20.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.error_outline,
-                size: 64,
-                color: Theme.of(context).colorScheme.error,
+                size: 50,
+                color: theme.colorScheme.error,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               Text(
                 'Error loading bookmarks',
                 style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 16,
+                  color: theme.colorScheme.error,
                 ),
               ),
               Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
+                    const EdgeInsets.symmetric(horizontal: 24.0, vertical: 6.0),
                 child: Text(
                   provider.lastError ?? 'Unknown error',
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.7),
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               ElevatedButton.icon(
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Try Again'),
                 onPressed: () => provider.reloadBookmarks(),
               ),
@@ -201,15 +202,15 @@ class _BookmarkScreenState extends State<BookmarkScreen>
       child: ChemistryCardBackground(
         backgroundColor: Colors.white.withOpacity(0.9),
         child: Padding(
-          padding: const EdgeInsets.all(30.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Chemistry-themed empty state icon
               Container(
-                width: 80,
-                height: 80,
+                width: 70,
+                height: 70,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
@@ -220,15 +221,15 @@ class _BookmarkScreenState extends State<BookmarkScreen>
                     children: [
                       Icon(
                         Icons.bookmark_border,
-                        size: 44,
+                        size: 36,
                         color: theme.colorScheme.primary,
                       ),
                       Positioned(
-                        top: 18,
-                        right: 18,
+                        top: 15,
+                        right: 15,
                         child: Icon(
                           Icons.science,
-                          size: 16,
+                          size: 14,
                           color: theme.colorScheme.primary.withOpacity(0.7),
                         ),
                       ),
@@ -236,11 +237,11 @@ class _BookmarkScreenState extends State<BookmarkScreen>
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Text(
                 'No bookmarks yet',
                 style: GoogleFonts.poppins(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.onSurface,
                 ),
@@ -249,7 +250,7 @@ class _BookmarkScreenState extends State<BookmarkScreen>
               Text(
                 'Save your favorite compounds and drugs to access them quickly',
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
+                  fontSize: 13,
                   color: theme.colorScheme.onSurface.withOpacity(0.7),
                 ),
                 textAlign: TextAlign.center,
@@ -268,14 +269,14 @@ class _BookmarkScreenState extends State<BookmarkScreen>
       child: ChemistryCardBackground(
         backgroundColor: Colors.white.withOpacity(0.9),
         child: Padding(
-          padding: const EdgeInsets.all(30.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 70,
-                height: 70,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withOpacity(0.1),
                   shape: BoxShape.circle,
@@ -283,16 +284,16 @@ class _BookmarkScreenState extends State<BookmarkScreen>
                 child: Center(
                   child: Icon(
                     Icons.bookmark_border,
-                    size: 40,
+                    size: 32,
                     color: theme.colorScheme.primary,
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               Text(
                 message,
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.onSurface,
                 ),
@@ -308,7 +309,7 @@ class _BookmarkScreenState extends State<BookmarkScreen>
   Widget _buildDrugList(
       BuildContext context, BookmarkProvider provider, List<Drug> drugs) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       shrinkWrap: true,
       itemCount: drugs.length,
       itemBuilder: (context, index) {
@@ -436,7 +437,7 @@ class _BookmarkScreenState extends State<BookmarkScreen>
           imageUrl: '', // Elements don't have images
           customImage: Container(
             decoration: BoxDecoration(
-              color: _getElementColor(element.groupBlock),
+              color: _getCategoryColor(element.groupBlock),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -507,26 +508,28 @@ class _BookmarkScreenState extends State<BookmarkScreen>
     );
   }
 
-  Color _getElementColor(String category) {
+  Color _getCategoryColor(String category) {
+    final theme = Theme.of(context);
+
     switch (category.toLowerCase()) {
       case 'nonmetal':
-        return Colors.green;
+        return Color(0xFF2E7D32);
       case 'alkali metal':
-        return Colors.red;
+        return Color(0xFFB82E2E);
       case 'alkaline earth metal':
-        return Colors.orange;
+        return Color(0xFFE67700);
       case 'transition metal':
-        return Colors.yellow.shade700;
+        return Color(0xFFE67700).withOpacity(0.8);
       case 'metalloid':
-        return Colors.purple;
+        return theme.colorScheme.tertiary;
       case 'halogen':
-        return Colors.lightBlue;
+        return theme.colorScheme.primary;
       case 'noble gas':
-        return Colors.blue;
+        return theme.colorScheme.primary;
       case 'lanthanide':
-        return Colors.pink;
+        return theme.colorScheme.tertiary;
       case 'actinide':
-        return Colors.deepPurple;
+        return theme.colorScheme.tertiary;
       default:
         return Colors.grey;
     }
@@ -541,14 +544,15 @@ class _BookmarkScreenState extends State<BookmarkScreen>
     required VoidCallback onTap,
     required VoidCallback onRemove,
   }) {
+    final theme = Theme.of(context);
     // Create separate widgets to completely isolate touch events
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       child: ChemistryCardBackground(
         backgroundColor: Colors.white.withOpacity(0.95),
         showMolecules: false, // Keep card clean for content focus
         child: SizedBox(
-          height: 144, // Fixed height for the card
+          height: 130, // Fixed height for the card
           child: Stack(
             children: [
               // The main card content with the title, subtitle and chevron
@@ -557,18 +561,17 @@ class _BookmarkScreenState extends State<BookmarkScreen>
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: onTap,
-                    splashColor:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
+                    splashColor: theme.colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(14),
                     child: Row(
                       children: [
                         // Spacer for the image area
-                        const SizedBox(width: 144),
+                        const SizedBox(width: 130),
 
                         // Content area
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.all(12.0),
+                            padding: const EdgeInsets.all(10.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -576,30 +579,26 @@ class _BookmarkScreenState extends State<BookmarkScreen>
                                 Text(
                                   title,
                                   style: GoogleFonts.poppins(
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w600,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                      horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary
+                                    color: theme.colorScheme.primary
                                         .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
                                     subtitle,
                                     style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary
+                                      fontSize: 12,
+                                      color: theme.colorScheme.primary
                                           .withOpacity(0.8),
                                     ),
                                   ),
@@ -613,18 +612,15 @@ class _BookmarkScreenState extends State<BookmarkScreen>
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.1),
+                              color: theme.colorScheme.primary.withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.chevron_right,
-                              color: Theme.of(context).colorScheme.primary,
-                              size: 20,
+                              color: theme.colorScheme.primary,
+                              size: 18,
                             ),
                           ),
                         ),
@@ -639,7 +635,7 @@ class _BookmarkScreenState extends State<BookmarkScreen>
                 left: 0,
                 top: 0,
                 bottom: 0,
-                width: 144,
+                width: 130,
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
@@ -659,11 +655,11 @@ class _BookmarkScreenState extends State<BookmarkScreen>
                       }
                     },
                     borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      bottomLeft: Radius.circular(16),
+                      topLeft: Radius.circular(14),
+                      bottomLeft: Radius.circular(14),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(10),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: customImage ??
@@ -691,9 +687,8 @@ class _BookmarkScreenState extends State<BookmarkScreen>
                                     imageUrl: imageUrl,
                                     fit: BoxFit.contain,
                                     placeholder: (context, url) => Container(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceContainerHighest,
+                                      color: theme
+                                          .colorScheme.surfaceContainerHighest,
                                       child: const Center(
                                         child: CircularProgressIndicator(
                                             strokeWidth: 2),
@@ -701,14 +696,13 @@ class _BookmarkScreenState extends State<BookmarkScreen>
                                     ),
                                     errorWidget: (context, error, stackTrace) =>
                                         Container(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceContainerHighest,
+                                      color: theme
+                                          .colorScheme.surfaceContainerHighest,
                                       child: Icon(
                                         Icons.image_not_supported,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
+                                        size: 20,
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                   ),
@@ -724,28 +718,32 @@ class _BookmarkScreenState extends State<BookmarkScreen>
               // Remove button - on its own layer
               Positioned(
                 right: 0,
-                top: -10,
+                top: -8,
                 child: Material(
                   color: Colors.transparent,
                   child: Container(
-                    margin: const EdgeInsets.all(8),
+                    margin: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 3,
+                          offset: const Offset(0, 1),
                         ),
                       ],
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.bookmark_remove),
-                      color: Theme.of(context).colorScheme.error,
-                      iconSize: 20,
+                      icon: const Icon(Icons.bookmark_remove, size: 18),
+                      color: theme.colorScheme.error,
+                      iconSize: 18,
                       tooltip: 'Remove bookmark',
                       onPressed: onRemove,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                     ),
                   ),
                 ),
@@ -779,7 +777,7 @@ class _FullScreenImageView extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: Colors.black.withOpacity(0.6),
+        backgroundColor: Colors.black.withOpacity(0.7),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [

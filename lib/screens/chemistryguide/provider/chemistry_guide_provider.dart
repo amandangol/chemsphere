@@ -33,6 +33,9 @@ class ChemistryGuideProvider with ChangeNotifier {
   // Topic cache to avoid redundant fetches
   final Map<String, ChemistryTopic> _topicCache = {};
 
+  // Track search query cache to avoid redundant searches
+  final Map<String, List<String>> _searchCache = {};
+
   ChemistryTopic? _selectedTopic;
   ChemistryTopic? get selectedTopic => _selectedTopic;
 
@@ -40,12 +43,23 @@ class ChemistryGuideProvider with ChangeNotifier {
   ChemistryGuideLoadingState _loadingState = ChemistryGuideLoadingState.initial;
   ChemistryGuideLoadingState get loadingState => _loadingState;
 
+  // Track loading state per article/topic to avoid multiple loading indicators
+  final Map<String, bool> _loadingStates = {};
+  bool isArticleLoading(String articleId) => _loadingStates[articleId] ?? false;
+
   bool get isLoading => _loadingState == ChemistryGuideLoadingState.loading;
   String? _error;
   String? get error => _error;
 
+  // Flag to track if the provider has been initialized
+  bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
+
   // Initialize with persistent cache
   Future<void> initialize() async {
+    // Skip initialization if already done
+    if (_isInitialized) return;
+
     _setLoading();
 
     // Load cached data if available
@@ -85,6 +99,7 @@ class ChemistryGuideProvider with ChangeNotifier {
       ];
     }
 
+    _isInitialized = true;
     _setLoaded();
   }
 
@@ -103,6 +118,8 @@ class ChemistryGuideProvider with ChangeNotifier {
         // Also rebuild the cache map
         for (final topic in _topics) {
           _topicCache[topic.id.toLowerCase()] = topic;
+          // Also cache by title for easier lookup
+          _topicCache[topic.title.toLowerCase()] = topic;
         }
       }
 
@@ -113,6 +130,17 @@ class ChemistryGuideProvider with ChangeNotifier {
         _pathways = pathwaysData
             .map((json) => ChemistryPathway.fromJson(json))
             .toList();
+      }
+
+      // Load cached search results
+      final cachedSearchJson = prefs.getString('cached_searches');
+      if (cachedSearchJson != null) {
+        final Map<String, dynamic> searchData = jsonDecode(cachedSearchJson);
+        searchData.forEach((key, value) {
+          if (value is List) {
+            _searchCache[key] = List<String>.from(value);
+          }
+        });
       }
 
       // Load cached element categories
@@ -132,6 +160,8 @@ class ChemistryGuideProvider with ChangeNotifier {
                 _topics[topicIndex].copyWith(isFavorite: true);
             // Update cache
             _topicCache[_topics[topicIndex].id.toLowerCase()] =
+                _topics[topicIndex];
+            _topicCache[_topics[topicIndex].title.toLowerCase()] =
                 _topics[topicIndex];
           }
         }
@@ -160,6 +190,11 @@ class ChemistryGuideProvider with ChangeNotifier {
         await prefs.setString('cached_pathways', pathwaysJson);
       }
 
+      // Cache search results
+      if (_searchCache.isNotEmpty) {
+        await prefs.setString('cached_searches', jsonEncode(_searchCache));
+      }
+
       // Cache element categories
       if (_elementCategories.isNotEmpty) {
         await prefs.setStringList('element_categories', _elementCategories);
@@ -174,7 +209,7 @@ class ChemistryGuideProvider with ChangeNotifier {
     }
   }
 
-  // Method to search Wikipedia articles
+  // Method to search Wikipedia articles with caching
   Future<void> searchWikipediaArticles(String query) async {
     if (query.isEmpty) {
       _searchResults = [];
@@ -182,24 +217,56 @@ class ChemistryGuideProvider with ChangeNotifier {
       return;
     }
 
+    final cacheKey = query.toLowerCase().trim();
+
+    // Check if we have this search cached
+    if (_searchCache.containsKey(cacheKey)) {
+      debugPrint('Using cached search results for: $query');
+      _searchResults = _searchCache[cacheKey]!;
+      notifyListeners();
+      return;
+    }
+
     try {
       _setLoading();
       _searchResults = await _wikipediaService.searchArticles(query);
+
+      // Cache the search results
+      _searchCache[cacheKey] = _searchResults;
+      _saveToCache();
+
       _setLoaded();
     } catch (e) {
       _setError('Failed to search Wikipedia: $e');
     }
   }
 
-  // Method to get a detailed article summary
+  // Method to get a detailed article summary with improved caching
   Future<ChemistryTopic?> getArticleSummary(String title) async {
     // Check if we already have this topic cached
     final cacheKey = title.toLowerCase();
+
+    // First check if we're already loading this article
+    if (_loadingStates[cacheKey] == true) {
+      debugPrint('Already loading article: $title');
+      // Return null but don't update loading state since it's already being loaded
+      return null;
+    }
+
+    // Check if we have this topic cached
+    if (_topicCache.containsKey(cacheKey)) {
+      debugPrint('Using cached topic for: $title');
+      _selectedTopic = _topicCache[cacheKey];
+      return _topicCache[cacheKey];
+    }
+
     final bool wasCached = _topicCache.containsKey(cacheKey);
     final bool wasFavorite =
         wasCached ? _topicCache[cacheKey]!.isFavorite : false;
 
     try {
+      // Mark this specific article as loading
+      _loadingStates[cacheKey] = true;
       _setLoading();
 
       // Get basic article summary
@@ -250,8 +317,9 @@ class ChemistryGuideProvider with ChangeNotifier {
         isFavorite: wasFavorite,
       );
 
-      // Cache the topic for future use
+      // Cache the topic for future use - both by ID and by title
       _topicCache[cacheKey] = topic;
+      _topicCache[topic.id.toLowerCase()] = topic;
       _selectedTopic = topic;
 
       // Add to topics list if not already there
@@ -268,12 +336,22 @@ class ChemistryGuideProvider with ChangeNotifier {
       // Save to persistent cache whenever we update a topic
       _saveToCache();
 
+      // Mark article as no longer loading
+      _loadingStates[cacheKey] = false;
       _setLoaded();
       return topic;
     } catch (e) {
+      // Mark article as no longer loading even on error
+      _loadingStates[cacheKey] = false;
       _setError('Failed to load article: $e');
       return null;
     }
+  }
+
+  // Check if a specific topic is already cached
+  bool isTopicCached(String title) {
+    final cacheKey = title.toLowerCase();
+    return _topicCache.containsKey(cacheKey);
   }
 
   // Toggle favorite status for a topic
@@ -293,6 +371,7 @@ class ChemistryGuideProvider with ChangeNotifier {
 
       // Update the cache
       _topicCache[updatedTopic.id.toLowerCase()] = updatedTopic;
+      _topicCache[updatedTopic.title.toLowerCase()] = updatedTopic;
 
       // If this is the selected topic, update that too
       if (_selectedTopic?.id == topicId) {
@@ -308,10 +387,22 @@ class ChemistryGuideProvider with ChangeNotifier {
 
   // Get related topics for a given topic
   Future<List<String>> getRelatedTopics(String topicName) async {
+    // Check if we have cached related topics
+    final cacheKey = 'related_${topicName.toLowerCase()}';
+    if (_searchCache.containsKey(cacheKey)) {
+      debugPrint('Using cached related topics for: $topicName');
+      return _searchCache[cacheKey]!;
+    }
+
     try {
       _setLoading();
       final relatedTopics =
           await _wikipediaService.getRelatedArticles(topicName);
+
+      // Cache the related topics
+      _searchCache[cacheKey] = relatedTopics;
+      _saveToCache();
+
       _setLoaded();
       return relatedTopics;
     } catch (e) {

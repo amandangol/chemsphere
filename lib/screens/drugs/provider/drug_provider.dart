@@ -450,6 +450,7 @@ class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
       }
     } finally {
       setLoading(false);
+      notifyListeners();
     }
   }
 

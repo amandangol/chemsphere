@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../providers/aqi_provider.dart';
-import '../../models/aqi_data.dart';
-import '../../models/pollutant.dart';
 import 'pollutant_detail_screen.dart';
 import 'dart:math';
 
@@ -16,19 +15,54 @@ class AqiInfoScreen extends StatefulWidget {
 }
 
 class _AqiInfoScreenState extends State<AqiInfoScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+  bool _refreshing = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    // Initialize animation controller separately
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this, // This is the correct usage with TickerProviderStateMixin
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeInOut,
+    );
+
+    _animController.forward();
   }
 
   @override
   void dispose() {
+    // Important to dispose both controllers
     _tabController.dispose();
+    _animController.dispose();
     super.dispose();
+  }
+
+  Future<void> _refreshData() async {
+    setState(() {
+      _refreshing = true;
+    });
+
+    try {
+      final provider = Provider.of<AqiProvider>(context, listen: false);
+      await provider.fetchAqiData();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _refreshing = false;
+        });
+      }
+    }
   }
 
   @override
@@ -40,65 +74,84 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
           'Atmospheric Analysis',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
-            fontSize: 20,
+            fontSize: 16,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           onPressed: () {
             Navigator.of(context).pop();
           },
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () {
-              final provider = Provider.of<AqiProvider>(context, listen: false);
-              provider.fetchAqiData();
-            },
+            icon: _refreshing
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ))
+                : const Icon(Icons.refresh_rounded, size: 18),
+            onPressed: _refreshing ? null : _refreshData,
             tooltip: 'Refresh Data',
           ),
           IconButton(
-            icon: const Icon(Icons.search_rounded),
+            icon: const Icon(Icons.search_rounded, size: 18),
             onPressed: () {
               Navigator.of(context).pushNamed('/city-search');
             },
             tooltip: 'Search Location',
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
-        elevation: 0,
+        elevation: 2,
+        shadowColor: Colors.black26,
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white.withOpacity(0.6),
           indicatorColor: Colors.white,
-          indicatorWeight: 3,
+          indicatorWeight: 2,
           labelStyle: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
-            fontSize: 14,
+            fontSize: 12,
           ),
           tabs: [
             Tab(
-              icon: const Icon(Icons.air),
+              icon: const Icon(Icons.air, size: 16),
               text: 'Air Quality',
-              iconMargin: const EdgeInsets.only(bottom: 4),
+              iconMargin: const EdgeInsets.only(bottom: 2),
             ),
             Tab(
-              icon: const Icon(Icons.science_outlined),
+              icon: const Icon(Icons.science_outlined, size: 16),
               text: 'Pollutants',
-              iconMargin: const EdgeInsets.only(bottom: 4),
+              iconMargin: const EdgeInsets.only(bottom: 2),
             ),
           ],
         ),
       ),
       body: Consumer<AqiProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
+          if (provider.isLoading && !_refreshing) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(strokeWidth: 2),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading air quality data...',
+                    style: GoogleFonts.poppins(
+                      color: theme.colorScheme.primary,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
             );
           }
 
@@ -107,138 +160,186 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                 provider.error!.contains("internet") ||
                 provider.error!.contains("connection");
 
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    isNetworkError ? Icons.wifi_off : Icons.error_outline,
-                    color: isNetworkError ? Colors.orange : Colors.red,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Text(
-                      isNetworkError ? 'Network Connection Error' : 'Error',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isNetworkError ? Colors.orange : Colors.red,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Text(
-                      isNetworkError
-                          ? 'Unable to connect to the air quality service. Please check your internet connection and try again.'
-                          : provider.error!,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        color: isNetworkError ? Colors.black87 : Colors.red,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      provider.fetchAqiData();
-                    },
-                    icon: const Icon(Icons.refresh),
-                    label: Text(
-                      'Retry',
-                      style: GoogleFonts.poppins(),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  if (isNetworkError)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).pushNamed('/city-search');
-                        },
-                        icon: const Icon(Icons.search),
-                        label: Text(
-                          'Try Searching for a City',
-                          style: GoogleFonts.poppins(),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+            return FadeTransition(
+              opacity: _fadeAnimation,
+              child: Center(
+                child: AnimationLimiter(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: AnimationConfiguration.toStaggeredList(
+                      duration: const Duration(milliseconds: 500),
+                      childAnimationBuilder: (widget) => SlideAnimation(
+                        verticalOffset: 30.0,
+                        child: FadeInAnimation(
+                          child: widget,
                         ),
                       ),
+                      children: [
+                        Icon(
+                          isNetworkError ? Icons.wifi_off : Icons.error_outline,
+                          color: isNetworkError ? Colors.orange : Colors.red,
+                          size: 36,
+                        ),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Text(
+                            isNetworkError
+                                ? 'Network Connection Error'
+                                : 'Error',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  isNetworkError ? Colors.orange : Colors.red,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Text(
+                            isNetworkError
+                                ? 'Unable to connect to the air quality service. Please check your internet connection and try again.'
+                                : provider.error!,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              color:
+                                  isNetworkError ? Colors.black87 : Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _refreshing ? null : _refreshData,
+                          icon: _refreshing
+                              ? Container(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ))
+                              : const Icon(Icons.refresh, size: 16),
+                          label: Text(
+                            'Retry',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        if (isNetworkError)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).pushNamed('/city-search');
+                              },
+                              icon: const Icon(Icons.search, size: 16),
+                              label: Text(
+                                'Try Searching for a City',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                ],
+                  ),
+                ),
               ),
             );
           }
 
           if (provider.aqiData == null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.air,
-                    color: Colors.grey,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No AQI data available',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Try refreshing to fetch latest data',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
+            return FadeTransition(
+              opacity: _fadeAnimation,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.air,
                       color: Colors.grey,
+                      size: 36,
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Refresh'),
-                    onPressed: () {
-                      provider.fetchAqiData();
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    Text(
+                      'No AQI data available',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Try refreshing to fetch latest data',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        color: Colors.grey,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      icon: _refreshing
+                          ? SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ))
+                          : const Icon(Icons.refresh, size: 16),
+                      label: Text('Refresh', style: TextStyle(fontSize: 12)),
+                      onPressed: _refreshing ? null : _refreshData,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }
 
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              // AQI Overview Tab
-              _buildAqiOverview(provider, theme),
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // AQI Overview Tab
+                _buildAqiOverview(provider, theme),
 
-              // Pollutants Tab
-              _buildPollutantsTab(provider, theme),
-            ],
+                // Pollutants Tab
+                _buildPollutantsTab(provider, theme),
+              ],
+            ),
           );
         },
       ),
@@ -261,7 +362,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       physics: const BouncingScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,12 +379,12 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                   Color.lerp(aqiColor, Colors.black, 0.3) ?? aqiColor,
                 ],
               ),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
                   color: aqiColor.withOpacity(0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
@@ -291,9 +392,9 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
               children: [
                 // Add molecular background pattern
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(16),
                   child: CustomPaint(
-                    size: Size(double.infinity, 240),
+                    size: Size(double.infinity, 200),
                     painter: MolecularBackgroundPainter(
                       color: Colors.white.withOpacity(0.05),
                     ),
@@ -302,7 +403,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
 
                 // Content
                 Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
                       Row(
@@ -311,7 +412,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                           Text(
                             'Air Quality Index',
                             style: GoogleFonts.poppins(
-                              fontSize: 20,
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),
@@ -322,10 +423,10 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                               provider.error!.contains('timed out'))
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
+                                  horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.black38,
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(12),
                                 border:
                                     Border.all(color: Colors.white24, width: 1),
                               ),
@@ -334,13 +435,13 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                                   const Icon(
                                     Icons.info_outline,
                                     color: Colors.white,
-                                    size: 14,
+                                    size: 12,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Estimated Data',
                                     style: GoogleFonts.poppins(
-                                      fontSize: 12,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.w500,
                                       color: Colors.white,
                                     ),
@@ -351,19 +452,19 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                         ],
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
                       // AQI Value with glowing effect
                       Container(
-                        padding: const EdgeInsets.all(28),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.15),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
                               color: Colors.white.withOpacity(0.1),
-                              blurRadius: 20,
-                              spreadRadius: 5,
+                              blurRadius: 16,
+                              spreadRadius: 3,
                             ),
                           ],
                         ),
@@ -371,52 +472,52 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                             ? Text(
                                 aqiValue.toString(),
                                 style: GoogleFonts.jetBrainsMono(
-                                  fontSize: 48,
+                                  fontSize: 36,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                   shadows: [
                                     Shadow(
                                       color: Colors.white.withOpacity(0.5),
-                                      blurRadius: 10,
+                                      blurRadius: 8,
                                     ),
                                   ],
                                 ),
                               )
                             : const Icon(
                                 Icons.question_mark,
-                                size: 48,
+                                size: 36,
                                 color: Colors.white,
                               ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
                       // Category with custom pill background
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
                           aqiCategory,
                           style: GoogleFonts.poppins(
-                            fontSize: 22,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
                       // Description in a stylized container
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: Colors.black12,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: Colors.white10,
                             width: 1,
@@ -428,7 +529,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                               : "Air quality data is not available for this location at the moment.",
                           textAlign: TextAlign.center,
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
+                            fontSize: 12,
                             color: Colors.white.withOpacity(0.9),
                           ),
                         ),
@@ -440,7 +541,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
 
           // Location
           if (aqiData.name.isNotEmpty)
@@ -795,23 +896,23 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
             Icon(
               Icons.science_outlined,
               color: theme.colorScheme.primary.withOpacity(0.5),
-              size: 64,
+              size: 48,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               'No pollutant data available',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               'Try searching for a different location',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 14,
+                fontSize: 12,
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
@@ -821,7 +922,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       itemCount: pollutants.length,
       itemBuilder: (context, index) {
         final pollutantKey = pollutants.keys.elementAt(index);
@@ -830,17 +931,17 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
             _getPollutantColor(pollutant.name, pollutant.value);
 
         return Card(
-          margin: const EdgeInsets.only(bottom: 16),
+          margin: const EdgeInsets.only(bottom: 12),
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             side: BorderSide(
               color: pollutantColor.withOpacity(0.3),
               width: 1.5,
             ),
           ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             onTap: () {
               Navigator.push(
                 context,
@@ -852,7 +953,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
               );
             },
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -861,10 +962,10 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                     children: [
                       // Left side - Chemical formula
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: pollutantColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: pollutantColor.withOpacity(0.3),
                             width: 1.5,
@@ -873,14 +974,14 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                         child: Text(
                           pollutant.name,
                           style: GoogleFonts.jetBrainsMono(
-                            fontSize: 24,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: pollutantColor,
                           ),
                         ),
                       ),
 
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
 
                       // Right side - Pollutant information
                       Expanded(
@@ -890,7 +991,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                             Text(
                               pollutant.fullName,
                               style: GoogleFonts.poppins(
-                                fontSize: 18,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -899,25 +1000,25 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                               children: [
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                                    horizontal: 6,
+                                    vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
                                     color: pollutantColor.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Row(
                                     children: [
                                       Icon(
                                         Icons.analytics_outlined,
-                                        size: 14,
+                                        size: 12,
                                         color: pollutantColor,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
                                         pollutant.formattedValue,
                                         style: GoogleFonts.jetBrainsMono(
-                                          fontSize: 14,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.w500,
                                           color: pollutantColor,
                                         ),
@@ -929,6 +1030,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                                 Icon(
                                   Icons.chevron_right,
                                   color: theme.colorScheme.primary,
+                                  size: 16,
                                 ),
                               ],
                             ),
@@ -938,9 +1040,9 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   const Divider(),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
 
                   // Health impact with icon
                   Row(
@@ -949,14 +1051,14 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                       Icon(
                         Icons.health_and_safety_outlined,
                         color: theme.colorScheme.primary,
-                        size: 20,
+                        size: 16,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           pollutant.getHealthImpact(),
                           style: GoogleFonts.poppins(
-                            fontSize: 14,
+                            fontSize: 12,
                             color: theme.colorScheme.onSurface.withOpacity(0.8),
                           ),
                         ),
@@ -981,15 +1083,15 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
   }) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
         border: Border.all(
@@ -1012,18 +1114,18 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                 ],
               ),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: color.withOpacity(0.3),
                       width: 1.5,
@@ -1032,14 +1134,14 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                   child: Icon(
                     icon,
                     color: color,
-                    size: 24,
+                    size: 18,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Text(
                   title,
                   style: GoogleFonts.poppins(
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: theme.colorScheme.onSurface,
                   ),
@@ -1050,7 +1152,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
 
           // Card content with padding
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: child,
           ),
         ],
@@ -1208,10 +1310,10 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
 
   Widget _buildRecommendationChip(String text, Color color, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: color.withOpacity(0.3),
           width: 1.5,
@@ -1222,14 +1324,14 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
         children: [
           Icon(
             Icons.arrow_right_rounded,
-            size: 20,
+            size: 16,
             color: color,
           ),
           const SizedBox(width: 4),
           Text(
             text,
             style: GoogleFonts.poppins(
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
               color: color,
             ),

@@ -13,10 +13,18 @@ import 'screens/main_screen.dart';
 import 'providers/aqi_provider.dart';
 import 'providers/pollutant_info_provider.dart';
 import 'screens/splash_screen.dart';
+import 'screens/onboarding/onboarding_screen.dart';
+import 'screens/onboarding/onboarding_provider.dart';
 import 'theme/app_theme.dart';
 
-void main() {
-  runApp(const ChemistryExplorerApp());
+void main() async {
+  // Ensure Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Check if it's the first time launch using the provider's static method
+  final bool isFirstTime = await OnboardingProvider.isFirstTime();
+
+  runApp(ChemistryExplorerApp(isFirstTime: isFirstTime));
 }
 
 class MyApp extends StatelessWidget {
@@ -34,7 +42,12 @@ class MyApp extends StatelessWidget {
 }
 
 class ChemistryExplorerApp extends StatelessWidget {
-  const ChemistryExplorerApp({Key? key}) : super(key: key);
+  final bool isFirstTime;
+
+  const ChemistryExplorerApp({
+    Key? key,
+    required this.isFirstTime,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -50,11 +63,13 @@ class ChemistryExplorerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ChemicalSearchProvider()),
         ChangeNotifierProvider(create: (_) => AqiProvider()),
         ChangeNotifierProvider(create: (_) => PollutantInfoProvider()),
+        ChangeNotifierProvider(create: (_) => OnboardingProvider()),
       ],
       child: MaterialApp(
         title: 'ChemVerse',
         theme: AppTheme.lightTheme,
-        home: const SplashScreen(),
+        // Show onboarding if it's first time, otherwise show splash screen
+        home: isFirstTime ? const OnboardingScreen() : const SplashScreen(),
         debugShowCheckedModeBanner: false,
         routes: {
           '/main': (context) => const MainScreen(initialIndex: 0),

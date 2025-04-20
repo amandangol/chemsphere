@@ -77,6 +77,15 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                 ? provider.getAqiColor(provider.aqiData!.aqi)
                 : theme.colorScheme.primary;
 
+        // Calculate a darker shade for text contrast if needed
+        Color textColor =
+            _isColorBright(primaryColor) ? Colors.black87 : Colors.white;
+
+        // Calculate container background color
+        Color containerBgColor = _isColorBright(primaryColor)
+            ? Colors.black.withOpacity(0.1)
+            : Colors.white.withOpacity(0.2);
+
         String dominantPollutant = provider.aqiData != null &&
                 provider.aqiData!.dominantPollutant.isNotEmpty
             ? provider.aqiData!.dominantPollutant
@@ -124,11 +133,14 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                     ),
                   ),
 
-                  // Molecular pattern background
+                  // Molecular pattern background with better visibility
                   Positioned.fill(
                     child: CustomPaint(
                       painter: MolecularPatternPainter(
-                        color: Colors.white.withOpacity(0.1),
+                        // Slightly improved opacity for better visibility
+                        color: _isColorBright(primaryColor)
+                            ? Colors.black.withOpacity(0.15)
+                            : Colors.white.withOpacity(0.15),
                       ),
                     ),
                   ),
@@ -151,15 +163,15 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                                     height: 42,
                                     width: 42,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
+                                      color: containerBgColor,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Stack(
                                       alignment: Alignment.center,
                                       children: [
-                                        const Icon(
+                                        Icon(
                                           Icons.science_outlined,
-                                          color: Colors.white,
+                                          color: textColor,
                                           size: 24,
                                         ),
                                         if (provider.isLoading)
@@ -168,11 +180,11 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                                             height: 42,
                                             child: CircularProgressIndicator(
                                               valueColor:
-                                                  const AlwaysStoppedAnimation<
-                                                      Color>(Colors.white),
+                                                  AlwaysStoppedAnimation<Color>(
+                                                      textColor),
                                               strokeWidth: 2,
                                               backgroundColor:
-                                                  Colors.white.withOpacity(0.1),
+                                                  textColor.withOpacity(0.1),
                                             ),
                                           ),
                                       ],
@@ -189,7 +201,18 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                                           style: GoogleFonts.poppins(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                                            color: textColor,
+                                            shadows: [
+                                              // Add shadow for better text readability
+                                              Shadow(
+                                                color:
+                                                    _isColorBright(primaryColor)
+                                                        ? Colors.black38
+                                                        : Colors.black54,
+                                                blurRadius: 2,
+                                                offset: const Offset(0, 1),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                         if (provider.aqiData != null &&
@@ -198,8 +221,8 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                                             '${provider.aqiData!.name}, ${provider.aqiData!.country.name}',
                                             style: GoogleFonts.poppins(
                                               fontSize: 12,
-                                              color:
-                                                  Colors.white.withOpacity(0.8),
+                                              color: textColor.withOpacity(0.9),
+                                              fontWeight: FontWeight.w500,
                                             ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -274,11 +297,20 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
 
                         // Air quality status and chemical info
                         if (provider.error != null)
-                          Text(
-                            'Could not load atmospheric data. Tap to retry.',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Could not load atmospheric data. Tap to retry.',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           )
                         else if (provider.aqiData != null &&
@@ -291,20 +323,28 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      provider.getAqiCategory(
-                                          provider.aqiData!.aqi),
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        provider.getAqiCategory(
+                                            provider.aqiData!.aqi),
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 6),
                                     if (dominantPollutant.isNotEmpty)
                                       Container(
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.2),
+                                          color: Colors.black.withOpacity(0.25),
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
@@ -329,42 +369,70 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                             ],
                           )
                         else if (provider.aqiData != null)
-                          Text(
-                            'Location identified. No measurement data available.',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.25),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Location identified. No measurement data available.',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           )
                         else if (!provider.isLoading)
-                          Text(
-                            'Tap to analyze atmospheric composition',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.25),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Tap to analyze atmospheric composition',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
 
                         const SizedBox(height: 8),
 
                         // Bottom indicator
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              'View Details',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.white.withOpacity(0.7),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(
+                                'View Details',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.arrow_forward,
-                              color: Colors.white.withOpacity(0.7),
-                              size: 16,
-                            ),
-                          ],
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.arrow_forward,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -378,12 +446,26 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
     );
   }
 
+  // Helper method to check if a color is bright (to determine text color)
+  bool _isColorBright(Color color) {
+    // Calculate luminance (perceived brightness)
+    // Values closer to 1 are brighter
+    double luminance =
+        (0.299 * color.red + 0.587 * color.green + 0.114 * color.blue) / 255;
+    return luminance > 0.7; // Threshold for considering a color bright
+  }
+
   Widget _buildMoleculeWidget(String formula, Color color) {
+    // Use a darker background for better visibility
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.black.withOpacity(0.3),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1.0,
+        ),
       ),
       child: Row(
         children: [
@@ -395,6 +477,7 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 14,
                   color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
               );
             } else {
@@ -404,6 +487,13 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black54,
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
               );
             }
