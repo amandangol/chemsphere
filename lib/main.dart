@@ -1,6 +1,7 @@
 import 'package:chem_explore/screens/elements/provider/element_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'screens/aqi/city_search_screen.dart';
 import 'screens/compounds/provider/chemical_search_provider.dart';
 import 'screens/compounds/provider/compound_provider.dart';
 import 'screens/formula/provider/formula_search_provider.dart';
@@ -48,13 +49,7 @@ class ChemistryExplorerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => FormulaSearchProvider()),
         ChangeNotifierProvider(create: (_) => ChemicalSearchProvider()),
         ChangeNotifierProvider(create: (_) => AqiProvider()),
-        ChangeNotifierProxyProvider<CompoundProvider, PollutantInfoProvider>(
-          create: (context) => PollutantInfoProvider(
-            Provider.of<CompoundProvider>(context, listen: false),
-          ),
-          update: (context, compoundProvider, previous) =>
-              PollutantInfoProvider(compoundProvider),
-        ),
+        ChangeNotifierProvider(create: (_) => PollutantInfoProvider()),
       ],
       child: MaterialApp(
         title: 'ChemVerse',
@@ -63,6 +58,7 @@ class ChemistryExplorerApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         routes: {
           '/main': (context) => const MainScreen(initialIndex: 0),
+          '/city-search': (context) => const MainScreen(initialIndex: 2),
         },
       ),
     );

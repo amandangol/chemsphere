@@ -82,19 +82,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     Future.delayed(const Duration(seconds: 15), _cycleToNextFact);
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    // Check for arguments to change tab
-    final args = ModalRoute.of(context)?.settings.arguments;
-    if (args != null && args is int && args != _currentIndex) {
-      setState(() {
-        _currentIndex = args;
-      });
-    }
-  }
-
   void _cycleToNextFact() {
     if (!mounted) return;
     setState(() {

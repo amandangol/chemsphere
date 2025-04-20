@@ -11,6 +11,7 @@ class Pollutant {
   String? safetyInfo;
   String? sources;
   Map<String, dynamic>? chemicalProperties;
+  String? detailedDescription; // Add a new field for detailed description
 
   Pollutant({
     required this.name,
@@ -23,6 +24,7 @@ class Pollutant {
     this.safetyInfo,
     this.sources,
     this.chemicalProperties,
+    this.detailedDescription,
   });
 
   String get formattedValue => '$value $unit';

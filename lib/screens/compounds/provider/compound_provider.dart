@@ -13,6 +13,15 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
   List<Compound> _compounds = [];
   Compound? _selectedCompound;
 
+  // Cache for compound details to avoid redundant API calls
+  final Map<int, Compound> _compoundCache = {};
+
+  // Track whether a fetch operation is in progress for a given CID
+  final Map<int, bool> _fetchInProgress = {};
+
+  // Add a debug flag to log API responses
+  final bool _debugApiResponses = true;
+
   List<Compound> get compounds => _compounds;
   Compound? get selectedCompound => _selectedCompound;
 
@@ -60,7 +69,12 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
         'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/$cid/JSON${heading != null ? '?heading=$heading' : ''}',
       );
 
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw TimeoutException('PUG View data request timed out');
+        },
+      );
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -75,6 +89,29 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
   }
 
   Future<void> fetchCompoundDetails(int cid) async {
+    // If a fetch is already in progress for this CID, wait for it to complete
+    if (_fetchInProgress[cid] == true) {
+      print('Fetch already in progress for CID: $cid - waiting for completion');
+      // Wait a bit and check the cache
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (_compoundCache.containsKey(cid)) {
+        _selectedCompound = _compoundCache[cid];
+        notifyListeners();
+        return;
+      }
+      return;
+    }
+
+    // Check if we already have the compound cached
+    if (_compoundCache.containsKey(cid)) {
+      print('Using cached compound data for CID: $cid');
+      _selectedCompound = _compoundCache[cid];
+      notifyListeners();
+      return;
+    }
+
+    _fetchInProgress[cid] = true;
+
     try {
       setLoading(true);
       clearError();
@@ -84,57 +121,97 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
 
       // Fetch basic compound data
       print('Fetching detailed info...');
-      final data = await fetchDetailedInfo(cid);
-      print('Detailed info response: ${data.toString().substring(0, 200)}...');
+      Map<String, dynamic> data;
+      try {
+        data = await fetchDetailedInfo(cid);
+        print('Detailed info response received successfully');
+      } catch (e) {
+        print('Error fetching detailed info: $e');
+        // Create a minimal valid structure
+        data = {
+          'compound': {
+            'PC_Compounds': [
+              {'props': []}
+            ]
+          }
+        };
+      }
 
       // Fetch description data from XML endpoint
       print('Fetching description data...');
-      final descriptionResponse = await http.get(
-        Uri.parse(
-            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/description/XML'),
-      );
-
       String description = '';
       String descriptionSource = '';
       String descriptionUrl = '';
 
-      if (descriptionResponse.statusCode == 200) {
-        final document = XmlDocument.parse(descriptionResponse.body);
-        final descriptionElement =
-            document.findAllElements('Description').firstOrNull;
-        final sourceElement =
-            document.findAllElements('DescriptionSourceName').firstOrNull;
-        final urlElement =
-            document.findAllElements('DescriptionURL').firstOrNull;
+      try {
+        final descriptionResponse = await http
+            .get(
+              Uri.parse(
+                  'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/description/XML'),
+            )
+            .timeout(const Duration(seconds: 10));
 
-        description = descriptionElement?.text ?? '';
-        descriptionSource = sourceElement?.text ?? '';
-        descriptionUrl = urlElement?.text ?? '';
+        if (descriptionResponse.statusCode == 200) {
+          final document = XmlDocument.parse(descriptionResponse.body);
+          final descriptionElement =
+              document.findAllElements('Description').firstOrNull;
+          final sourceElement =
+              document.findAllElements('DescriptionSourceName').firstOrNull;
+          final urlElement =
+              document.findAllElements('DescriptionURL').firstOrNull;
 
-        print('Description: $description');
-        print('Description Source: $descriptionSource');
-        print('Description URL: $descriptionUrl');
+          description = descriptionElement?.text ?? '';
+          descriptionSource = sourceElement?.text ?? '';
+          descriptionUrl = urlElement?.text ?? '';
+
+          print('Description: $description');
+          print('Description Source: $descriptionSource');
+          print('Description URL: $descriptionUrl');
+        }
+      } catch (e) {
+        print('Non-critical error fetching description: $e');
+        // We'll continue with an empty description
+      }
+
+      // Use default descriptions when PubChem data is not available
+      if (description.isEmpty) {
+        description = _getDefaultDescription(cid);
+        descriptionSource = 'Generated Description';
       }
 
       // Fetch additional data from PUG View
-      print('Fetching PUG View data...');
-      final pugViewData = await fetchPugViewData(cid);
-      print(
-          'PUG View response: ${pugViewData.toString().substring(0, 200)}...');
+      Map<String, dynamic> pugViewData = {};
+      try {
+        print('Fetching PUG View data...');
+        pugViewData = await fetchPugViewData(cid);
+        print('PUG View response received');
+      } catch (e) {
+        print('Non-critical error fetching PUG View data: $e');
+        // Continue without PUG View data
+        pugViewData = {};
+      }
 
       // Fetch chemical properties
-      print('Fetching chemical properties...');
-      final propertiesResponse = await http.get(
-        Uri.parse(
-            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/property/MeltingPoint,BoilingPoint,FlashPoint,Density,Solubility,LogP,VaporPressure/JSON'),
-      );
-
       Map<String, dynamic> chemicalProperties = {};
-      if (propertiesResponse.statusCode == 200) {
-        final propertiesData = json.decode(propertiesResponse.body);
-        if (propertiesData['PropertyTable']?['Properties'] != null) {
-          chemicalProperties = propertiesData['PropertyTable']['Properties'][0];
+      try {
+        print('Fetching chemical properties...');
+        final propertiesResponse = await http
+            .get(
+              Uri.parse(
+                  'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/property/MeltingPoint,BoilingPoint,FlashPoint,Density,Solubility,LogP,VaporPressure/JSON'),
+            )
+            .timeout(const Duration(seconds: 10));
+
+        if (propertiesResponse.statusCode == 200) {
+          final propertiesData = json.decode(propertiesResponse.body);
+          if (propertiesData['PropertyTable']?['Properties'] != null) {
+            chemicalProperties =
+                propertiesData['PropertyTable']['Properties'][0];
+          }
         }
+      } catch (e) {
+        print('Non-critical error fetching chemical properties: $e');
+        // Continue without these properties
       }
 
       // Extract properties from compound data
@@ -142,8 +219,6 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
       final propertiesData = compoundData?['props'] ?? [];
       print('Properties data length: ${propertiesData.length}');
       final properties = _extractProperties(propertiesData);
-      print(
-          'Extracted properties: ${properties.toString().substring(0, 200)}...');
 
       // Extract title from PUG View data
       String title = pugViewData['Record']?['RecordTitle'] ?? '';
@@ -155,10 +230,16 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
         print('Title from properties: $title');
       }
 
+      // If title is still empty, use a default based on CID
+      if (title.isEmpty) {
+        title = 'Compound $cid';
+        print('Using default title: $title');
+      }
+
       // Use base provider's method to fetch synonyms with proper error handling
-      print('Fetching synonyms...');
       List<String> synonyms = [];
       try {
+        print('Fetching synonyms...');
         synonyms = await fetchSynonyms(cid);
         print('Synonyms fetched: ${synonyms.length}');
       } catch (e) {
@@ -168,14 +249,19 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
         synonyms = [];
       }
 
+      // Add fallback data for common pollutants
+      _addFallbackData(cid, properties, chemicalProperties);
+
       // Create the compound object with empty safety and biological data
-      _selectedCompound = Compound(
+      final compound = Compound(
         cid: cid,
         title: title,
         molecularFormula: properties['MolecularFormula'] ?? '',
-        molecularWeight: double.tryParse(
-                properties['Molecular Weight']?.toString() ?? '0') ??
-            0.0,
+        molecularWeight: properties['Molecular Weight'] is num
+            ? properties['Molecular Weight']
+            : double.tryParse(
+                    properties['Molecular Weight']?.toString() ?? '0') ??
+                0.0,
         smiles: properties['CanonicalSMILES'] ?? '',
         xLogP: double.tryParse(properties['XLogP']?.toString() ?? '0') ?? 0.0,
         hBondDonorCount:
@@ -251,27 +337,87 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
         inchiKey: properties['InChIKey'] ?? '',
       );
 
+      // Save to cache and update selected compound
+      _compoundCache[cid] = compound;
+      _selectedCompound = compound;
+
       print('\n=== Created Compound Object ===');
       print('Title: ${_selectedCompound?.title}');
       print('Molecular Formula: ${_selectedCompound?.molecularFormula}');
       print('Molecular Weight: ${_selectedCompound?.molecularWeight}');
-      print('Description: ${_selectedCompound?.description}');
-      print('Description Source: ${_selectedCompound?.descriptionSource}');
-      print('Description URL: ${_selectedCompound?.descriptionUrl}');
-      print('Synonyms: ${_selectedCompound?.synonyms}');
-      print('Chemical Properties: ${_selectedCompound?.physicalProperties}');
     } catch (e) {
       print('Error in fetchCompoundDetails: $e');
 
       // Use ErrorHandler to get a user-friendly error message
       if (e is SocketException) {
         setError(ErrorHandler.getErrorMessage(e));
+      } else if (e is TimeoutException) {
+        setError(
+            'Request timed out. Please check your internet connection and try again.');
       } else {
         setError(e.toString());
       }
+
+      // Create a minimal compound with fallback data
+      _createFallbackCompound(cid);
     } finally {
       setLoading(false);
+      _fetchInProgress[cid] = false; // Mark fetch as completed
     }
+  }
+
+  // Create a fallback compound if the normal fetch fails
+  void _createFallbackCompound(int cid) {
+    // Create a minimal compound with fallback data to avoid UI errors
+    final properties = <String, dynamic>{};
+    _addFallbackData(cid, properties, {});
+
+    final compound = Compound(
+      cid: cid,
+      title: 'Compound $cid',
+      molecularFormula: properties['MolecularFormula'] ?? '',
+      molecularWeight: 0.0,
+      description: _getDefaultDescription(cid),
+      descriptionSource: 'Generated Description',
+      physicalProperties: properties,
+      synonyms: [],
+      safetyData: {},
+      biologicalData: {},
+      pubChemUrl: 'https://pubchem.ncbi.nlm.nih.gov/compound/$cid',
+      // Default values for all other properties
+      smiles: '',
+      xLogP: 0.0,
+      hBondDonorCount: 0,
+      hBondAcceptorCount: 0,
+      rotatableBondCount: 0,
+      heavyAtomCount: 0,
+      atomStereoCount: 0,
+      bondStereoCount: 0,
+      complexity: 0.0,
+      iupacName: '',
+      descriptionUrl: '',
+      monoisotopicMass: 0.0,
+      tpsa: 0.0,
+      charge: 0,
+      isotopeAtomCount: 0,
+      definedAtomStereoCount: 0,
+      undefinedAtomStereoCount: 0,
+      definedBondStereoCount: 0,
+      undefinedBondStereoCount: 0,
+      covalentUnitCount: 0,
+      patentCount: 0,
+      patentFamilyCount: 0,
+      annotationTypes: [],
+      annotationTypeCount: 0,
+      sourceCategories: [],
+      literatureCount: 0,
+      inchi: '',
+      inchiKey: '',
+    );
+
+    // Save to cache and update selected compound
+    _compoundCache[cid] = compound;
+    _selectedCompound = compound;
   }
 
   void clearSelectedCompound() {
@@ -282,6 +428,21 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
   void clearCompounds() {
     _compounds = [];
     notifyListeners();
+  }
+
+  void clearCache() {
+    _compoundCache.clear();
+    _fetchInProgress.clear();
+    notifyListeners();
+  }
+
+  bool isCompoundCached(int cid) {
+    return _compoundCache.containsKey(cid);
+  }
+
+  // Utility function to get min of two numbers
+  int min(int a, int b) {
+    return a < b ? a : b;
   }
 
   Map<String, dynamic> _extractProperties(List<dynamic> props) {
@@ -525,6 +686,154 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
 
       // Return empty list instead of throwing to prevent entire compound loading from failing
       return [];
+    }
+  }
+
+  // Add fallback data for common pollutants when API data is incomplete
+  void _addFallbackData(int cid, Map<String, dynamic> properties,
+      Map<String, dynamic> chemicalProperties) {
+    switch (cid) {
+      case 44778645: // PM2.5
+        if (properties['MolecularFormula'] == null ||
+            properties['MolecularFormula'].isEmpty) {
+          properties['MolecularFormula'] = 'Various';
+        }
+        if (properties['Molecular Weight'] == null ||
+            properties['Molecular Weight'] == 0) {
+          properties['Molecular Weight'] = 'Varies';
+        }
+        break;
+      case 518232: // PM10
+        if (properties['MolecularFormula'] == null ||
+            properties['MolecularFormula'].isEmpty) {
+          properties['MolecularFormula'] = 'Various';
+        }
+        if (properties['Molecular Weight'] == null ||
+            properties['Molecular Weight'] == 0) {
+          properties['Molecular Weight'] = 'Varies';
+        }
+        break;
+      case 24823: // O3 (Ozone)
+        if (properties['MolecularFormula'] == null ||
+            properties['MolecularFormula'].isEmpty) {
+          properties['MolecularFormula'] = 'O₃';
+        }
+        if (properties['Molecular Weight'] == null ||
+            properties['Molecular Weight'] == 0) {
+          properties['Molecular Weight'] = 48.00;
+        }
+        break;
+      case 3032552: // NO2
+        if (properties['MolecularFormula'] == null ||
+            properties['MolecularFormula'].isEmpty) {
+          properties['MolecularFormula'] = 'NO₂';
+        }
+        if (properties['Molecular Weight'] == null ||
+            properties['Molecular Weight'] == 0) {
+          properties['Molecular Weight'] = 46.01;
+        }
+        break;
+      case 1119: // SO2
+        if (properties['MolecularFormula'] == null ||
+            properties['MolecularFormula'].isEmpty) {
+          properties['MolecularFormula'] = 'SO₂';
+        }
+        if (properties['Molecular Weight'] == null ||
+            properties['Molecular Weight'] == 0) {
+          properties['Molecular Weight'] = 64.07;
+        }
+        break;
+      case 281: // CO
+        if (properties['MolecularFormula'] == null ||
+            properties['MolecularFormula'].isEmpty) {
+          properties['MolecularFormula'] = 'CO';
+        }
+        if (properties['Molecular Weight'] == null ||
+            properties['Molecular Weight'] == 0) {
+          properties['Molecular Weight'] = 28.01;
+        }
+        break;
+    }
+  }
+
+  // Get default description for common pollutants when PubChem description is unavailable
+  String _getDefaultDescription(int cid) {
+    switch (cid) {
+      case 44778645: // PM2.5
+        return 'Fine particulate matter (PM2.5) refers to tiny particles or droplets in the air that are 2.5 micrometers or less in width. They are primarily produced from combustion processes and can penetrate deep into the lungs and even enter the bloodstream, causing respiratory and cardiovascular health issues.';
+      case 518232: // PM10
+        return 'Particulate matter 10 (PM10) refers to inhalable particles with diameters that are generally 10 micrometers and smaller. These particles come from sources such as dust, pollen, mold, and various combustion processes. PM10 can enter the lungs and potentially cause health problems.';
+      case 24823: // O3 (Ozone)
+        return 'Ozone (O₃) is a gas composed of three oxygen atoms. At ground level, ozone is created by chemical reactions between oxides of nitrogen and volatile organic compounds in the presence of sunlight. Breathing ozone can trigger health problems including chest pain, coughing, throat irritation, and congestion.';
+      case 3032552: // NO2
+        return 'Nitrogen dioxide (NO₂) is a gaseous air pollutant composed of nitrogen and oxygen. It forms when fossil fuels such as coal, oil, gas, or diesel are burned at high temperatures. NO₂ can cause respiratory problems and contribute to the formation of other pollutants including ground-level ozone and particulate matter.';
+      case 1119: // SO2
+        return 'Sulfur dioxide (SO₂) is a colorless, reactive gas with a strong odor. It is produced from burning fuels containing sulfur, such as coal and oil, and during metal extraction from ore. SO₂ can harm the human respiratory system and make breathing difficult, particularly for people with asthma.';
+      case 281: // CO
+        return 'Carbon monoxide (CO) is a colorless, odorless gas that is formed when carbon in fuel is not burned completely. It is a poisonous gas that can cause sudden illness and death. CO interferes with the delivery of oxygen throughout the body, and exposure to high levels can cause headache, dizziness, confusion, unconsciousness, and death.';
+      default:
+        return '';
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchDetailedInfo(int cid) async {
+    try {
+      final url = Uri.parse(
+          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/record/JSON?record_type=2d');
+
+      final response = await http.get(url).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw TimeoutException('PubChem detailed info request timed out');
+        },
+      );
+
+      if (response.statusCode != 200) {
+        if (_debugApiResponses) {
+          print('Error response from PubChem API: ${response.statusCode}');
+          print('Response body: ${response.body}');
+        }
+        throw Exception(
+            'Failed to fetch compound details: ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+
+      if (_debugApiResponses) {
+        print('Received detailed info response for CID: $cid');
+        print(
+            'PC_Compounds present: ${data['compound']?['PC_Compounds'] != null}');
+        print(
+            'PC_Compounds length: ${data['compound']?['PC_Compounds']?.length ?? 0}');
+      }
+
+      // Check if the response has the expected structure
+      if (data['compound'] == null ||
+          data['compound']['PC_Compounds'] == null ||
+          data['compound']['PC_Compounds'].isEmpty) {
+        print(
+            'Invalid response format from PubChem - missing compound data for CID: $cid');
+        // Return a minimal valid structure to avoid crashes
+        return {
+          'compound': {
+            'PC_Compounds': [
+              {'props': []}
+            ]
+          }
+        };
+      }
+
+      return data;
+    } catch (e) {
+      print('Error in fetchDetailedInfo for CID $cid: $e');
+      // Return a minimal valid structure to avoid crashes
+      return {
+        'compound': {
+          'PC_Compounds': [
+            {'props': []}
+          ]
+        }
+      };
     }
   }
 }

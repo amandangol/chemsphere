@@ -13,7 +13,7 @@ class AqiIndicatorWidget extends StatefulWidget {
 }
 
 class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
