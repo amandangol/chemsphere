@@ -4,9 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'bookmarks/bookmark_screen.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/aqi/city_search_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  final int initialIndex;
+
+  const MainScreen({
+    Key? key,
+    this.initialIndex = 0,
+  }) : super(key: key);
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -28,12 +34,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   ];
   int _currentFactIndex = 0;
   late PageController _pageController;
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: _currentIndex);
     _loadUsername();
 
     // Header animation
@@ -75,11 +82,29 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     Future.delayed(const Duration(seconds: 15), _cycleToNextFact);
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Check for arguments to change tab
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args != null && args is int && args != _currentIndex) {
+      setState(() {
+        _currentIndex = args;
+      });
+    }
+  }
+
   void _cycleToNextFact() {
+    if (!mounted) return;
     setState(() {
       _currentFactIndex = (_currentFactIndex + 1) % _chemistryFacts.length;
     });
-    Future.delayed(const Duration(seconds: 15), _cycleToNextFact);
+    Future.delayed(const Duration(seconds: 15), () {
+      if (mounted) {
+        _cycleToNextFact();
+      }
+    });
   }
 
   Future<void> _loadUsername() async {
@@ -119,13 +144,14 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
           // Flashcards Screen
           ElementFlashcardScreen(),
 
+          // AQI City Search Screen
+          CitySearchScreen(),
+
           // Favorites Screen
           BookmarkScreen(),
 
-          // Profile Screen (placeholder)
-          Center(
-            child: ChemistryGuideScreen(),
-          ),
+          // Chemistry Guide Screen
+          ChemistryGuideScreen(),
         ],
       ),
       bottomNavigationBar: Container(
@@ -188,9 +214,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                 type: BottomNavigationBarType.fixed,
                 items: [
                   _buildNavItem(Icons.home_rounded, 'Home'),
-                  _buildNavItem(Icons.flash_on_rounded, 'Flashcards'),
+                  _buildNavItem(Icons.flash_on_rounded, 'Learn'),
+                  _buildNavItem(Icons.air_rounded, 'Air Quality'),
                   _buildNavItem(Icons.bookmark_rounded, 'Saved'),
-                  _buildNavItem(Icons.book_rounded, 'Readbook'),
+                  _buildNavItem(Icons.book_rounded, 'Guide'),
                 ],
                 currentIndex: _currentIndex,
                 onTap: (index) {
@@ -240,11 +267,13 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     switch (label) {
       case 'Home':
         return theme.colorScheme.primary;
-      case 'Flashcards':
+      case 'Learn':
         return Colors.orange;
+      case 'Air Quality':
+        return Colors.blue;
       case 'Saved':
         return Colors.green;
-      case 'Profile':
+      case 'Guide':
         return Colors.purple;
       default:
         return theme.colorScheme.primary;

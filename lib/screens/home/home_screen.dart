@@ -5,12 +5,18 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:lottie/lottie.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import '../../widgets/chemistry_widgets.dart';
+import '../../providers/aqi_provider.dart';
+import '../aqi/aqi_indicator_widget.dart';
+import '../aqi/aqi_info_screen.dart';
 import '../elements/periodic_table_screen.dart';
 import '../compounds/compound_searhc_screen.dart';
 import '../drugs/drug_search_screen.dart';
 import '../reactions/reaction_screen.dart';
 import '../chemistryguide/chemistry_guide_screen.dart';
 import '../formula/formula_search_screen.dart';
+import '../main_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -80,10 +86,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _cycleToNextFact() {
+    if (!mounted) return;
     setState(() {
       _currentFactIndex = (_currentFactIndex + 1) % _chemistryFacts.length;
     });
-    Future.delayed(const Duration(seconds: 15), _cycleToNextFact);
+    Future.delayed(const Duration(seconds: 15), () {
+      if (mounted) {
+        _cycleToNextFact();
+      }
+    });
   }
 
   Future<void> _loadUsername() async {
@@ -167,65 +178,123 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           children: [
                             Row(
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        theme.colorScheme.primary,
-                                        theme.colorScheme.secondary,
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: theme.colorScheme.primary
-                                            .withOpacity(0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 3),
+                                // Logo with molecular structure background
+                                Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    // Animated molecular background (optional)
+                                    SizedBox(
+                                      width: 62,
+                                      height: 62,
+                                      child: CustomPaint(
+                                        painter: MoleculePainter(
+                                          color: theme.colorScheme.primary
+                                              .withOpacity(0.15),
+                                        ),
                                       ),
-                                    ],
-                                  ),
-                                  child: Image.asset(
-                                    'assets/images/chemlogo.png',
-                                    color: theme.colorScheme.onPrimary,
-                                    width: 24,
-                                    height: 24,
-                                  ),
+                                    ),
+                                    // Logo container with scientific look
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.surface,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: theme.colorScheme.primary
+                                              .withOpacity(0.4),
+                                          width: 2,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: theme.colorScheme.primary
+                                                .withOpacity(0.2),
+                                            blurRadius: 8,
+                                            spreadRadius: 1,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Image.asset(
+                                        'assets/images/chemlogo.png',
+                                        width: 48,
+                                        height: 48,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(width: 12),
-                                Text(
-                                  'ChemiVerse',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    foreground: Paint()
-                                      ..shader = LinearGradient(
-                                        colors: [
-                                          theme.colorScheme.primary,
-                                          Colors.deepPurple,
-                                        ],
-                                      ).createShader(const Rect.fromLTWH(
-                                          0.0, 0.0, 200.0, 70.0)),
-                                  ),
+                                // App name with chemistry-inspired style
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'ChemiVerse',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        foreground: Paint()
+                                          ..shader = LinearGradient(
+                                            colors: [
+                                              theme.colorScheme.primary,
+                                              Colors.deepPurple,
+                                              theme.colorScheme.secondary,
+                                            ],
+                                          ).createShader(
+                                            const Rect.fromLTWH(
+                                                0.0, 0.0, 200.0, 70.0),
+                                          ),
+                                      ),
+                                    ),
+                                    // Scientific formula-like subtitle
+                                    Text(
+                                      'H₂O • CO₂ • C₆H₁₂O₆',
+                                      style: GoogleFonts.jetBrainsMono(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                        letterSpacing: 1.2,
+                                        color: theme.colorScheme.primary
+                                            .withOpacity(0.7),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
+                            // Chemistry flask icon button
                             Container(
+                              height: 42,
+                              width: 42,
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.surface,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    theme.colorScheme.primary.withOpacity(0.7),
+                                    theme.colorScheme.secondary
+                                        .withOpacity(0.7),
+                                  ],
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 8,
+                                    color: theme.colorScheme.primary
+                                        .withOpacity(0.2),
+                                    blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
-                              child: IconButton(
-                                icon: const Icon(Icons.notifications_outlined),
-                                onPressed: () {},
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () {},
+                                  child: Icon(
+                                    Icons.science_outlined,
+                                    color: theme.colorScheme.onPrimary,
+                                    size: 24,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -281,6 +350,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 );
               },
+            ),
+          ),
+
+          // AQI Widget - New addition
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+              child: AqiIndicatorWidget(),
             ),
           ),
 
@@ -400,6 +477,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               MaterialPageRoute(
                                 builder: (context) =>
                                     const ChemistryGuideScreen(),
+                              ),
+                            ),
+                          ),
+                          _buildQuickAccessItem(
+                            context,
+                            imagePath: 'assets/svgs/molecule.svg',
+                            label: 'Air Quality',
+                            color: Colors.blue,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AqiInfoScreen(),
                               ),
                             ),
                           ),
@@ -629,6 +718,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         builder: (context) => const ChemistryGuideScreen(),
                       ),
                     ),
+                  ),
+                  _buildFeatureCard(
+                    context,
+                    imagePath: 'assets/svgs/molecule.svg',
+                    title: 'Air Quality',
+                    description:
+                        'Explore real-time air quality data and learn about pollutants',
+                    color: Colors.blue.withOpacity(0.1),
+                    iconColor: Colors.blue,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AqiInfoScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ]),
               ),

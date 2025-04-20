@@ -2,7 +2,7 @@ name: chem_explore
 description: A chemistry exploration app
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ">=3.0.0 <4.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -31,12 +31,12 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
-  http: ^1.1.2
-  provider: ^6.1.1
-  shared_preferences: ^2.2.2
-  url_launcher: ^6.3.1
+  http: ^1.1.0
+  provider: ^6.0.5
+  shared_preferences: ^2.2.0
+  url_launcher: ^6.1.14
   flutter_svg: ^2.0.17
-  cached_network_image: ^3.4.1
+  cached_network_image: ^3.2.3
   google_fonts: ^6.1.0
   flutter_staggered_animations: ^1.1.1
   lottie: ^3.1.3
@@ -44,17 +44,20 @@ dependencies:
   share_plus: ^7.2.1
   path_provider: ^2.1.5
   webview_flutter: ^4.4.2
-  xml: ^6.5.0
+  xml: ^6.3.0
   flip_card: ^0.7.0
   font_awesome_flutter: ^10.8.0
   flutter_launcher_icons: ^0.14.3
-  flutter_html: ^3.0.0-beta.2
-  
+  flutter_map: ^7.0.2 # For OpenStreetMap implementation
+  latlong2: ^0.9.1 # Required for LatLng in flutter_map
+  geolocator: ^12.0.0 # For getting device location
+  geolocator_android: ^4.5.5  # For Android platform implementation
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
 
   webview_flutter_android: any
+  fl_chart: ^0.69.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -71,7 +74,6 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
@@ -92,6 +94,7 @@ flutter_icons:
   macos: true
   image_path: "assets/icon/icon.png"
   remove_alpha_ios: true # Fixes iOS alpha issue
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

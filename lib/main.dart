@@ -8,6 +8,9 @@ import 'screens/drugs/provider/drug_provider.dart';
 import 'screens/reactions/provider/reaction_provider.dart';
 import 'screens/bookmarks/provider/bookmark_provider.dart';
 import 'screens/chemistryguide/provider/chemistry_guide_provider.dart';
+import 'screens/main_screen.dart';
+import 'providers/aqi_provider.dart';
+import 'providers/pollutant_info_provider.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 
@@ -44,12 +47,23 @@ class ChemistryExplorerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ChemistryGuideProvider()),
         ChangeNotifierProvider(create: (_) => FormulaSearchProvider()),
         ChangeNotifierProvider(create: (_) => ChemicalSearchProvider()),
+        ChangeNotifierProvider(create: (_) => AqiProvider()),
+        ChangeNotifierProxyProvider<CompoundProvider, PollutantInfoProvider>(
+          create: (context) => PollutantInfoProvider(
+            Provider.of<CompoundProvider>(context, listen: false),
+          ),
+          update: (context, compoundProvider, previous) =>
+              PollutantInfoProvider(compoundProvider),
+        ),
       ],
       child: MaterialApp(
         title: 'ChemVerse',
         theme: AppTheme.lightTheme,
         home: const SplashScreen(),
         debugShowCheckedModeBanner: false,
+        routes: {
+          '/main': (context) => const MainScreen(initialIndex: 0),
+        },
       ),
     );
   }
