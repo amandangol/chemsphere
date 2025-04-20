@@ -513,13 +513,13 @@ class _BookmarkScreenState extends State<BookmarkScreen>
 
     switch (category.toLowerCase()) {
       case 'nonmetal':
-        return Color(0xFF2E7D32);
+        return const Color(0xFF2E7D32);
       case 'alkali metal':
-        return Color(0xFFB82E2E);
+        return const Color(0xFFB82E2E);
       case 'alkaline earth metal':
-        return Color(0xFFE67700);
+        return const Color(0xFFE67700);
       case 'transition metal':
-        return Color(0xFFE67700).withOpacity(0.8);
+        return const Color(0xFFE67700).withOpacity(0.8);
       case 'metalloid':
         return theme.colorScheme.tertiary;
       case 'halogen':

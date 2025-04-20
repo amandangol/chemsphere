@@ -10,10 +10,8 @@ import '../elements/periodic_table_screen.dart';
 import '../compounds/compound_searhc_screen.dart';
 import '../drugs/drug_search_screen.dart';
 import '../onboarding/onboarding_screen.dart';
-import '../reactions/reaction_screen.dart';
 import '../chemistryguide/chemistry_guide_screen.dart';
 import '../formula/formula_search_screen.dart';
-import '../elements/element_flashcard_screen.dart';
 import '../aqi/city_search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -36,6 +34,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     'Diamonds are not rare at all—they are actually one of the most common gems found on Earth.',
     'The human body contains enough carbon to fill about 9,000 pencils.',
     'The only letter not appearing on the periodic table is J.',
+    'Helium is the only element that was first discovered in space before being found on Earth.',
+    'Mercury and bromine are the only elements that are liquid at room temperature.',
+    'Astatine is so rare that there is less than 1 gram of it naturally on Earth at any time.',
+    'The smell of rain comes from a chemical compound called geosmin.',
+    'Bananas are naturally radioactive because they contain potassium-40.'
   ];
   int _currentFactIndex = 0;
 
@@ -88,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     setState(() {
       _currentFactIndex = (_currentFactIndex + 1) % _chemistryFacts.length;
     });
-    Future.delayed(const Duration(seconds: 15), () {
+    Future.delayed(const Duration(seconds: 10), () {
       if (mounted) {
         _cycleToNextFact();
       }
@@ -360,9 +363,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
 
           // AQI Widget - Enhanced air quality indicator
-          SliverToBoxAdapter(
+          const SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: AqiIndicatorWidget(),
             ),
           ),

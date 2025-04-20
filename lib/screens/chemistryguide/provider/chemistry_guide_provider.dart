@@ -23,7 +23,7 @@ class ChemistryGuideProvider with ChangeNotifier {
   List<ChemistryPathway> get pathways => _pathways;
 
   // Elements data
-  List<ChemistryElement> _elements = [];
+  final List<ChemistryElement> _elements = [];
   List<ChemistryElement> get elements => _elements;
 
   // Search results

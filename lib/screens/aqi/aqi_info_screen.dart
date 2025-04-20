@@ -86,7 +86,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
         actions: [
           IconButton(
             icon: _refreshing
-                ? SizedBox(
+                ? const SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
@@ -120,16 +120,16 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
             fontWeight: FontWeight.w600,
             fontSize: 12,
           ),
-          tabs: [
+          tabs: const [
             Tab(
-              icon: const Icon(Icons.air, size: 16),
+              icon: Icon(Icons.air, size: 16),
               text: 'Air Quality',
-              iconMargin: const EdgeInsets.only(bottom: 2),
+              iconMargin: EdgeInsets.only(bottom: 2),
             ),
             Tab(
-              icon: const Icon(Icons.science_outlined, size: 16),
+              icon: Icon(Icons.science_outlined, size: 16),
               text: 'Pollutants',
-              iconMargin: const EdgeInsets.only(bottom: 2),
+              iconMargin: EdgeInsets.only(bottom: 2),
             ),
           ],
         ),
@@ -215,7 +215,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                         ElevatedButton.icon(
                           onPressed: _refreshing ? null : _refreshData,
                           icon: _refreshing
-                              ? Container(
+                              ? const SizedBox(
                                   width: 16,
                                   height: 16,
                                   child: CircularProgressIndicator(
@@ -305,7 +305,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       icon: _refreshing
-                          ? SizedBox(
+                          ? const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
@@ -313,7 +313,8 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                                 strokeWidth: 2,
                               ))
                           : const Icon(Icons.refresh, size: 16),
-                      label: Text('Refresh', style: TextStyle(fontSize: 12)),
+                      label:
+                          const Text('Refresh', style: TextStyle(fontSize: 12)),
                       onPressed: _refreshing ? null : _refreshData,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
@@ -394,7 +395,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: CustomPaint(
-                    size: Size(double.infinity, 200),
+                    size: const Size(double.infinity, 200),
                     painter: MolecularBackgroundPainter(
                       color: Colors.white.withOpacity(0.05),
                     ),

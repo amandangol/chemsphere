@@ -111,7 +111,7 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
       appBar: AppBar(
         title: Text(
           widget.title,
-          style: TextStyle(fontSize: 17),
+          style: const TextStyle(fontSize: 17),
         ),
         centerTitle: true,
         actions: [
@@ -178,7 +178,7 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                           controller: _searchController,
                           decoration: InputDecoration(
                             hintText: 'Enter a search term...',
-                            hintStyle: TextStyle(fontSize: 13),
+                            hintStyle: const TextStyle(fontSize: 13),
                             prefixIcon: const Icon(Icons.search, size: 18),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -189,7 +189,7 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                             contentPadding:
                                 const EdgeInsets.symmetric(vertical: 10),
                           ),
-                          style: TextStyle(fontSize: 14),
+                          style: const TextStyle(fontSize: 14),
                           onSubmitted: (_) => _search(),
                         ),
                       ),
@@ -210,7 +210,7 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                         icon: const Icon(Icons.search, size: 18),
                         tooltip: 'Search',
                         style: IconButton.styleFrom(
-                          minimumSize: Size(36, 36),
+                          minimumSize: const Size(36, 36),
                         ),
                       ),
                     ),
@@ -419,7 +419,7 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
       builder: (context) => AlertDialog(
         title: Text(
           'About ${widget.title}',
-          style: TextStyle(fontSize: 16),
+          style: const TextStyle(fontSize: 16),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -608,7 +608,7 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                         ),
                         label: Text(
                           suggestion,
-                          style: TextStyle(fontSize: 12),
+                          style: const TextStyle(fontSize: 12),
                         ),
                         labelStyle: GoogleFonts.poppins(
                           fontWeight: FontWeight.w500,
@@ -618,7 +618,7 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                           _search();
                         },
                         padding:
-                            EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                            const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
                       ))
                   .toList(),
             ),
@@ -639,15 +639,15 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
       'States of Matter': theme.colorScheme.secondary,
       'Solutions & Mixtures': theme.colorScheme.tertiary,
       'Concentration': theme.colorScheme.tertiary,
-      'Chemical Equations': Color(0xFFE67700), // Themed orange
-      'Reaction Types': Color(0xFFE67700), // Themed orange
-      'Equilibrium': Color(0xFFE67700), // Themed orange
-      'Thermochemistry': Color(0xFFB82E2E), // Themed red
-      'Reaction Rates': Color(0xFFB82E2E), // Themed red
-      'Catalysts': Color(0xFFB82E2E), // Themed red
-      'Carbon Compounds': Color(0xFF2E7D32), // Themed green
-      'Functional Groups': Color(0xFF2E7D32), // Themed green
-      'Organic Reactions': Color(0xFF2E7D32), // Themed green
+      'Chemical Equations': const Color(0xFFE67700), // Themed orange
+      'Reaction Types': const Color(0xFFE67700), // Themed orange
+      'Equilibrium': const Color(0xFFE67700), // Themed orange
+      'Thermochemistry': const Color(0xFFB82E2E), // Themed red
+      'Reaction Rates': const Color(0xFFB82E2E), // Themed red
+      'Catalysts': const Color(0xFFB82E2E), // Themed red
+      'Carbon Compounds': const Color(0xFF2E7D32), // Themed green
+      'Functional Groups': const Color(0xFF2E7D32), // Themed green
+      'Organic Reactions': const Color(0xFF2E7D32), // Themed green
     };
 
     return topicColors[topicTitle] ?? theme.colorScheme.primary;

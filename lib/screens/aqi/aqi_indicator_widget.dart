@@ -51,7 +51,7 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
     switch (pollutantCode.toLowerCase()) {
       case 'pm25':
       case 'pm10':
-        return 'PM'; // Particulate Matter doesn't have a chemical formula
+        return 'PM';
       case 'o3':
         return 'O₃';
       case 'no2':
@@ -426,7 +426,7 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                                 ),
                               ),
                               const SizedBox(width: 4),
-                              Icon(
+                              const Icon(
                                 Icons.arrow_forward,
                                 color: Colors.white,
                                 size: 14,
@@ -488,10 +488,10 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                   shadows: [
-                    Shadow(
+                    const Shadow(
                       color: Colors.black54,
                       blurRadius: 2,
-                      offset: const Offset(0, 1),
+                      offset: Offset(0, 1),
                     ),
                   ],
                 ),

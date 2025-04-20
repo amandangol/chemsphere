@@ -23,7 +23,7 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
   bool _isLoading = false;
   bool _fetchedContent = false;
   double _textScaleFactor = 1.0;
-  ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -144,8 +144,8 @@ class _TopicDetailScreenState extends State<TopicDetailScreen> {
       floatingActionButton: FloatingActionButton(
         heroTag: "related_topics",
         onPressed: _showRelatedTopics,
-        child: const Icon(Icons.explore),
         tooltip: 'Explore related topics',
+        child: const Icon(Icons.explore),
       ),
     );
   }

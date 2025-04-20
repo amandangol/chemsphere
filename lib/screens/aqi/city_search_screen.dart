@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -120,7 +119,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       print("Error getting current location: $e");
 
       // Default to a generic location if we can't get the user's
-      _mapController.move(LatLng(40.7128, -74.0060), 4); // Default to NYC
+      _mapController.move(const LatLng(40.7128, -74.0060), 4); // Default to NYC
       setState(() {
         _isSearching = false;
       });
@@ -226,7 +225,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
             ),
           ),
           // Simple triangle indicator using icon
-          Icon(
+          const Icon(
             Icons.arrow_drop_down,
             color: Colors.white,
             size: 24,
@@ -511,10 +510,10 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
           // Map as background
           FlutterMap(
             mapController: _mapController,
-            options: MapOptions(
-              initialCenter: const LatLng(0, 0),
+            options: const MapOptions(
+              initialCenter: LatLng(0, 0),
               initialZoom: 2,
-              interactionOptions: const InteractionOptions(
+              interactionOptions: InteractionOptions(
                 flags: InteractiveFlag.all,
               ),
             ),

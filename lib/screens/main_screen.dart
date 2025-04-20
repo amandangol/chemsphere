@@ -1,5 +1,3 @@
-import 'package:chem_explore/screens/chemistryguide/chemistry_guide_screen.dart';
-import 'package:chem_explore/screens/elements/element_flashcard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'bookmarks/bookmark_screen.dart';

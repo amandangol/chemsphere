@@ -189,7 +189,7 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
             }
 
             if (_displayElements.isEmpty) {
-              return Center(
+              return const Center(
                 child: Text(
                   'No flashcards available.',
                   style: TextStyle(fontSize: 14),
@@ -723,22 +723,22 @@ class _ElementFlashcardScreenState extends State<ElementFlashcardScreen> {
 
     // If it's a standard element group color, use a more theme-appropriate version
     if (originalColor == Colors.green ||
-        originalColor.value == Color(0xFF4CAF50).value) {
-      return Color(0xFF2E7D32); // Themed green
+        originalColor.value == const Color(0xFF4CAF50).value) {
+      return const Color(0xFF2E7D32); // Themed green
     } else if (originalColor == Colors.red ||
-        originalColor.value == Color(0xFFF44336).value) {
-      return Color(0xFFB82E2E); // Themed red
+        originalColor.value == const Color(0xFFF44336).value) {
+      return const Color(0xFFB82E2E); // Themed red
     } else if (originalColor == Colors.blue ||
-        originalColor.value == Color(0xFF2196F3).value) {
+        originalColor.value == const Color(0xFF2196F3).value) {
       return theme.colorScheme.primary; // App primary
     } else if (originalColor == Colors.deepPurple ||
-        originalColor.value == Color(0xFF673AB7).value) {
+        originalColor.value == const Color(0xFF673AB7).value) {
       return theme.colorScheme.tertiary; // App tertiary
     } else if (originalColor == Colors.orange ||
-        originalColor.value == Color(0xFFFF9800).value) {
-      return Color(0xFFE67700); // Themed orange
+        originalColor.value == const Color(0xFFFF9800).value) {
+      return const Color(0xFFE67700); // Themed orange
     } else if (originalColor == Colors.teal ||
-        originalColor.value == Color(0xFF009688).value) {
+        originalColor.value == const Color(0xFF009688).value) {
       return theme.colorScheme.secondary; // App secondary
     }
 

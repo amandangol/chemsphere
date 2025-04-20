@@ -669,11 +669,11 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
       case 'fundamentals':
         return theme.colorScheme.primary;
       case 'reactions':
-        return Color(0xFFE67700); // Themed orange
+        return const Color(0xFFE67700); // Themed orange
       case 'organic':
-        return Color(0xFF2E7D32); // Themed green
+        return const Color(0xFF2E7D32); // Themed green
       case 'energy':
-        return Color(0xFFB82E2E); // Themed red
+        return const Color(0xFFB82E2E); // Themed red
       case 'matter':
         return theme.colorScheme.secondary;
       default:

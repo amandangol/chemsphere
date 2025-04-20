@@ -264,7 +264,7 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Modern Periodic Table',
+          'Interactive Periodic Table',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
             fontSize: 16,
@@ -1004,81 +1004,172 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
   }
 
   Widget _buildTableDirectionArrows() {
-    return Positioned(
-      top: 30,
-      left: 50,
-      child: Column(
+    return Container(
+      width: 300,
+      height: 400,
+      child: Stack(
+        // Add fit property to ensure children don't overflow
+        fit: StackFit.loose,
         children: [
-          // Group arrow (vertical)
-          Container(
-            height: 150,
-            width: 40,
+          // Group (vertical) arrow with description
+          Positioned(
+            top: 60,
+            left: 40,
             child: Column(
               children: [
                 Text(
-                  'Groups',
+                  'Groups (Columns)',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.blue.shade800,
                   ),
                 ),
-                Expanded(
-                  child: CustomPaint(
-                    painter: ArrowPainter(
-                      start: const Offset(20, 20),
-                      end: const Offset(20, 130),
-                      color: Colors.blue.shade800,
-                      arrowSize: 8,
-                    ),
+                Container(
+                  height: 160,
+                  width: 100,
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: Stack(
+                          // Make sure this inner Stack has bounds
+                          clipBehavior: Clip.none,
+                          fit: StackFit.expand,
+                          children: [
+                            CustomPaint(
+                              size: const Size(100, 140),
+                              painter: ArrowPainter(
+                                start: const Offset(50, 10),
+                                end: const Offset(50, 120),
+                                color: Colors.blue.shade800,
+                                arrowSize: 10,
+                              ),
+                            ),
+                            Positioned(
+                              top: 55,
+                              left: 60,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade50,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                      color: Colors.blue.shade200, width: 1),
+                                ),
+                                child: Text(
+                                  'Similar\nProperties',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 9,
+                                    color: Colors.blue.shade800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 100,
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Text(
+                          'Elements in same group have similar chemical properties',
+                          style: GoogleFonts.poppins(
+                            fontSize: 8,
+                            color: Colors.blue.shade800,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                Text(
-                  'Similar Properties',
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    color: Colors.blue.shade800,
-                  ),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 80),
-
-          // Period arrow (horizontal)
-          Container(
-            width: 150,
-            height: 40,
+          // Period (horizontal) arrow with description
+          Positioned(
+            top: 260,
+            left: 40,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Periods',
+                  'Periods (Rows)',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.red.shade800,
                   ),
                 ),
-                Expanded(
-                  child: CustomPaint(
-                    painter: ArrowPainter(
-                      start: const Offset(20, 15),
-                      end: const Offset(130, 15),
-                      color: Colors.red.shade800,
-                      arrowSize: 8,
-                      isHorizontal: true,
-                    ),
+                Container(
+                  width: 220,
+                  height: 100,
+                  child: Stack(
+                    // Add fit property to this inner Stack too
+                    fit: StackFit.loose,
+                    children: [
+                      CustomPaint(
+                        size: const Size(190, 50),
+                        painter: ArrowPainter(
+                          start: const Offset(10, 25),
+                          end: const Offset(170, 25),
+                          color: Colors.red.shade800,
+                          arrowSize: 10,
+                          isHorizontal: true,
+                        ),
+                      ),
+                      Positioned(
+                        top: 5,
+                        left: 70,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                                color: Colors.red.shade200, width: 1),
+                          ),
+                          child: Text(
+                            'Increasing Atomic Number',
+                            style: GoogleFonts.poppins(
+                              fontSize: 9,
+                              color: Colors.red.shade800,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 40,
+                        left: 10,
+                        child: Container(
+                          width: 180,
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.red.shade200),
+                          ),
+                          child: Text(
+                            'Elements in same period have same number of electron shells',
+                            style: GoogleFonts.poppins(
+                              fontSize: 8,
+                              color: Colors.red.shade800,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                Text(
-                  'Increasing Atomic Number',
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    color: Colors.red.shade800,
-                  ),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -1131,7 +1222,7 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'The modern periodic table is arranged by atomic number, while Mendeleev\'s original table was organized by atomic mass. Elements are organized in 18 groups (columns) and 7 periods (rows), with lanthanides and actinides placed separately below.',
+            'The modern periodic table organizes elements by increasing atomic number (number of protons). Elements are arranged in 18 groups (columns) and 7 periods (rows), with lanthanides and actinides placed separately below. This arrangement reveals patterns in electron configurations and chemical properties.',
             style: GoogleFonts.poppins(fontSize: 12),
           ),
         ],
@@ -1142,7 +1233,7 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
   Widget _buildInfoDialog() {
     return AlertDialog(
       title: Text(
-        'About the Modern Periodic Table',
+        'Modern vs. Mendeleev\'s Periodic Table',
         style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 15),
       ),
       content: SingleChildScrollView(
@@ -1150,44 +1241,81 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Historical background section
             Text(
-              'Evolution of the Periodic Table',
+              'Historical Background',
               style: GoogleFonts.poppins(
                   fontSize: 14, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              'Dmitri Mendeleev\'s original periodic table (1869) arranged elements by increasing atomic mass and similarities in chemical properties. It successfully predicted the properties of then-undiscovered elements.',
+              'In 1869, Russian chemist Dmitri Mendeleev created the first widely recognized periodic table. He organized elements by increasing atomic weight and grouped them based on similar properties, leaving gaps for undiscovered elements. His predictions of these missing elements and their properties proved remarkably accurate.',
               style: GoogleFonts.poppins(fontSize: 13),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+
+            // Key Differences section
             Text(
-              'Key Differences with Modern Table:',
+              'Key Differences',
               style: GoogleFonts.poppins(
                   fontSize: 14, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
+
+            // Organizing principle
             _buildComparisonItem(
-                '• Atomic Number vs. Mass: Modern table arranges elements by atomic number (number of protons), while Mendeleev used atomic mass.'),
+                'Organizing Principle:',
+                'Mendeleev: Arranged by atomic weight (mass)',
+                'Modern: Arranged by atomic number (protons)'),
             _buildComparisonItem(
-                '• Structure: Modern table has 18 groups and 7 periods, with lanthanides and actinides separated below.'),
+                'Structure:',
+                'Mendeleev: 8 groups with some inconsistencies',
+                'Modern: 18 groups with systematic arrangement'),
             _buildComparisonItem(
-                '• Completeness: Modern table includes all naturally occurring elements and artificially created ones up to element 118.'),
+                'Predictive Ability:',
+                'Mendeleev: Left gaps for undiscovered elements',
+                'Modern: Based on electron configuration theory'),
             _buildComparisonItem(
-                '• Electron Configuration: Modern table reflects electron orbital arrangement, explaining chemical properties.'),
-            const SizedBox(height: 12),
+                'Element Placement:',
+                'Mendeleev: Some elements misplaced due to atomic weight',
+                'Modern: Resolves inversions (like Te/I, Co/Ni) properly'),
+            _buildComparisonItem(
+                'Special Elements:',
+                'Mendeleev: No specific provisions for lanthanides/actinides',
+                'Modern: Separates lanthanides/actinides into dedicated rows'),
+
+            const SizedBox(height: 16),
+
+            // Scientific advancements section
             Text(
-              'Reading the Table:',
+              'Scientific Advancements',
               style: GoogleFonts.poppins(
                   fontSize: 14, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            _buildComparisonItem(
-                '• Groups (Columns): Elements in the same group have similar chemical properties due to the same outer electron configuration.'),
-            _buildComparisonItem(
-                '• Periods (Rows): Elements in the same period have the same number of electron shells.'),
-            _buildComparisonItem(
-                '• Block Structure: The table is divided into s, p, d, and f blocks based on the electron subshell being filled.'),
+            Text(
+              'The modern periodic table evolved after the discovery of atomic structure and quantum theory. Henry Moseley\'s work in 1913 identified that elements should be arranged by atomic number rather than mass. This reorganization resolved inconsistencies in Mendeleev\'s table and provided a theoretical foundation based on electron configurations.',
+              style: GoogleFonts.poppins(fontSize: 13),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Benefits of modern table section
+            Text(
+              'Benefits of the Modern Table',
+              style: GoogleFonts.poppins(
+                  fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            _buildBulletPoint(
+                'Accurately predicts physical and chemical properties'),
+            _buildBulletPoint('Reflects electronic structure of atoms'),
+            _buildBulletPoint(
+                'Organizes elements into blocks (s, p, d, f) based on orbitals'),
+            _buildBulletPoint(
+                'Includes all discovered elements (currently 118)'),
+            _buildBulletPoint(
+                'Groups elements with similar valence electron configurations'),
           ],
         ),
       ),
@@ -1200,12 +1328,95 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
     );
   }
 
-  Widget _buildComparisonItem(String text) {
+  // Enhanced comparison item with old vs new format
+  Widget _buildComparisonItem(String title, String oldTable, String newTable) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                margin: const EdgeInsets.only(top: 2, right: 4),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade200,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  oldTable,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                margin: const EdgeInsets.only(top: 2, right: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade200,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  newTable,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Bullet point helper
+  Widget _buildBulletPoint(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        text,
-        style: GoogleFonts.poppins(fontSize: 13),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            margin: const EdgeInsets.only(top: 5, right: 6),
+            decoration: BoxDecoration(
+              color: Colors.indigo.shade400,
+              shape: BoxShape.circle,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: GoogleFonts.poppins(fontSize: 12),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../config/api_config.dart';
 
 /// A mixin that provides concrete implementations of the BasePubChemProvider methods.
 /// This allows sharing common implementation logic across different providers.
@@ -7,7 +8,7 @@ mixin PubChemImplMixin {
   Future<List<int>> fetchCids(String name) async {
     try {
       final cidUrl = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/$name/cids/JSON');
+          '${ApiConfig.pubchemBaseUrl}/compound/name/$name/cids/JSON');
       final cidResponse = await http.get(cidUrl);
 
       if (cidResponse.statusCode == 404) {
@@ -52,7 +53,7 @@ mixin PubChemImplMixin {
     try {
       final limitedCids = cids.take(limit).join(',');
       final propertiesUrl = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$limitedCids/property/Title,MolecularFormula,MolecularWeight,CanonicalSMILES,XLogP,Complexity,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,HeavyAtomCount,AtomStereoCount,BondStereoCount,ExactMass,MonoisotopicMass,TPSA,Charge,IsotopeAtomCount,DefinedAtomStereoCount,UndefinedAtomStereoCount,DefinedBondStereoCount,UndefinedBondStereoCount,CovalentUnitCount,PatentCount,PatentFamilyCount,AnnotationTypes,AnnotationTypeCount,SourceCategories,LiteratureCount,InChI,InChIKey/JSON');
+          '${ApiConfig.pubchemBaseUrl}/compound/cid/$limitedCids/property/Title,MolecularFormula,MolecularWeight,CanonicalSMILES,XLogP,Complexity,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,HeavyAtomCount,AtomStereoCount,BondStereoCount,ExactMass,MonoisotopicMass,TPSA,Charge,IsotopeAtomCount,DefinedAtomStereoCount,UndefinedAtomStereoCount,DefinedBondStereoCount,UndefinedBondStereoCount,CovalentUnitCount,PatentCount,PatentFamilyCount,AnnotationTypes,AnnotationTypeCount,SourceCategories,LiteratureCount,InChI,InChIKey/JSON');
 
       final propertiesResponse = await http.get(propertiesUrl);
 
@@ -90,8 +91,8 @@ mixin PubChemImplMixin {
   Future<Map<String, dynamic>> fetchDetailedInfo(int cid) async {
     try {
       // First fetch the basic compound data
-      final compoundUrl = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/JSON');
+      final compoundUrl =
+          Uri.parse('${ApiConfig.pubchemBaseUrl}/compound/cid/$cid/JSON');
       final compoundResponse = await http.get(compoundUrl);
 
       if (compoundResponse.statusCode != 200) {
@@ -101,8 +102,8 @@ mixin PubChemImplMixin {
       final compoundData = json.decode(compoundResponse.body);
 
       // Then fetch the record data
-      final recordUrl = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/$cid/JSON');
+      final recordUrl =
+          Uri.parse('${ApiConfig.pubchemViewUrl}/data/compound/$cid/JSON');
       final recordResponse = await http.get(recordUrl);
 
       if (recordResponse.statusCode != 200) {
@@ -124,7 +125,7 @@ mixin PubChemImplMixin {
   Future<List<String>> fetchSynonyms(int cid) async {
     try {
       final url = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/synonyms/JSON');
+          '${ApiConfig.pubchemBaseUrl}/compound/cid/$cid/synonyms/JSON');
       final response = await http.get(url);
 
       if (response.statusCode != 200) {
@@ -147,7 +148,7 @@ mixin PubChemImplMixin {
   Future<Map<String, String>> fetchDescription(int cid) async {
     try {
       final url = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/description/JSON');
+          '${ApiConfig.pubchemBaseUrl}/compound/cid/$cid/description/JSON');
       final response = await http.get(url);
 
       if (response.statusCode != 200) {
@@ -185,7 +186,7 @@ mixin PubChemImplMixin {
       }
 
       final url = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/$dictionary/$query/json?limit=$limit');
+          '${ApiConfig.pubchemAutocompleteUrl}/$dictionary/$query/json?limit=$limit');
 
       final response = await http.get(url);
 
@@ -208,7 +209,7 @@ mixin PubChemImplMixin {
     try {
       // Fetch 3D structure in SDF format
       final sdfUrl = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/SDF?record_type=3d&response_type=display');
+          '${ApiConfig.pubchemBaseUrl}/compound/cid/$cid/SDF?record_type=3d&response_type=display');
 
       final response = await http.get(sdfUrl);
 
@@ -245,7 +246,7 @@ mixin PubChemImplMixin {
   Future<Map<String, dynamic>> fetchClassification(int cid) async {
     try {
       final url = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/classification/JSON');
+          '${ApiConfig.pubchemBaseUrl}/compound/cid/$cid/classification/JSON');
 
       final response = await http.get(url);
 
@@ -265,7 +266,7 @@ mixin PubChemImplMixin {
   Future<List<Map<String, dynamic>>> fetchPatents(int cid) async {
     try {
       final url = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/xrefs/PatentID/JSON');
+          '${ApiConfig.pubchemBaseUrl}/compound/cid/$cid/xrefs/PatentID/JSON');
 
       final response = await http.get(url);
 
@@ -296,7 +297,7 @@ mixin PubChemImplMixin {
   Future<List<Map<String, dynamic>>> fetchAssaySummary(int cid) async {
     try {
       final url = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/assaysummary/JSON');
+          '${ApiConfig.pubchemBaseUrl}/compound/cid/$cid/assaysummary/JSON');
 
       final response = await http.get(url);
 
@@ -322,7 +323,7 @@ mixin PubChemImplMixin {
       }
 
       final url = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastformula/$formula/cids/JSON');
+          '${ApiConfig.pubchemBaseUrl}/compound/fastformula/$formula/cids/JSON');
 
       final response = await http.get(url);
 
@@ -343,7 +344,7 @@ mixin PubChemImplMixin {
   Future<List<int>> fetchSimilarCompounds(int cid, {int threshold = 90}) async {
     try {
       final url = Uri.parse(
-          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/fastsimilarity_2d/cid/$cid/cids/JSON?Threshold=$threshold');
+          '${ApiConfig.pubchemBaseUrl}/compound/fastsimilarity_2d/cid/$cid/cids/JSON?Threshold=$threshold');
 
       final response = await http.get(url);
 

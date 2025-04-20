@@ -1,86 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class WikipediaService {
-  static const String baseUrl = 'https://en.wikipedia.org/api/rest_v1';
-
-  /// Fetches a summary of a Wikipedia article by title
-  /// Returns a Map with title, extract, thumbnail URL, and page URL
-  Future<Map<String, dynamic>> getArticleSummary(String title) async {
-    // Encode the title to handle spaces and special characters
-    final encodedTitle = Uri.encodeComponent(title);
-    final url = '$baseUrl/page/summary/$encodedTitle';
-
-    final response = await http.get(Uri.parse(url));
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-
-      // Get additional content with separate call to get sections
-      final sections = await _getArticleSections(title);
-
-      return {
-        'title': data['title'],
-        'extract': data['extract'],
-        'extractHtml': data['extract_html'],
-        'thumbnailUrl': data['thumbnail']?['source'],
-        'pageUrl': data['content_urls']?['desktop']?['page'],
-        'description': data['description'],
-        'categories': _extractCategoriesFromHtml(data['extract_html'] ?? ''),
-        'sections': sections,
-        'lastUpdated': DateTime.now().toIso8601String(),
-      };
-    } else {
-      throw Exception(
-          'Failed to load Wikipedia article: ${response.statusCode}');
-    }
-  }
-
-  /// Fetches article sections to get more detailed content
-  Future<List<Map<String, dynamic>>> _getArticleSections(String title) async {
-    final encodedTitle = Uri.encodeComponent(title);
-    final url = '$baseUrl/page/segments/$encodedTitle';
-
-    try {
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        List<Map<String, dynamic>> sections = [];
-
-        // Process segments to extract sections with content
-        if (data['segments'] != null && data['segments'] is List) {
-          for (var segment in data['segments']) {
-            if (segment['type'] == 'heading') {
-              sections.add({
-                'title': segment['content']?['html'] ?? 'Section',
-                'level': segment['content']?['level'] ?? 2,
-                'content': [],
-              });
-            } else if (segment['type'] == 'paragraph' && sections.isNotEmpty) {
-              // Add content to the most recent section
-              sections.last['content'].add(segment['content']?['html'] ?? '');
-            }
-          }
-        }
-
-        return sections;
-      } else {
-        // If sections fail, return empty list but don't throw exception
-        return [];
-      }
-    } catch (e) {
-      // Silently fail for sections - we'll still have the summary
-      return [];
-    }
-  }
-
   /// Searches for Wikipedia articles that match the query
   /// Returns a list of article titles, filtered for chemistry-related content
   Future<List<String>> searchArticles(String query,
       {int limit = 15, bool filterChemistry = true}) async {
-    // Modify the query to focus on chemistry-related content if filter is enabled
     String searchQuery = query;
     if (filterChemistry && !_containsChemistryTerms(query)) {
       searchQuery = '$query chemistry';
@@ -109,34 +35,178 @@ class WikipediaService {
     }
   }
 
-  /// Gets related articles for a given chemistry topic
-  Future<List<String>> getRelatedArticles(String topic) async {
-    final List<String> chemistryKeywords = _getChemistryKeywords(topic);
+  /// Returns a Map with title, extract, thumbnail URL, and page URL
+  Future<Map<String, dynamic>> getArticleSummary(String title) async {
+    // Encode the title to handle spaces and special characters
+    final encodedTitle = Uri.encodeComponent(title);
+    final url = '${ApiConfig.wikipediaApiUrl}/page/summary/$encodedTitle';
 
-    List<String> relatedArticles = [];
+    final response = await http.get(Uri.parse(url));
 
-    // Try up to 3 related keywords to find related articles
-    for (int i = 0; i < chemistryKeywords.length && i < 3; i++) {
-      final results = await searchArticles(chemistryKeywords[i], limit: 5);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
 
-      // Add unique results to our list
-      for (String result in results) {
-        if (!relatedArticles.contains(result) && result != topic) {
-          relatedArticles.add(result);
+      // Get additional content with separate call to get sections
+      final sections = await _getArticleSections(title);
+
+      return {
+        'title': data['title'],
+        'extract': data['extract'],
+        'extractHtml': data['extract_html'],
+        'thumbnailUrl': data['thumbnail']?['source'],
+        'pageUrl': data['content_urls']?['desktop']?['page'],
+        'description': data['description'],
+        'categories': _extractCategoriesFromHtml(data['extract_html'] ?? ''),
+        'sections': sections,
+        'lastUpdated': DateTime.now().toIso8601String(),
+      };
+    } else {
+      throw Exception(
+          'Failed to load Wikipedia article: ${response.statusCode}');
+    }
+  }
+
+  /// Gets the sections of an article
+  Future<List<Map<String, dynamic>>> _getArticleSections(String title) async {
+    final encodedTitle = Uri.encodeComponent(title);
+    final url =
+        '${ApiConfig.wikipediaApiUrl}/page/mobile-sections/$encodedTitle';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<Map<String, dynamic>> sections = [];
+
+        // Extract sections from the remaining content (after lead)
+        if (data['remaining']?['sections'] != null) {
+          for (var section in data['remaining']['sections']) {
+            // Only include sections up to level 3 for readability
+            if ((section['toclevel'] ?? 0) <= 3) {
+              sections.add({
+                'title': section['line'] ?? '',
+                'level': section['toclevel'] ?? 2,
+                'content': _extractSectionText(section),
+              });
+            }
+          }
         }
 
-        // Stop after collecting enough related articles
+        return sections;
+      }
+      return [];
+    } catch (e) {
+      print('Error getting article sections: $e');
+      return [];
+    }
+  }
+
+  /// Extract text from a section and its subsections
+  List<String> _extractSectionText(Map<String, dynamic> section) {
+    List<String> content = [];
+
+    if (section['text'] != null) {
+      content.add(_cleanHtml(section['text']));
+    }
+
+    // Process subsections recursively
+    if (section['subsections'] != null) {
+      for (var subsection in section['subsections']) {
+        if (subsection['text'] != null) {
+          content.add(_cleanHtml(subsection['text']));
+        }
+      }
+    }
+
+    return content;
+  }
+
+  /// Gets related articles for a given chemistry topic
+  Future<List<String>> getRelatedArticles(String topic) async {
+    final encodedTitle = Uri.encodeComponent(topic);
+    final url = '${ApiConfig.wikipediaApiUrl}/page/related/$encodedTitle';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['pages'] != null) {
+          // Extract titles from related pages
+          return List<String>.from(
+              data['pages'].map((page) => page['title'] as String));
+        }
+      }
+
+      // If the above fails, fall back to keyword-based approach
+      final List<String> chemistryKeywords = _getChemistryKeywords(topic);
+      List<String> relatedArticles = [];
+
+      // Try up to 3 related keywords to find related articles
+      for (int i = 0; i < chemistryKeywords.length && i < 3; i++) {
+        final results = await searchArticles(chemistryKeywords[i], limit: 5);
+
+        // Add unique results to our list
+        for (String result in results) {
+          if (!relatedArticles.contains(result) && result != topic) {
+            relatedArticles.add(result);
+          }
+
+          // Stop after collecting enough related articles
+          if (relatedArticles.length >= 10) break;
+        }
+
         if (relatedArticles.length >= 10) break;
       }
 
-      if (relatedArticles.length >= 10) break;
+      return relatedArticles;
+    } catch (e) {
+      print('Error getting related articles: $e');
+      return [];
     }
-
-    return relatedArticles;
   }
 
   /// Gets images related to a chemistry topic
   Future<List<String>> getTopicImages(String topic) async {
+    final encodedTitle = Uri.encodeComponent(topic);
+    final url = '${ApiConfig.wikipediaApiUrl}/page/media-list/$encodedTitle';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['items'] != null) {
+          // Filter for image types
+          final images = data['items'].where((item) {
+            final mime = item['mime'] ?? '';
+            return mime.startsWith('image/');
+          }).toList();
+
+          // Extract image URLs
+          final imageUrls = images.map((item) {
+            if (item['srcset'] != null && item['srcset'].isNotEmpty) {
+              // Get the smallest image from srcset for thumbnails
+              return item['srcset'][0]['src'];
+            }
+            return item['src'];
+          }).toList();
+
+          return List<String>.from(imageUrls);
+        }
+      }
+
+      // Fall back to older API if the above fails
+      return await _getImagesLegacy(topic);
+    } catch (e) {
+      print('Error getting topic images: $e');
+      return [];
+    }
+  }
+
+  /// Legacy method to get images using the old API
+  Future<List<String>> _getImagesLegacy(String topic) async {
     final encodedTitle = Uri.encodeComponent(topic);
     final url =
         'https://en.wikipedia.org/w/api.php?action=query&titles=$encodedTitle&prop=images&format=json';
@@ -182,235 +252,19 @@ class WikipediaService {
     }
   }
 
-  /// Converts image name to actual URL
-  Future<String> _getImageUrl(String imageName) async {
-    final encodedName = Uri.encodeComponent(imageName.replaceAll('File:', ''));
-    final url =
-        'https://en.wikipedia.org/w/api.php?action=query&titles=Image:$encodedName&prop=imageinfo&iiprop=url&format=json';
-
-    try {
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final pages = data['query']?['pages'];
-        if (pages != null) {
-          final pageId = pages.keys.first;
-          final imageInfo = pages[pageId]?['imageinfo'];
-
-          if (imageInfo != null && imageInfo is List && imageInfo.isNotEmpty) {
-            return imageInfo[0]['url'] ?? '';
-          }
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
-  }
-
-  /// Extracts categories from HTML content
-  List<String> _extractCategoriesFromHtml(String html) {
-    // This is a simple extraction - in a real app you'd use a proper HTML parser
-    final categoryPattern = RegExp(
-        r'chemistry|chemical|element|compound|reaction|molecule|atom|bond|acid|base|organic|inorganic|gas|liquid|solid|periodic table',
-        caseSensitive: false);
-
-    final matches = categoryPattern.allMatches(html);
-    final Set<String> categories = {};
-
-    for (final match in matches) {
-      categories.add(match.group(0)!.toLowerCase());
-    }
-
-    return categories.toList();
-  }
-
-  /// Checks if a query already contains chemistry-related terms
-  bool _containsChemistryTerms(String query) {
-    final chemistryTerms = [
-      'chemistry',
-      'chemical',
-      'element',
-      'compound',
-      'reaction',
-      'molecule',
-      'atom',
-      'bond',
-      'acid',
-      'base',
-      'periodic',
-      'organic',
-      'inorganic',
-      'gas',
-      'liquid',
-      'solid'
-    ];
-
-    query = query.toLowerCase();
-    return chemistryTerms.any((term) => query.contains(term));
-  }
-
-  /// Filters search results to prioritize chemistry-related content
-  List<String> _filterChemistryResults(
-      List<String> titles, String originalQuery) {
-    // Chemistry-related keywords for filtering
-    final List<String> chemistryKeywords = [
-      'chemistry',
-      'chemical',
-      'element',
-      'compound',
-      'reaction',
-      'molecule',
-      'atom',
-      'bond',
-      'acid',
-      'base',
-      'periodic table',
-      'organic',
-      'inorganic',
-      'thermodynamics',
-      'electrochemistry',
-      'biochemistry',
-      'analytical',
-      'physical chemistry',
-      'solution',
-      'mixture',
-      'concentration',
-      'mole',
-      'catalyst',
-      'equilibrium',
-      'redox',
-      'isotope',
-      'ion',
-      'metal',
-      'nonmetal'
-    ];
-
-    // Check titles for chemistry relevance
-    final List<String> chemistryTitles = [];
-    final List<String> otherTitles = [];
-
-    for (final title in titles) {
-      final String lowerTitle = title.toLowerCase();
-
-      // Check if title contains chemistry keywords
-      bool isChemistryRelated = chemistryKeywords.any((keyword) =>
-          lowerTitle.contains(keyword) ||
-          (lowerTitle.contains(originalQuery.toLowerCase()) &&
-              _checkIfLikelyChemistryTopic(title)));
-
-      if (isChemistryRelated) {
-        chemistryTitles.add(title);
-      } else {
-        otherTitles.add(title);
-      }
-    }
-
-    // Prioritize chemistry-related titles
-    return [...chemistryTitles, ...otherTitles];
-  }
-
-  /// Determines if a title is likely a chemistry topic
-  bool _checkIfLikelyChemistryTopic(String title) {
-    // Exclude common non-chemistry categories
-    final nonChemistryPatterns = [
-      RegExp(
-          r'(TV|television|series|movie|film|book|novel|game|show|episode|cartoon|character)',
-          caseSensitive: false),
-      RegExp(
-          r'(band|musician|artist|singer|actor|actress|politician|athlete|band)',
-          caseSensitive: false),
-      RegExp(r'(company|corporation|business|product|software)',
-          caseSensitive: false)
-    ];
-
-    for (final pattern in nonChemistryPatterns) {
-      if (pattern.hasMatch(title)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /// Generate related chemistry keywords based on a topic
-  List<String> _getChemistryKeywords(String topic) {
-    final Map<String, List<String>> relatedKeywords = {
-      'atom': ['atomic structure', 'nucleus', 'electron', 'proton', 'neutron'],
-      'element': [
-        'periodic table',
-        'atomic number',
-        'chemical element',
-        'isotope'
-      ],
-      'bond': [
-        'chemical bond',
-        'covalent',
-        'ionic',
-        'metallic',
-        'hydrogen bond'
-      ],
-      'reaction': [
-        'chemical reaction',
-        'redox',
-        'equilibrium',
-        'activation energy'
-      ],
-      'acid': ['base', 'pH', 'neutralization', 'acid-base reaction', 'buffer'],
-      'organic': [
-        'carbon compound',
-        'hydrocarbon',
-        'functional group',
-        'organic chemistry'
-      ],
-      'period': [
-        'periodic table',
-        'group',
-        'chemical properties',
-        'atomic radius'
-      ],
-      'state': ['solid', 'liquid', 'gas', 'plasma', 'phase transition'],
-      'solution': [
-        'solvent',
-        'solute',
-        'concentration',
-        'solubility',
-        'mixture'
-      ],
-      'compound': ['chemical compound', 'molecule', 'formula', 'nomenclature'],
-    };
-
-    List<String> keywords = ['chemistry $topic'];
-
-    // Look for matching keywords
-    final lowerTopic = topic.toLowerCase();
-    for (final entry in relatedKeywords.entries) {
-      if (lowerTopic.contains(entry.key)) {
-        keywords.addAll(entry.value);
-      }
-    }
-
-    // Add default keywords if no specific matches
-    if (keywords.length < 2) {
-      keywords.addAll([
-        'chemistry definition',
-        'chemical properties',
-        'chemistry reactions',
-        'chemistry compounds'
-      ]);
-    }
-
-    return keywords;
-  }
-
   /// Gets examples related to a chemistry topic
-  Future<List<Map<String, String>>> getTopicExamples(String topic) async {
-    // First identify what kind of topic this is to find appropriate examples
+  Future<List<Map<String, dynamic>>> getTopicExamples(String topic) async {
+    // Identify what kind of topic this is to find appropriate examples
     final String exampleType = _getExampleType(topic);
-    final List<String> searchTerms = _getExampleSearchTerms(topic, exampleType);
 
-    List<Map<String, String>> examples = [];
+    // For some topics, we can provide curated examples
+    if (_hasPredefinedExamples(exampleType)) {
+      return _getPredefinedExamples(topic);
+    }
+
+    // Otherwise, search for relevant examples
+    final List<String> searchTerms = _getExampleSearchTerms(topic, exampleType);
+    List<Map<String, dynamic>> examples = [];
 
     // Try to find examples for up to 2 search terms
     for (int i = 0; i < searchTerms.length && i < 2; i++) {
@@ -439,12 +293,34 @@ class WikipediaService {
       }
     }
 
-    // If we found no examples with search, use pre-defined examples for common topics
-    if (examples.isEmpty) {
-      examples = _getPredefinedExamples(topic);
-    }
-
     return examples;
+  }
+
+  /// Converts image name to actual URL
+  Future<String> _getImageUrl(String imageName) async {
+    final encodedName = Uri.encodeComponent(imageName.replaceAll('File:', ''));
+    final url =
+        'https://en.wikipedia.org/w/api.php?action=query&titles=Image:$encodedName&prop=imageinfo&iiprop=url&format=json';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final pages = data['query']?['pages'];
+        if (pages != null) {
+          final pageId = pages.keys.first;
+          final imageInfo = pages[pageId]?['imageinfo'];
+
+          if (imageInfo != null && imageInfo is List && imageInfo.isNotEmpty) {
+            return imageInfo[0]['url'] ?? '';
+          }
+        }
+      }
+      return '';
+    } catch (e) {
+      return '';
+    }
   }
 
   /// Gets a brief summary (first sentence) for an article
@@ -464,6 +340,153 @@ class WikipediaService {
     } catch (e) {
       return '';
     }
+  }
+
+  /// Check if the topic has predefined examples
+  bool _hasPredefinedExamples(String exampleType) {
+    return [
+      'elements',
+      'bonds',
+      'reactions',
+      'acids_bases',
+      'organic_compounds',
+      'nuclear'
+    ].contains(exampleType);
+  }
+
+  /// Extract categories from HTML content
+  List<String> _extractCategoriesFromHtml(String html) {
+    // Simple extraction based on common category formats
+    final categoryRegex = RegExp(r'Category:([A-Za-z0-9_\s]+)');
+    final matches = categoryRegex.allMatches(html);
+
+    return matches
+        .map((match) => match.group(1)?.trim() ?? '')
+        .where((cat) => cat.isNotEmpty)
+        .toList();
+  }
+
+  /// Clean HTML content
+  String _cleanHtml(String html) {
+    // Remove HTML tags
+    return html
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .trim();
+  }
+
+  /// Check if a query contains chemistry terms
+  bool _containsChemistryTerms(String query) {
+    final chemistryTerms = [
+      'element',
+      'compound',
+      'acid',
+      'base',
+      'metal',
+      'reaction',
+      'molecule',
+      'isotope',
+      'bond',
+      'electron',
+      'proton',
+      'neutron',
+      'atom',
+      'periodic',
+      'chemical',
+      'formula',
+      'organic',
+      'inorganic',
+      'solution',
+      'gas',
+      'liquid',
+      'solid'
+    ];
+
+    final lowerQuery = query.toLowerCase();
+    return chemistryTerms.any((term) => lowerQuery.contains(term));
+  }
+
+  /// Filter results to prioritize chemistry-related content
+  List<String> _filterChemistryResults(List<String> titles, String query) {
+    final lowerQuery = query.toLowerCase();
+    final priorityTerms = [
+      'chemistry',
+      'element',
+      'compound',
+      'acid',
+      'base',
+      'reaction',
+      'metal',
+      'molecule'
+    ];
+
+    // Check if query already has a chemistry context
+    bool hasChemistryContext =
+        priorityTerms.any((term) => lowerQuery.contains(term));
+
+    if (hasChemistryContext) {
+      // If query has chemistry context, return results as is (up to 10)
+      return titles.take(10).toList();
+    } else {
+      // Otherwise, prioritize results with chemistry keywords
+      var prioritized = titles.where((title) {
+        final lowerTitle = title.toLowerCase();
+        return priorityTerms.any((term) => lowerTitle.contains(term));
+      }).toList();
+
+      // If we don't have enough chemistry-related results, add others
+      if (prioritized.length < 5 && titles.isNotEmpty) {
+        final remaining =
+            titles.where((title) => !prioritized.contains(title)).toList();
+        prioritized.addAll(remaining.take(10 - prioritized.length));
+      }
+
+      return prioritized.take(10).toList();
+    }
+  }
+
+  /// Get related chemistry keywords based on a topic
+  List<String> _getChemistryKeywords(String topic) {
+    final lowerTopic = topic.toLowerCase();
+    List<String> keywords = [];
+
+    // Add the topic itself
+    keywords.add(topic);
+
+    // Add related keywords based on what type of topic it is
+    if (lowerTopic.contains('element') || lowerTopic.contains('atom')) {
+      keywords.addAll([
+        'periodic table elements',
+        'chemical elements',
+        'element properties'
+      ]);
+    } else if (lowerTopic.contains('acid') || lowerTopic.contains('base')) {
+      keywords.addAll(['acids and bases', 'pH scale', 'acid base reactions']);
+    } else if (lowerTopic.contains('bond')) {
+      keywords.addAll(['chemical bonding', 'molecular bonds', 'ionic bonds']);
+    } else if (lowerTopic.contains('react')) {
+      keywords.addAll(
+          ['chemical reactions', 'reaction types', 'reaction mechanisms']);
+    } else if (lowerTopic.contains('organic')) {
+      keywords.addAll(
+          ['organic chemistry', 'organic compounds', 'carbon compounds']);
+    } else if (lowerTopic.contains('solution')) {
+      keywords
+          .addAll(['chemical solutions', 'solubility', 'solvent properties']);
+    } else {
+      // Generic chemistry keywords
+      keywords.addAll([
+        'chemistry $topic',
+        '$topic chemical properties',
+        '$topic chemistry'
+      ]);
+    }
+
+    return keywords;
   }
 
   /// Determines what kind of examples to look for based on the topic
@@ -525,7 +548,7 @@ class WikipediaService {
   }
 
   /// Provides predefined examples for common chemistry topics
-  List<Map<String, String>> _getPredefinedExamples(String topic) {
+  List<Map<String, dynamic>> _getPredefinedExamples(String topic) {
     final lowerTopic = topic.toLowerCase();
 
     // Elements examples

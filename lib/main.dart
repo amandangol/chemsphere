@@ -1,7 +1,6 @@
 import 'package:chem_explore/screens/elements/provider/element_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'screens/aqi/city_search_screen.dart';
 import 'screens/compounds/provider/chemical_search_provider.dart';
 import 'screens/compounds/provider/compound_provider.dart';
 import 'screens/formula/provider/formula_search_provider.dart';

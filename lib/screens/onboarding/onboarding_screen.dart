@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:lottie/lottie.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../splash_screen.dart';
 import 'onboarding_provider.dart';
 
@@ -11,65 +11,56 @@ class OnboardingScreen extends StatefulWidget {
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen>
-    with TickerProviderStateMixin {
+class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
-  late AnimationController _lottieController;
 
   final List<OnboardingPage> _pages = [
     OnboardingPage(
       title: 'Welcome to ChemVerse',
       description: 'Your ultimate chemistry exploration companion',
-      animationPath: 'assets/animations/chemistry_lab.json',
+      imagePath: 'assets/svgs/welcometochem.svg',
       backgroundColor: const Color(0xFFE3F2FD),
     ),
     OnboardingPage(
       title: 'Explore Elements',
       description:
           'Discover all elements in the periodic table with detailed information',
-      animationPath: 'assets/animations/atoms.json',
+      imagePath: 'assets/svgs/atoms.svg',
       backgroundColor: const Color(0xFFE8F5E9),
     ),
     OnboardingPage(
       title: 'Learn About Compounds',
       description:
           'Search and view detailed information about chemical compounds',
-      animationPath: 'assets/animations/molecules.json',
+      imagePath: 'assets/svgs/molecules.svg',
       backgroundColor: const Color(0xFFFFF8E1),
     ),
     OnboardingPage(
       title: 'Track Air Quality',
       description:
           'Search cities or use your location to monitor real-time air quality data and pollutant levels',
-      animationPath: 'assets/animations/air_quality.json',
+      imagePath: 'assets/svgs/air_quality.svg',
       backgroundColor: const Color(0xFFE1F5FE),
     ),
     OnboardingPage(
       title: 'Educational Resources',
       description:
           'Study from flashcards, chemistry guides, and interactive lessons',
-      animationPath: 'assets/animations/education.json',
+      imagePath: 'assets/svgs/education.svg',
       backgroundColor: const Color(0xFFF3E5F5),
     ),
     OnboardingPage(
       title: 'Bookmarks & Formulas',
       description:
           'Save your favorite elements, compounds, and reactions for quick access',
-      animationPath: 'assets/animations/reaction.json',
+      imagePath: 'assets/svgs/reaction.svg',
       backgroundColor: const Color(0xFFE8EAF6),
     ),
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _lottieController = AnimationController(vsync: this);
-  }
-
-  @override
   void dispose() {
     _pageController.dispose();
-    _lottieController.dispose();
     super.dispose();
   }
 
@@ -88,7 +79,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   itemCount: _pages.length,
                   onPageChanged: (index) {
                     provider.setPage(index);
-                    _lottieController.reset();
                   },
                   itemBuilder: (context, index) {
                     return Container(
@@ -100,28 +90,20 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              // Animation
+                              // SVG Image
                               Expanded(
                                 flex: 5,
                                 child: Center(
-                                  child: Lottie.asset(
-                                    _pages[index].animationPath,
-                                    controller: _lottieController,
-                                    onLoaded: (composition) {
-                                      _lottieController
-                                        ..duration = composition.duration
-                                        ..repeat();
-                                    },
-                                    errorBuilder: (context, error, stackTrace) {
-                                      // Fallback icon if animation not found
-                                      return Icon(
-                                        _getIconForPage(index),
-                                        size: 150,
-                                        color: Theme.of(context)
-                                            .primaryColor
-                                            .withOpacity(0.7),
-                                      );
-                                    },
+                                  child: SvgPicture.asset(
+                                    _pages[index].imagePath,
+                                    height: 260,
+                                    placeholderBuilder: (context) => Icon(
+                                      _getIconForPage(index),
+                                      size: 150,
+                                      color: Theme.of(context)
+                                          .primaryColor
+                                          .withOpacity(0.7),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -155,7 +137,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                 textAlign: TextAlign.center,
                               ),
 
-                              Expanded(
+                              const Expanded(
                                 flex: 2,
                                 child: SizedBox(),
                               ),
@@ -331,13 +313,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 class OnboardingPage {
   final String title;
   final String description;
-  final String animationPath;
+  final String imagePath;
   final Color backgroundColor;
 
   OnboardingPage({
     required this.title,
     required this.description,
-    required this.animationPath,
+    required this.imagePath,
     required this.backgroundColor,
   });
 }

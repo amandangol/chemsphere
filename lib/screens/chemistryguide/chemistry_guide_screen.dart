@@ -435,7 +435,7 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
                           decoration: InputDecoration(
                             hintText:
                                 'Search Wikipedia for chemistry topics...',
-                            hintStyle: TextStyle(fontSize: 13),
+                            hintStyle: const TextStyle(fontSize: 13),
                             prefixIcon: const Icon(Icons.search, size: 18),
                             suffixIcon: IconButton(
                               icon: const Icon(Icons.send, size: 18),
@@ -453,7 +453,7 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
                           ),
                           onSubmitted: (_) => _searchWikipedia(),
                           autofocus: true,
-                          style: TextStyle(fontSize: 14),
+                          style: const TextStyle(fontSize: 14),
                         ),
                       ),
                     )
@@ -484,7 +484,7 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
                     const SizedBox(height: 14),
                     Text(
                       'Error: ${provider.error}',
-                      style: TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 14),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 14),
@@ -784,11 +784,11 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
       case 'Matter & Solutions':
         return theme.colorScheme.secondary;
       case 'Reactions':
-        return Color(0xFFE67700); // Muted orange
+        return const Color(0xFFE67700); // Muted orange
       case 'Energy & Kinetics':
-        return Color(0xFFB82E2E); // Muted red
+        return const Color(0xFFB82E2E); // Muted red
       case 'Organic Chemistry':
-        return Color(0xFF2E7D32); // Muted green
+        return const Color(0xFF2E7D32); // Muted green
       default:
         return theme.colorScheme.tertiary;
     }
@@ -924,7 +924,7 @@ class _SearchResultsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Results for "$query"',
-          style: TextStyle(fontSize: 16),
+          style: const TextStyle(fontSize: 16),
         ),
         centerTitle: true,
       ),
@@ -1003,7 +1003,7 @@ class _SearchResultsScreen extends StatelessWidget {
                       SnackBar(
                         content: Text(
                           'Error loading article: $e',
-                          style: TextStyle(fontSize: 13),
+                          style: const TextStyle(fontSize: 13),
                         ),
                         behavior: SnackBarBehavior.floating,
                       ),

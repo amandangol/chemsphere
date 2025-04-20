@@ -118,7 +118,7 @@ class _PollutantDetailScreenState extends State<PollutantDetailScreen>
           // Add refresh button with loading indicator
           IconButton(
             icon: _isRefreshing
-                ? SizedBox(
+                ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
@@ -173,7 +173,7 @@ class _PollutantDetailScreenState extends State<PollutantDetailScreen>
                     ElevatedButton(
                       onPressed: _refreshData,
                       child: _isRefreshing
-                          ? SizedBox(
+                          ? const SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(

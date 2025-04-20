@@ -132,32 +132,32 @@ class AppTheme {
         thumbColor: Color(0xFF0C54B0),
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith((states) {
-          return states.contains(MaterialState.selected)
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
               ? const Color(0xFF0C54B0)
               : Colors.white;
         }),
-        trackColor: MaterialStateProperty.resolveWith((states) {
-          return states.contains(MaterialState.selected)
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
               ? const Color(0xFFD8E6FF)
               : const Color(0xFFE5E5E5);
         }),
       ),
       checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
-          return states.contains(MaterialState.selected)
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
               ? const Color(0xFF0C54B0)
               : Colors.transparent;
         }),
-        checkColor: MaterialStateProperty.all(Colors.white),
+        checkColor: WidgetStateProperty.all(Colors.white),
         side: const BorderSide(color: Color(0xFF0C54B0), width: 1.5),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
         ),
       ),
       radioTheme: RadioThemeData(
-        fillColor: MaterialStateProperty.resolveWith((states) {
-          return states.contains(MaterialState.selected)
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
               ? const Color(0xFF0C54B0)
               : const Color(0xFF666666);
         }),
