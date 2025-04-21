@@ -1,19 +1,19 @@
-import 'package:chem_explore/screens/elements/provider/element_provider.dart';
+import 'package:chem_explore/features/elements/provider/element_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'screens/compounds/provider/chemical_search_provider.dart';
-import 'screens/compounds/provider/compound_provider.dart';
-import 'screens/formula/provider/formula_search_provider.dart';
-import 'screens/drugs/provider/drug_provider.dart';
-import 'screens/reactions/provider/reaction_provider.dart';
-import 'screens/bookmarks/provider/bookmark_provider.dart';
-import 'screens/chemistryguide/provider/chemistry_guide_provider.dart';
-import 'screens/main_screen.dart';
+import 'features/compounds/provider/chemical_search_provider.dart';
+import 'features/compounds/provider/compound_provider.dart';
+import 'features/formula/provider/formula_search_provider.dart';
+import 'features/drugs/provider/drug_provider.dart';
+import 'features/reactions/provider/reaction_provider.dart';
+import 'features/bookmarks/provider/bookmark_provider.dart';
+import 'features/chemistryguide/provider/chemistry_guide_provider.dart';
+import 'features/main_screen.dart';
 import 'providers/aqi_provider.dart';
 import 'providers/pollutant_info_provider.dart';
-import 'screens/splash_screen.dart';
-import 'screens/onboarding/onboarding_screen.dart';
-import 'screens/onboarding/onboarding_provider.dart';
+import 'features/splash_screen.dart';
+import 'features/onboarding/screen/onboarding_screen.dart';
+import 'features/onboarding/provider/onboarding_provider.dart';
 import 'theme/app_theme.dart';
 
 void main() async {

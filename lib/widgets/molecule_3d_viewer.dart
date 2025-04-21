@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
-import '../screens/compounds/provider/compound_provider.dart';
-import '../screens/compounds/compound_details_screen.dart';
+import '../features/compounds/provider/compound_provider.dart';
+import '../features/compounds/compound_details_screen.dart';
 import '../utils/error_handler.dart';
 import 'dart:async';
 
@@ -12,6 +12,7 @@ class Molecule3DViewer extends StatefulWidget {
   final double height;
   final Function(WebViewController)? onWebViewCreated;
   final bool isFullScreen;
+  final VoidCallback? onLoadComplete;
 
   const Molecule3DViewer({
     Key? key,
@@ -19,6 +20,7 @@ class Molecule3DViewer extends StatefulWidget {
     this.height = 300,
     this.onWebViewCreated,
     this.isFullScreen = false,
+    this.onLoadComplete,
   }) : super(key: key);
 
   @override
@@ -33,11 +35,23 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
   bool _isStructureAvailable = true;
   Timer? _rotationTimer;
   bool _autoRotate = true;
+  int? _previousCid;
 
   @override
   void initState() {
     super.initState();
+    _previousCid = widget.cid;
     _initWebView();
+  }
+
+  @override
+  void didUpdateWidget(Molecule3DViewer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reload molecule data if the CID has changed
+    if (oldWidget.cid != widget.cid) {
+      _previousCid = widget.cid;
+      _loadMoleculeData();
+    }
   }
 
   @override
@@ -147,6 +161,11 @@ class _Molecule3DViewerState extends State<Molecule3DViewer> {
             // Start auto-rotation after the molecule is loaded
             _startAutoRotation();
           });
+
+          // Notify that loading is complete
+          if (widget.onLoadComplete != null) {
+            widget.onLoadComplete!();
+          }
         }
       }).catchError((error) {
         if (mounted) {
@@ -670,10 +689,14 @@ class Molecule3DControls extends StatelessWidget {
 
 class Complete3DMoleculeViewer extends StatefulWidget {
   final int cid;
+  final bool isFullScreen;
+  final VoidCallback? onLoadComplete;
 
   const Complete3DMoleculeViewer({
     Key? key,
     required this.cid,
+    this.isFullScreen = false,
+    this.onLoadComplete,
   }) : super(key: key);
 
   @override
@@ -683,12 +706,46 @@ class Complete3DMoleculeViewer extends StatefulWidget {
 
 class _Complete3DMoleculeViewerState extends State<Complete3DMoleculeViewer> {
   WebViewController? _controller;
-  final bool _isLoading = true;
+  bool _isLoading = true;
   String? _error;
-  final bool _isFullScreen = false;
+  bool _isFullScreen = false;
   String _currentStyle = 'stick';
   bool _autoRotate = true;
   Timer? _rotationTimer;
+  int? _lastCid;
+
+  @override
+  void initState() {
+    super.initState();
+    _lastCid = widget.cid;
+    _isFullScreen = widget.isFullScreen;
+
+    // Start auto-rotation if we're in fullscreen mode
+    if (_isFullScreen && _autoRotate) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _startAutoRotation();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(Complete3DMoleculeViewer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.cid != widget.cid) {
+      _lastCid = widget.cid;
+      // Force reload by recreating the Molecule3DViewer
+      setState(() {});
+    }
+
+    if (oldWidget.isFullScreen != widget.isFullScreen) {
+      _isFullScreen = widget.isFullScreen;
+      if (_isFullScreen && _autoRotate) {
+        _startAutoRotation();
+      } else if (!_isFullScreen) {
+        _stopAutoRotation();
+      }
+    }
+  }
 
   void _onWebViewCreated(WebViewController controller) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -754,6 +811,12 @@ class _Complete3DMoleculeViewerState extends State<Complete3DMoleculeViewer> {
     _rotationTimer = null;
   }
 
+  void _notifyLoadComplete() {
+    if (widget.onLoadComplete != null) {
+      widget.onLoadComplete!();
+    }
+  }
+
   @override
   void dispose() {
     _stopAutoRotation();
@@ -764,55 +827,55 @@ class _Complete3DMoleculeViewerState extends State<Complete3DMoleculeViewer> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (_isFullScreen) {
+    if (widget.isFullScreen) {
       return Scaffold(
         backgroundColor: Colors.black,
-        appBar: AppBar(
-          title:
-              const Text('3D Structure', style: TextStyle(color: Colors.white)),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.white),
-          actions: [
-            IconButton(
-              icon: Icon(_autoRotate ? Icons.pause : Icons.play_arrow),
-              onPressed: _toggleAutoRotation,
-              tooltip: _autoRotate ? 'Pause Rotation' : 'Start Rotation',
-              color: Colors.white,
-            ),
-            // IconButton(
-            //   icon: const Icon(Icons.fullscreen_exit),
-            //   onPressed: _toggleFullScreen,
-            //   tooltip: 'Exit Full Screen',
-            //   color: Colors.white,
-            // ),
-          ],
-        ),
-        body: SafeArea(
-          child: Stack(
-            children: [
-              // 3D Viewer
-              Molecule3DViewer(
+        body: Stack(
+          children: [
+            // 3D Viewer
+            SizedBox.expand(
+              child: Molecule3DViewer(
+                key: ValueKey('fullscreen_3d_viewer_${widget.cid}'),
                 cid: widget.cid,
                 onWebViewCreated: _onWebViewCreated,
                 isFullScreen: true,
+                onLoadComplete: _notifyLoadComplete,
               ),
-              // Controls
-              Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
-                child: Molecule3DControls(
-                  controller: _controller,
-                  onReset: _resetView,
-                  onStyleChange: _changeStyle,
-                  currentStyle: _currentStyle,
-                  showFullScreenButton: false,
-                  isFullScreen: true,
+            ),
+
+            // Controls
+            Positioned(
+              bottom: 16,
+              left: 16,
+              right: 16,
+              child: Molecule3DControls(
+                controller: _controller,
+                onReset: _resetView,
+                onStyleChange: _changeStyle,
+                currentStyle: _currentStyle,
+                showFullScreenButton: false,
+                isFullScreen: true,
+              ),
+            ),
+
+            // Auto-rotation toggle button
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: IconButton(
+                  icon: Icon(_autoRotate ? Icons.pause : Icons.play_arrow,
+                      color: Colors.white),
+                  onPressed: _toggleAutoRotation,
+                  tooltip: _autoRotate ? 'Pause Rotation' : 'Start Rotation',
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
@@ -860,13 +923,6 @@ class _Complete3DMoleculeViewerState extends State<Complete3DMoleculeViewer> {
                   iconSize: 20,
                   visualDensity: VisualDensity.compact,
                 ),
-                // IconButton(
-                //   icon: const Icon(Icons.fullscreen),
-                //   onPressed: _toggleFullScreen,
-                //   tooltip: 'Full Screen',
-                //   iconSize: 20,
-                //   visualDensity: VisualDensity.compact,
-                // ),
               ],
             ),
           ),
@@ -875,8 +931,10 @@ class _Complete3DMoleculeViewerState extends State<Complete3DMoleculeViewer> {
           AspectRatio(
             aspectRatio: 1.5,
             child: Molecule3DViewer(
+              key: ValueKey('3d_viewer_${widget.cid}'),
               cid: widget.cid,
               onWebViewCreated: _onWebViewCreated,
+              onLoadComplete: _notifyLoadComplete,
             ),
           ),
 
@@ -984,54 +1042,67 @@ class _FullScreenMoleculeViewState extends State<FullScreenMoleculeView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(widget.title, style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.black.withOpacity(0.7),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: Icon(_autoRotate ? Icons.pause : Icons.play_arrow),
-            onPressed: _toggleAutoRotation,
-            tooltip: _autoRotate ? 'Pause Rotation' : 'Start Rotation',
-            color: Colors.white,
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.of(context).pop();
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title:
+              Text(widget.title, style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.black.withOpacity(0.7),
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+          // Make sure to use the leading button for explicit navigation control
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            SizedBox.expand(
-              child: Molecule3DViewer(
-                cid: widget.cid,
-                onWebViewCreated: (controller) {
-                  setState(() {
-                    _controller = controller;
-                  });
-                },
-                isFullScreen: true,
-              ),
-            ),
-            Positioned(
-              bottom: 16,
-              left: 16,
-              right: 16,
-              child: Molecule3DControls(
-                controller: _controller,
-                onReset: _resetView,
-                onStyleChange: (style) {
-                  setState(() {
-                    _currentStyle = style;
-                  });
-                },
-                currentStyle: _currentStyle,
-                showFullScreenButton: false,
-                isFullScreen: true,
-              ),
+          actions: [
+            IconButton(
+              icon: Icon(_autoRotate ? Icons.pause : Icons.play_arrow),
+              onPressed: _toggleAutoRotation,
+              tooltip: _autoRotate ? 'Pause Rotation' : 'Start Rotation',
+              color: Colors.white,
             ),
           ],
+        ),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              SizedBox.expand(
+                child: Molecule3DViewer(
+                  key: ValueKey('standalone_fullscreen_${widget.cid}'),
+                  cid: widget.cid,
+                  onWebViewCreated: (controller) {
+                    setState(() {
+                      _controller = controller;
+                    });
+                  },
+                  isFullScreen: true,
+                ),
+              ),
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: Molecule3DControls(
+                  controller: _controller,
+                  onReset: _resetView,
+                  onStyleChange: (style) {
+                    setState(() {
+                      _currentStyle = style;
+                    });
+                  },
+                  currentStyle: _currentStyle,
+                  showFullScreenButton: false,
+                  isFullScreen: true,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1044,6 +1115,7 @@ extension Molecule3DViewerExtension on CompoundDetailsScreen {
       BuildContext context, int cid, String title) {
     Navigator.of(context).push(
       MaterialPageRoute(
+        fullscreenDialog: true,
         builder: (context) => FullScreenMoleculeView(
           cid: cid,
           title: title,

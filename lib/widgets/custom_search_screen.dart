@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'dart:io'; // Import for SocketException
+import 'dart:io';
 import '../utils/error_handler.dart';
 
 class CustomSearchScreen extends StatefulWidget {
