@@ -18,12 +18,39 @@ class AqiProvider with ChangeNotifier {
   final Map<String, Pollutant> _pollutants = {};
   String? _selectedCity;
   String? _locationName;
+// List of major cities with their coordinates
+  final List<Map<String, dynamic>> _majorCities = [
+    {'name': 'New York', 'latitude': 40.7128, 'longitude': -74.0060},
+    {'name': 'London', 'latitude': 51.5074, 'longitude': -0.1278},
+    {'name': 'Tokyo', 'latitude': 35.6762, 'longitude': 139.6503},
+    {'name': 'Sydney', 'latitude': -33.8688, 'longitude': 151.2093},
+    {'name': 'Mumbai', 'latitude': 19.0760, 'longitude': 72.8777},
+    {'name': 'Beijing', 'latitude': 39.9042, 'longitude': 116.4074},
+    {'name': 'Paris', 'latitude': 48.8566, 'longitude': 2.3522},
+    {'name': 'Cairo', 'latitude': 30.0444, 'longitude': 31.2357},
+    {'name': 'Rio de Janeiro', 'latitude': -22.9068, 'longitude': -43.1729},
+    {'name': 'Kathmandu', 'latitude': 27.7172, 'longitude': 85.3240},
+    {'name': 'Berlin', 'latitude': 52.5200, 'longitude': 13.4050},
+    {'name': 'Moscow', 'latitude': 55.7558, 'longitude': 37.6173},
+    {'name': 'Los Angeles', 'latitude': 34.0522, 'longitude': -118.2437},
+    {'name': 'Toronto', 'latitude': 43.6532, 'longitude': -79.3832},
+    {'name': 'Dubai', 'latitude': 25.276987, 'longitude': 55.296249},
+    {'name': 'Cape Town', 'latitude': -33.9249, 'longitude': 18.4241},
+    {'name': 'Seoul', 'latitude': 37.5665, 'longitude': 126.9780},
+    {'name': 'Mexico City', 'latitude': 19.4326, 'longitude': -99.1332},
+  ];
+
+  // Store AQI data for multiple cities
+  final Map<String, AqiData> _citiesAqiData = {};
 
   AqiData? get aqiData => _aqiData;
   bool get isLoading => _isLoading;
   String? get error => _error;
   Map<String, Pollutant> get pollutants => _pollutants;
   String? get selectedCity => _selectedCity;
+
+  // Getter for cities AQI data
+  Map<String, AqiData> get citiesAqiData => _citiesAqiData;
 
   void setLoading(bool loading) {
     _isLoading = loading;
@@ -106,6 +133,19 @@ class AqiProvider with ChangeNotifier {
       String locationName =
           _selectedCity ?? _locationName ?? "Current Location";
 
+      // Parse the location name
+      String cityName = locationName;
+      String localityName = '';
+
+      if (locationName.contains(',')) {
+        final parts = locationName.split(',');
+        cityName = parts[0].trim();
+        // Get the last part for country if available
+        if (parts.length > 1) {
+          localityName = parts[parts.length - 1].trim();
+        }
+      }
+
       // Create measurements with realistic values for all pollutants
       Map<String, Measurement> measurements = {
         'pm25': Measurement(
@@ -150,18 +190,13 @@ class AqiProvider with ChangeNotifier {
       // Create mock AQI data object
       _aqiData = AqiData(
         locationId: 0,
-        name: locationName.contains(',')
-            ? locationName.split(',')[0].trim()
-            : locationName,
-        locality:
-            locationName.contains(',') ? locationName.split(',')[1].trim() : '',
+        name: cityName,
+        locality: localityName,
         timezone: 'auto',
         country: Country(
           id: 0,
           code: '',
-          name: locationName.contains(',')
-              ? locationName.split(',')[1].trim()
-              : '',
+          name: localityName,
         ),
         coordinates: Coordinates(
           latitude: latitude,
@@ -188,27 +223,36 @@ class AqiProvider with ChangeNotifier {
 
   Future<void> _fetchCityGeocoding(String cityName) async {
     try {
-      // Use Open-Meteo Geocoding API to get coordinates for city name
+      // Use Nominatim API for geocoding city name to coordinates
       final geocodingUrl = Uri.parse(
-          'https://geocoding-api.open-meteo.com/v1/search?name=$cityName&count=1&language=en&format=json');
+          'https://nominatim.openstreetmap.org/search?q=$cityName&format=json&limit=1');
 
-      final response = await http.get(geocodingUrl);
+      final response = await http.get(
+        geocodingUrl,
+        headers: {'User-Agent': 'ChemExplore App'}, // Required by Nominatim
+      );
 
       if (response.statusCode != 200) {
         throw Exception('Failed to geocode city: ${response.statusCode}');
       }
 
-      final data = json.decode(response.body);
+      final List<dynamic> data = json.decode(response.body);
 
-      if (data['results'] == null || data['results'].isEmpty) {
+      if (data.isEmpty) {
         throw Exception(
             'City "$cityName" not found. Try a different city or use your current location.');
       }
 
-      final location = data['results'][0];
-      _locationName = location['name'] + ', ' + (location['country'] ?? '');
+      final location = data[0];
 
-      await _fetchAqiByCoordinates(location['latitude'], location['longitude']);
+      // Store full display name for reference
+      _locationName = location['display_name'];
+
+      // Extract coordinates
+      double latitude = double.parse(location['lat']);
+      double longitude = double.parse(location['lon']);
+
+      await _fetchAqiByCoordinates(latitude, longitude);
     } catch (e) {
       throw Exception('Error finding location: $e');
     }
@@ -221,11 +265,16 @@ class AqiProvider with ChangeNotifier {
       // Before fetching AQI data, we'll get the location name first
       String cityName = "Current Location";
       try {
-        print("Getting location name from coordinates");
+        print("Getting location name from coordinates using Nominatim API");
+        // Use Nominatim API for reverse geocoding instead of Open-Meteo
         final reverseGeocodingUrl = Uri.parse(
-            'https://geocoding-api.open-meteo.com/v1/reverse?latitude=$latitude&longitude=$longitude');
+            'https://nominatim.openstreetmap.org/reverse?lat=$latitude&lon=$longitude&format=json');
 
-        final geocodingResponse = await http.get(reverseGeocodingUrl).timeout(
+        // Add a user-agent header as required by Nominatim's usage policy
+        final geocodingResponse = await http.get(
+          reverseGeocodingUrl,
+          headers: {'User-Agent': 'ChemExplore App'},
+        ).timeout(
           const Duration(seconds: 10),
           onTimeout: () {
             print("Geocoding request timed out");
@@ -236,35 +285,40 @@ class AqiProvider with ChangeNotifier {
         if (geocodingResponse.statusCode == 200) {
           final geocodingData = json.decode(geocodingResponse.body);
           print("Geocoding response: ${geocodingResponse.body}");
-          if (geocodingData['results'] != null &&
-              geocodingData['results'].isNotEmpty) {
-            final location = geocodingData['results'][0];
 
-            // Extract location components
-            List<String> locationParts = [];
+          // Extract location from Nominatim response
+          if (geocodingData['display_name'] != null) {
+            cityName = geocodingData['display_name'];
 
-            if (location['name'] != null &&
-                location['name'].toString().isNotEmpty) {
-              locationParts.add(location['name']);
-            }
+            // For a more structured approach, we can extract specific parts
+            if (geocodingData['address'] != null) {
+              List<String> locationParts = [];
 
-            // Prioritize most specific information
-            for (String key in ['admin4', 'admin3', 'admin2', 'admin1']) {
-              if (location[key] != null &&
-                  location[key].toString().isNotEmpty) {
-                locationParts.add(location[key]);
-                break; // Only add one administrative level
+              // Try to get city or town or village
+              if (geocodingData['address']['city'] != null) {
+                locationParts.add(geocodingData['address']['city']);
+              } else if (geocodingData['address']['town'] != null) {
+                locationParts.add(geocodingData['address']['town']);
+              } else if (geocodingData['address']['village'] != null) {
+                locationParts.add(geocodingData['address']['village']);
+              }
+
+              // Add state/province if available
+              if (geocodingData['address']['state'] != null) {
+                locationParts.add(geocodingData['address']['state']);
+              }
+
+              // Add country as the last part
+              if (geocodingData['address']['country'] != null) {
+                locationParts.add(geocodingData['address']['country']);
+              }
+
+              // Construct a clean city name if we have location parts
+              if (locationParts.isNotEmpty) {
+                cityName = locationParts.join(', ');
               }
             }
 
-            // Add country as the last part
-            if (location['country'] != null &&
-                location['country'].toString().isNotEmpty) {
-              locationParts.add(location['country']);
-            }
-
-            // Construct a clean city name
-            cityName = locationParts.join(', ');
             _locationName = cityName;
             print("Location resolved: $cityName");
           }
@@ -392,16 +446,29 @@ class AqiProvider with ChangeNotifier {
       // Determine the dominant pollutant by comparing each pollutant to standard thresholds
       String dominantPollutant = _determineDominantPollutant(measurements);
 
+      // Parse the location name for display
+      String locationName = cityName;
+      String localityName = '';
+
+      if (cityName.contains(',')) {
+        final parts = cityName.split(',');
+        locationName = parts[0].trim();
+        // Get the last part for country if available
+        if (parts.length > 1) {
+          localityName = parts[parts.length - 1].trim();
+        }
+      }
+
       // Create AQI data object
       _aqiData = AqiData(
         locationId: 0,
-        name: cityName.contains(',') ? cityName.split(',')[0].trim() : cityName,
-        locality: cityName.contains(',') ? cityName.split(',')[1].trim() : '',
+        name: locationName,
+        locality: localityName,
         timezone: data['timezone'] ?? '',
         country: Country(
           id: 0,
           code: '',
-          name: cityName.contains(',') ? cityName.split(',')[1].trim() : '',
+          name: localityName,
         ),
         coordinates: Coordinates(
           latitude: latitude,
@@ -429,27 +496,57 @@ class AqiProvider with ChangeNotifier {
     if (query.length < 3) return [];
 
     try {
-      // Use Open-Meteo Geocoding API to search for cities
+      // Use Nominatim API for geocoding city search
       final url = Uri.parse(
-          'https://geocoding-api.open-meteo.com/v1/search?name=$query&count=5&language=en&format=json');
+          'https://nominatim.openstreetmap.org/search?q=$query&format=json&addressdetails=1&limit=5');
 
-      final response = await http.get(url);
+      final response = await http.get(
+        url,
+        headers: {'User-Agent': 'ChemExplore App'}, // Required by Nominatim
+      );
 
       if (response.statusCode != 200) {
         throw Exception('Failed to search cities: ${response.statusCode}');
       }
 
-      final data = json.decode(response.body);
+      final List<dynamic> data = json.decode(response.body);
 
-      if (data['results'] == null) {
+      if (data.isEmpty) {
         return [];
       }
 
-      final List<dynamic> results = data['results'];
-      return results
-          .map<String>(
-              (location) => '${location['name']}, ${location['country'] ?? ''}')
-          .toList();
+      // Format the results as "City, Country"
+      return data.map<String>((location) {
+        String cityName = location['display_name'];
+
+        // Try to extract more precise information if available in address
+        if (location['address'] != null) {
+          List<String> locationParts = [];
+
+          // Try to get city or town or village
+          if (location['address']['city'] != null) {
+            locationParts.add(location['address']['city']);
+          } else if (location['address']['town'] != null) {
+            locationParts.add(location['address']['town']);
+          } else if (location['address']['village'] != null) {
+            locationParts.add(location['address']['village']);
+          } else if (location['address']['county'] != null) {
+            locationParts.add(location['address']['county']);
+          }
+
+          // Add country
+          if (location['address']['country'] != null) {
+            locationParts.add(location['address']['country']);
+          }
+
+          // Use the structured format if we have enough parts
+          if (locationParts.length >= 2) {
+            cityName = locationParts.join(', ');
+          }
+        }
+
+        return cityName;
+      }).toList();
     } catch (e) {
       setError('Error searching cities: $e');
       return [];
@@ -675,6 +772,98 @@ class AqiProvider with ChangeNotifier {
         return value / 4000.0; // Example threshold for carbon monoxide
       default:
         return 1.0;
+    }
+  }
+
+  // Fetch AQI for all major cities
+  Future<void> fetchMajorCitiesAqi() async {
+    print("Fetching AQI data for major cities");
+
+    // Create a list of futures to fetch data for all cities concurrently
+    List<Future<void>> futures = [];
+
+    for (var city in _majorCities) {
+      futures.add(_fetchCityAqi(
+        city['name'],
+        city['latitude'],
+        city['longitude'],
+      ));
+    }
+
+    // Wait for all requests to complete, but allow some to fail
+    // without stopping the entire operation
+    await Future.wait(
+      futures.map((future) => future.catchError((e) {
+            print("Error fetching city data: $e");
+            return null;
+          })),
+    );
+
+    // Notify listeners that data has been updated
+    notifyListeners();
+  }
+
+  // Helper method to fetch data for a single city
+  Future<void> _fetchCityAqi(
+      String cityName, double latitude, double longitude) async {
+    try {
+      // Get air quality data from Open-Meteo
+      final url = Uri.parse(
+        '$_baseUrl?latitude=$latitude&longitude=$longitude'
+        '&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone,us_aqi'
+        '&timezone=auto',
+      );
+
+      // Add shorter timeout for background city fetching
+      final response = await http.get(url).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Request timed out for $cityName');
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'Failed to load AQI data for $cityName: ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+
+      // Only continue if we have valid data
+      if (data['current'] != null && data['current']['us_aqi'] != null) {
+        // Get basic data
+        int usAqi = data['current']['us_aqi'];
+        DateTime measurementTime = DateTime.now();
+
+        // Try to parse time
+        if (data['current']['time'] != null) {
+          try {
+            measurementTime = DateTime.parse(data['current']['time']);
+          } catch (e) {
+            print("Error parsing time for $cityName: $e");
+          }
+        }
+
+        // Create city AQI data
+        _citiesAqiData[cityName] = AqiData(
+          locationId: 0,
+          name: cityName,
+          locality: '',
+          timezone: data['timezone'] ?? '',
+          country: Country(id: 0, code: '', name: ''),
+          coordinates: Coordinates(latitude: latitude, longitude: longitude),
+          sensors: [],
+          lastUpdated: measurementTime,
+          measurements: {}, // We don't need detailed measurements for the map
+          aqi: usAqi,
+          dominantPollutant: '', // Not needed for map display
+        );
+
+        print("Added AQI data for $cityName: $usAqi");
+      }
+    } catch (e) {
+      print("Error fetching AQI for $cityName: $e");
+      // We don't rethrow to allow other city requests to continue
     }
   }
 }

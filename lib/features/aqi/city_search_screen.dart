@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../providers/aqi_provider.dart';
+import '../../models/aqi_data.dart';
 import 'aqi_info_screen.dart';
 
 class CitySearchScreen extends StatefulWidget {
@@ -28,6 +30,9 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
   final MapController _mapController = MapController();
   List<Marker> _markers = [];
   bool _mapInitialized = false;
+
+  // Toggle for showing major cities
+  bool _showMajorCities = false;
 
   @override
   void initState() {
@@ -53,6 +58,9 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       if (provider.aqiData != null) {
         _addAqiMarker(provider);
       }
+
+      // Fetch AQI data for major cities in the background
+      provider.fetchMajorCitiesAqi();
     });
   }
 
@@ -82,6 +90,70 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
     });
   }
 
+  // Add all major cities markers to the map
+  void _updateMajorCitiesMarkers(AqiProvider provider) {
+    if (!_showMajorCities) {
+      // If not showing major cities, only keep current location marker
+      _markers = _markers
+          .where((marker) =>
+              marker.point.latitude == provider.aqiData?.coordinates.latitude &&
+              marker.point.longitude == provider.aqiData?.coordinates.longitude)
+          .toList();
+      return;
+    }
+
+    // Get all major cities with AQI data
+    List<Marker> cityMarkers = [];
+
+    // Add marker for current location if available
+    if (provider.aqiData != null) {
+      final lat = provider.aqiData!.coordinates.latitude;
+      final lng = provider.aqiData!.coordinates.longitude;
+
+      cityMarkers.add(
+        Marker(
+          width: 80.0,
+          height: 80.0,
+          point: LatLng(lat, lng),
+          child: _buildMarkerWidget(provider, provider.aqiData!),
+        ),
+      );
+    }
+
+    // Add markers for all major cities
+    provider.citiesAqiData.forEach((cityName, aqiData) {
+      // Skip if coordinates are too close to current location
+      if (provider.aqiData != null) {
+        final currentLat = provider.aqiData!.coordinates.latitude;
+        final currentLng = provider.aqiData!.coordinates.longitude;
+        final cityLat = aqiData.coordinates.latitude;
+        final cityLng = aqiData.coordinates.longitude;
+
+        // Calculate rough distance
+        final distance =
+            sqrt(pow(cityLat - currentLat, 2) + pow(cityLng - currentLng, 2));
+        if (distance < 0.5) {
+          // Approximate 50km at equator
+          return; // Skip this city as it's too close to current location
+        }
+      }
+
+      cityMarkers.add(
+        Marker(
+          width: 80.0,
+          height: 80.0,
+          point: LatLng(
+              aqiData.coordinates.latitude, aqiData.coordinates.longitude),
+          child: _buildMarkerWidget(provider, aqiData),
+        ),
+      );
+    });
+
+    setState(() {
+      _markers = cityMarkers;
+    });
+  }
+
   Future<bool> _moveToCurrentLocation() async {
     setState(() {
       _isSearching = true;
@@ -108,7 +180,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       await provider.fetchAqiData();
 
       if (provider.aqiData != null) {
-        _addAqiMarker(provider);
+        _updateMajorCitiesMarkers(provider);
       }
 
       setState(() {
@@ -170,34 +242,45 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
   void _addAqiMarker(AqiProvider provider) {
     if (provider.aqiData == null) return;
 
-    final lat = provider.aqiData!.coordinates.latitude;
-    final lng = provider.aqiData!.coordinates.longitude;
-
-    final marker = Marker(
-      width: 80.0,
-      height: 80.0,
-      point: LatLng(lat, lng),
-      child: _buildMarkerWidget(provider),
-    );
-
-    setState(() {
-      _markers = [marker];
-    });
+    _updateMajorCitiesMarkers(provider);
   }
 
-  Widget _buildMarkerWidget(AqiProvider provider) {
-    final aqiData = provider.aqiData!;
+  Widget _buildMarkerWidget(AqiProvider provider, AqiData aqiData) {
     final aqiValue = aqiData.aqi;
     final aqiColor =
         aqiValue > 0 ? provider.getAqiColor(aqiValue) : Colors.grey;
 
+    // Determine if this is the main location or a major city
+    final bool isMainLocation = provider.aqiData != null &&
+        aqiData.coordinates.latitude ==
+            provider.aqiData!.coordinates.latitude &&
+        aqiData.coordinates.longitude ==
+            provider.aqiData!.coordinates.longitude;
+
     return GestureDetector(
       onTap: () {
-        _showAqiInfoBottomSheet(provider);
+        _showAqiInfoBottomSheet(provider, aqiData, isMainLocation);
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Add city name above marker for major cities
+          if (!isMainLocation && _showMajorCities)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                aqiData.name,
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -212,19 +295,19 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
               ],
               border: Border.all(
                 color: aqiColor,
-                width: 2,
+                width: isMainLocation ? 3 : 2,
               ),
             ),
             child: Text(
               aqiValue.toString(),
               style: GoogleFonts.jetBrainsMono(
-                fontSize: 16,
+                fontSize: isMainLocation ? 16 : 14,
                 fontWeight: FontWeight.bold,
                 color: aqiColor,
               ),
             ),
           ),
-          // Simple triangle indicator using icon
+          // Simple triangle indicator
           const Icon(
             Icons.arrow_drop_down,
             color: Colors.white,
@@ -235,8 +318,8 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
     );
   }
 
-  void _showAqiInfoBottomSheet(AqiProvider provider) {
-    final aqiData = provider.aqiData!;
+  void _showAqiInfoBottomSheet(
+      AqiProvider provider, AqiData aqiData, bool isMainLocation) {
     final aqiValue = aqiData.aqi;
     final aqiColor =
         aqiValue > 0 ? provider.getAqiColor(aqiValue) : Colors.grey;
@@ -357,34 +440,60 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
                 ),
               ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: aqiColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AqiInfoScreen(),
+            if (isMainLocation)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: aqiColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  );
-                },
-                child: Text(
-                  'View Full Details',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AqiInfoScreen(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'View Full Details',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
+            if (!isMainLocation)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: aqiColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    // Set the selected city and fetch detailed data
+                    _selectCity(aqiData.name);
+                  },
+                  child: Text(
+                    'Show Detailed Data',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -439,7 +548,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
         _addAqiMarker(provider);
 
         // Show the AQI info bottom sheet
-        _showAqiInfoBottomSheet(provider);
+        _showAqiInfoBottomSheet(provider, provider.aqiData!, true);
       }
     } catch (e) {
       print("Error selecting city: $e");
@@ -472,7 +581,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       if (e.toString().contains('timed out') && provider.aqiData != null) {
         if (!mounted) return;
         _addAqiMarker(provider);
-        _showAqiInfoBottomSheet(provider);
+        _showAqiInfoBottomSheet(provider, provider.aqiData!, true);
       }
     } finally {
       if (mounted) {
@@ -630,7 +739,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
                   bottom: 90,
                   child: GestureDetector(
                     onTap: () {
-                      _showAqiInfoBottomSheet(provider);
+                      _showAqiInfoBottomSheet(provider, aqiData, true);
                     },
                     child: Container(
                       padding: const EdgeInsets.all(12),
@@ -705,6 +814,55 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
             },
           ),
 
+          // Button to toggle showing major cities
+          Positioned(
+            bottom: 16,
+            left: 16,
+            child: Consumer<AqiProvider>(
+              builder: (context, provider, child) {
+                return FloatingActionButton.extended(
+                  heroTag: "global_cities_fab",
+                  backgroundColor: _showMajorCities
+                      ? theme.colorScheme.primary
+                      : Colors.white,
+                  onPressed: () {
+                    setState(() {
+                      _showMajorCities = !_showMajorCities;
+
+                      // If turning on, make sure we fetch data
+                      if (_showMajorCities && provider.citiesAqiData.isEmpty) {
+                        provider.fetchMajorCitiesAqi();
+                      }
+
+                      // Update markers
+                      _updateMajorCitiesMarkers(provider);
+
+                      // Zoom out a bit when showing global cities
+                      if (_showMajorCities) {
+                        _mapController.move(_mapController.camera.center, 2);
+                      }
+                    });
+                  },
+                  icon: Icon(
+                    _showMajorCities ? Icons.public : Icons.public_outlined,
+                    color: _showMajorCities
+                        ? Colors.white
+                        : theme.colorScheme.primary,
+                  ),
+                  label: Text(
+                    _showMajorCities ? "Hide Global AQI" : "Show Global AQI",
+                    style: GoogleFonts.poppins(
+                      color: _showMajorCities
+                          ? Colors.white
+                          : theme.colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
           // Current location button
           Positioned(
             bottom: 16,
@@ -735,7 +893,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
 
           // Show instruction if map is initialized but no AQI data
           if (_mapInitialized &&
-              _markers.isEmpty &&
+              Provider.of<AqiProvider>(context).aqiData == null &&
               !_showSearchResults &&
               !_isSearching)
             Positioned(

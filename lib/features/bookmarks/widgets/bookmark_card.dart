@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../widgets/chemistry_widgets.dart';
 import '../../elements/model/periodic_element.dart';
-import '../../../features/elements/model/periodic_element.dart';
 import 'bookmark_widgets.dart';
 
 /// Widget for a bookmark card that can be used for any type of bookmarked item
