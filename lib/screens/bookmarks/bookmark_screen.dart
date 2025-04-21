@@ -2,12 +2,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../drugs/provider/drug_provider.dart';
 import 'provider/bookmark_provider.dart';
 import '../drugs/model/drug.dart';
 import '../compounds/model/compound.dart';
 import '../elements/model/periodic_element.dart'; // Import PeriodicElement
 import '../drugs/drug_detail_screen.dart';
 import '../compounds/compound_details_screen.dart';
+import '../compounds/provider/compound_provider.dart';
 import '../elements/element_detail_screen.dart'; // Import ElementDetailScreen
 import '../../widgets/chemistry_widgets.dart'; // Import custom chemistry widgets
 import 'dart:math';
@@ -322,12 +324,57 @@ class _BookmarkScreenState extends State<BookmarkScreen>
               'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${drug.cid}/PNG',
           onTap: () {
             try {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => DrugDetailScreen(selectedDrug: drug),
+              // Show loading dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(
+                  child: ChemistryLoadingWidget(
+                    message: 'Loading drug details...',
+                  ),
                 ),
               );
+
+              // Get the drug provider to fetch the full details
+              final drugProvider =
+                  Provider.of<DrugProvider>(context, listen: false);
+              drugProvider.clearSelectedDrug();
+
+              // Fetch fresh data for the drug
+              drugProvider.getDrug(drug.cid).then((updatedDrug) {
+                // Close loading dialog
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+
+                if (context.mounted && drugProvider.error == null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const DrugDetailScreen(),
+                    ),
+                  );
+                } else if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          drugProvider.error ?? 'Failed to load drug details'),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  );
+                }
+              }).catchError((e) {
+                // Close loading dialog on error
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error loading details: ${e.toString()}'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              });
             } catch (e) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -379,13 +426,59 @@ class _BookmarkScreenState extends State<BookmarkScreen>
               'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${compound.cid}/PNG',
           onTap: () {
             try {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      CompoundDetailsScreen(selectedCompound: compound),
+              // Show loading dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(
+                  child: ChemistryLoadingWidget(
+                    message: 'Loading compound details...',
+                  ),
                 ),
               );
+
+              // Get the compound provider to fetch the full details
+              final compoundProvider =
+                  Provider.of<CompoundProvider>(context, listen: false);
+              compoundProvider.clearSelectedCompound();
+
+              // Fetch fresh data for the compound
+              compoundProvider
+                  .getCompound(compound.cid)
+                  .then((updatedCompound) {
+                // Close loading dialog
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+
+                if (context.mounted && compoundProvider.error == null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CompoundDetailsScreen(),
+                    ),
+                  );
+                } else if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(compoundProvider.error ??
+                          'Failed to load compound details'),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  );
+                }
+              }).catchError((e) {
+                // Close loading dialog on error
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error loading details: ${e.toString()}'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              });
             } catch (e) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

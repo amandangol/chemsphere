@@ -23,29 +23,64 @@ class DrugDetailScreen extends StatefulWidget {
 }
 
 class _DrugDetailScreenState extends State<DrugDetailScreen> {
+  bool _isInitialized = false; // Track if we've initialized
+
   @override
   void initState() {
     super.initState();
 
-    // If a selectedDrug is passed, schedule fetching its details after the widget is built
-    if (widget.selectedDrug != null) {
-      // Use a post-frame callback to ensure the widget is fully built before calling provider
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        try {
-          final drugProvider =
-              Provider.of<DrugProvider>(context, listen: false);
-          drugProvider.fetchDrugDetails(widget.selectedDrug!.cid);
-        } catch (e) {
-          // Just log the error, don't crash
-          debugPrint('Error fetching drug details: $e');
+    // Initialize state with a delay to ensure context is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeDrug();
+    });
+  }
 
-          // Show a snackbar with the error if we have access to the context
+  // Method to handle initialization or re-initialization
+  void _initializeDrug() {
+    if (_isInitialized) return;
+
+    final drugProvider = Provider.of<DrugProvider>(context, listen: false);
+
+    // If we have a selected drug either from the widget or provider, make sure it's loaded
+    final drug = widget.selectedDrug ?? drugProvider.selectedDrug;
+
+    if (drug != null) {
+      setState(() {
+        _isInitialized = true;
+      });
+
+      // If we have a drug from the widget but not in the provider, we need to fetch its details
+      if (widget.selectedDrug != null && drugProvider.selectedDrug == null) {
+        // Show loading state
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: ChemistryLoadingWidget(
+              message: 'Loading drug details...',
+            ),
+          ),
+        );
+
+        // Fetch the drug details using the proper method
+        drugProvider.getDrug(widget.selectedDrug!.cid).then((_) {
+          // Close the loading dialog
+          if (context.mounted) {
+            Navigator.pop(context);
+          }
+        }).catchError((e) {
+          // Close the loading dialog on error
+          if (context.mounted) {
+            Navigator.pop(context);
+          }
+
+          debugPrint('Error fetching drug details: $e');
           if (mounted) {
             ErrorHandler.showErrorSnackBar(
                 context, ErrorHandler.getErrorMessage(e));
           }
-        }
-      });
+        });
+      }
     }
   }
 

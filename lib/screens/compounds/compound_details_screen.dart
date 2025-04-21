@@ -15,7 +15,10 @@ import 'provider/chemical_search_provider.dart';
 class CompoundDetailsScreen extends StatefulWidget {
   final Compound? selectedCompound;
 
-  const CompoundDetailsScreen({super.key, this.selectedCompound});
+  const CompoundDetailsScreen({
+    super.key,
+    this.selectedCompound,
+  });
 
   @override
   State<CompoundDetailsScreen> createState() => _CompoundDetailsScreenState();
@@ -24,33 +27,69 @@ class CompoundDetailsScreen extends StatefulWidget {
 class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
   bool _isLoading3D = false;
   String? _3dError;
+  bool _isLoadingFullDetails = false;
+  bool _isInitialized = false; // Track if we've initialized
 
   @override
   void initState() {
     super.initState();
 
-    // If a selectedCompound is passed, schedule fetching its details after the widget is built
-    if (widget.selectedCompound != null) {
-      // Use a post-frame callback to ensure the widget is fully built before calling provider
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        try {
-          final compoundProvider =
-              Provider.of<CompoundProvider>(context, listen: false);
-          compoundProvider.fetchCompoundDetails(widget.selectedCompound!.cid);
+    // Initialize state with a delay to ensure context is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeCompound();
+    });
+  }
 
-          // Start loading 3D structure
-          _load3DStructure(widget.selectedCompound!.cid);
-        } catch (e) {
-          // Just log the error, don't crash
+  // New method to handle initialization or re-initialization
+  void _initializeCompound() {
+    if (_isInitialized) return;
+
+    final compoundProvider =
+        Provider.of<CompoundProvider>(context, listen: false);
+
+    // If we have a selected compound either from the widget or provider, load its 3D structure
+    final compound =
+        widget.selectedCompound ?? compoundProvider.selectedCompound;
+
+    if (compound != null) {
+      setState(() {
+        _isInitialized = true;
+        _isLoadingFullDetails = true;
+      });
+
+      // If we have a compound from the widget but not in the provider, we need to fetch its details
+      if (widget.selectedCompound != null &&
+          compoundProvider.selectedCompound == null) {
+        // Show loading state
+        setState(() {
+          _isLoadingFullDetails = true;
+        });
+
+        compoundProvider
+            .fetchCompoundDetails(widget.selectedCompound!.cid)
+            .then((_) {
+          setState(() {
+            _isLoadingFullDetails = false;
+          });
+        }).catchError((e) {
           debugPrint('Error fetching compound details: $e');
+          setState(() {
+            _isLoadingFullDetails = false;
+          });
 
-          // Show a snackbar with the error if we have access to the context
           if (mounted) {
             ErrorHandler.showErrorSnackBar(
                 context, ErrorHandler.getErrorMessage(e));
           }
-        }
-      });
+        });
+      } else {
+        setState(() {
+          _isLoadingFullDetails = false;
+        });
+      }
+
+      // Start loading 3D structure in parallel
+      _load3DStructure(compound.cid);
     }
   }
 
@@ -112,8 +151,17 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
         ),
         child: Consumer<CompoundProvider>(
           builder: (context, provider, child) {
-            // Show loading indicator when provider is loading
-            if (provider.isLoading) {
+            // Reinitialize if a compound has become available and we haven't initialized yet
+            if (!_isInitialized && provider.selectedCompound != null) {
+              // Use a post-frame callback to ensure the widget is fully built
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _initializeCompound();
+              });
+            }
+
+            // Show loading indicator only for initial loading, not for detail updates
+            if ((provider.isLoading && provider.selectedCompound == null) ||
+                (!_isInitialized && widget.selectedCompound == null)) {
               return SafeArea(
                 child: Column(
                   children: [
@@ -223,11 +271,28 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
               );
             }
 
-            return _buildCompoundDetailContent(
-              context,
-              compound,
-              bookmarkProvider,
-              theme,
+            return Stack(
+              children: [
+                _buildCompoundDetailContent(
+                  context,
+                  compound,
+                  bookmarkProvider,
+                  theme,
+                ),
+
+                // Show a loading indicator for full details that doesn't block interaction
+                if (_isLoadingFullDetails || provider.isLoading)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withOpacity(0.3),
+                      child: const Center(
+                        child: ChemistryLoadingWidget(
+                          message: 'Loading compound details...',
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             );
           },
         ),
@@ -1080,5 +1145,22 @@ class _CompoundDetailsScreenState extends State<CompoundDetailsScreen> {
         ),
       ],
     );
+  }
+
+  // New method to handle widget updates
+  @override
+  void didUpdateWidget(CompoundDetailsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // If the selectedCompound has changed, we need to reinitialize
+    if (widget.selectedCompound?.cid != oldWidget.selectedCompound?.cid) {
+      setState(() {
+        _isInitialized = false;
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initializeCompound();
+      });
+    }
   }
 }

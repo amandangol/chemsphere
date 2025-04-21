@@ -17,6 +17,8 @@ class CustomSearchScreen extends StatefulWidget {
   final Function(String) onSearch;
   final Function() onClear;
   final Function(dynamic) onItemTap;
+  final Function(dynamic)? onQuickSearchTap;
+  final Function(String) onAutoComplete;
   final Widget Function(dynamic) itemBuilder;
   final String emptyMessage;
   final String emptySubMessage;
@@ -24,8 +26,8 @@ class CustomSearchScreen extends StatefulWidget {
   final int itemCount;
   final String? imageUrl;
   final List<Widget>? actions;
-  final Future<List<String>> Function(String)? onAutoComplete;
   final Widget? customHeader;
+  final bool showSearchResults;
 
   const CustomSearchScreen({
     Key? key,
@@ -40,6 +42,8 @@ class CustomSearchScreen extends StatefulWidget {
     required this.onSearch,
     required this.onClear,
     required this.onItemTap,
+    this.onQuickSearchTap,
+    required this.onAutoComplete,
     required this.itemBuilder,
     required this.emptyMessage,
     required this.emptySubMessage,
@@ -47,8 +51,8 @@ class CustomSearchScreen extends StatefulWidget {
     this.itemCount = 6,
     this.imageUrl,
     this.actions,
-    this.onAutoComplete,
     this.customHeader,
+    this.showSearchResults = true,
   }) : super(key: key);
 
   @override
@@ -183,7 +187,7 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
         slivers: [
           // App Bar with animated background
           SliverAppBar(
-            expandedHeight: 160,
+            expandedHeight: 130,
             floating: false,
             pinned: true,
             backgroundColor: Colors.transparent,
@@ -203,7 +207,7 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                   widget.title,
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: 15,
                     color: Colors.white,
                   ),
                 ),
@@ -248,7 +252,7 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                                     Icons.wifi_off,
                                     color: theme.colorScheme.onPrimary
                                         .withOpacity(0.3),
-                                    size: 40,
+                                    size: 32,
                                   ),
                                 ),
                               );
@@ -285,7 +289,7 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                 ),
               ),
               child: Padding(
-                padding: const EdgeInsets.only(top: 24, left: 20, right: 20),
+                padding: const EdgeInsets.only(top: 16, left: 16, right: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -296,14 +300,14 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                         link: _layerLink,
                         child: Container(
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
                                 color:
                                     theme.colorScheme.primary.withOpacity(0.15),
                                 spreadRadius: 0,
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
+                                blurRadius: 15,
+                                offset: const Offset(0, 8),
                               ),
                             ],
                           ),
@@ -317,39 +321,42 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                                 filled: true,
                                 fillColor: theme.colorScheme.surface,
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
+                                  borderRadius: BorderRadius.circular(20),
                                   borderSide: BorderSide.none,
                                 ),
                                 prefixIcon: Container(
-                                  padding: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.all(10),
                                   child: Icon(
                                     widget.searchIcon,
                                     color: theme.colorScheme.primary,
+                                    size: 20,
                                   ),
                                 ),
                                 suffixIcon: _isLoadingSuggestions
                                     ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
+                                        width: 18,
+                                        height: 18,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                         ),
                                       )
                                     : _searchController.text.isNotEmpty
                                         ? IconButton(
-                                            icon: const Icon(Icons.clear),
+                                            icon: const Icon(Icons.clear,
+                                                size: 20),
                                             onPressed: _clearSearch,
                                           )
                                         : IconButton(
                                             icon: Icon(
                                               Icons.search,
                                               color: theme.colorScheme.primary,
+                                              size: 20,
                                             ),
                                             onPressed: () => widget.onSearch(
                                                 _searchController.text),
                                           ),
                                 contentPadding:
-                                    const EdgeInsets.symmetric(vertical: 18),
+                                    const EdgeInsets.symmetric(vertical: 14),
                               ),
                               onChanged: (value) {
                                 setState(() {
@@ -359,7 +366,7 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                               },
                               onSubmitted: widget.onSearch,
                               style: GoogleFonts.poppins(
-                                fontSize: 16,
+                                fontSize: 14,
                               ),
                             ),
                           ),
@@ -367,12 +374,12 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 18),
 
                     // Custom Header for educational content
                     if (widget.customHeader != null) ...[
                       widget.customHeader!,
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
                     ],
 
                     // Quick search section with animated cards
@@ -383,13 +390,13 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                             Icon(
                               Icons.history,
                               color: theme.colorScheme.primary,
-                              size: 20,
+                              size: 16,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Text(
                               'Recent Searches',
                               style: GoogleFonts.poppins(
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: theme.colorScheme.onSurface,
                               ),
@@ -403,8 +410,8 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 3,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
                               childAspectRatio: 3,
                             ),
                             itemCount:
@@ -425,40 +432,41 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                                         widget.onSearch(
                                             widget.historyItems[index]);
                                       },
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(14),
                                       child: Container(
                                         decoration: BoxDecoration(
                                           borderRadius:
-                                              BorderRadius.circular(16),
+                                              BorderRadius.circular(14),
                                           color: theme.colorScheme
                                               .surfaceContainerHighest,
                                           boxShadow: [
                                             BoxShadow(
                                               color: theme.shadowColor
                                                   .withOpacity(0.1),
-                                              blurRadius: 10,
-                                              offset: const Offset(0, 4),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 3),
                                             ),
                                           ],
                                         ),
                                         child: Padding(
-                                          padding: const EdgeInsets.all(12),
+                                          padding: const EdgeInsets.all(10),
                                           child: Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
                                             children: [
                                               Icon(
                                                 Icons.history,
-                                                size: 16,
+                                                size: 14,
                                                 color: theme.colorScheme
                                                     .onSurfaceVariant,
                                               ),
-                                              const SizedBox(width: 8),
+                                              const SizedBox(width: 6),
                                               Expanded(
                                                 child: Text(
                                                   widget.historyItems[index],
                                                   style: GoogleFonts.poppins(
                                                     fontWeight: FontWeight.w500,
+                                                    fontSize: 11,
                                                     color: theme.colorScheme
                                                         .onSurfaceVariant,
                                                   ),
@@ -478,27 +486,27 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                       ],
                       Row(
                         children: [
                           Icon(
                             Icons.bolt,
                             color: theme.colorScheme.primary,
-                            size: 20,
+                            size: 16,
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           Text(
                             'Quick Search',
                             style: GoogleFonts.poppins(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: theme.colorScheme.onSurface,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       AnimationLimiter(
                         child: GridView.builder(
                           shrinkWrap: true,
@@ -506,8 +514,8 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
                             childAspectRatio: 2.5,
                           ),
                           itemCount: widget.quickSearchItems.length,
@@ -520,15 +528,20 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                                 child: FadeInAnimation(
                                   child: InkWell(
                                     onTap: () {
-                                      _searchController.text =
-                                          widget.quickSearchItems[index];
-                                      widget.onSearch(
-                                          widget.quickSearchItems[index]);
+                                      if (widget.onQuickSearchTap != null) {
+                                        widget.onQuickSearchTap!(
+                                            widget.quickSearchItems[index]);
+                                      } else {
+                                        _searchController.text =
+                                            widget.quickSearchItems[index];
+                                        widget.onSearch(
+                                            widget.quickSearchItems[index]);
+                                      }
                                     },
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(14),
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(16),
+                                        borderRadius: BorderRadius.circular(14),
                                         color: index % 3 == 0
                                             ? theme.colorScheme.primaryContainer
                                             : index % 3 == 1
@@ -540,18 +553,19 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                                           BoxShadow(
                                             color: theme.shadowColor
                                                 .withOpacity(0.1),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 3),
                                           ),
                                         ],
                                       ),
                                       child: Padding(
-                                        padding: const EdgeInsets.all(12),
+                                        padding: const EdgeInsets.all(10),
                                         child: Center(
                                           child: Text(
                                             widget.quickSearchItems[index],
                                             style: GoogleFonts.poppins(
                                               fontWeight: FontWeight.w500,
+                                              fontSize: 13,
                                               color: index % 3 == 0
                                                   ? theme.colorScheme
                                                       .onPrimaryContainer
@@ -573,7 +587,7 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                           },
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
                     ],
                   ],
                 ),
@@ -583,7 +597,7 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
 
           // Results area
           SliverPadding(
-            padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 if (widget.isLoading)
@@ -593,18 +607,18 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         SizedBox(
-                          width: 30,
-                          height: 30,
+                          width: 24,
+                          height: 24,
                           child: CircularProgressIndicator(
                             color: theme.colorScheme.primary,
                             strokeWidth: 2,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         Text(
                           'Searching...',
                           style: GoogleFonts.poppins(
-                            fontSize: 16,
+                            fontSize: 14,
                             color: theme.colorScheme.primary,
                           ),
                         ),
@@ -617,51 +631,52 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.errorContainer,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.error_outline,
-                            size: 48,
+                            size: 36,
                             color: theme.colorScheme.inversePrimary,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         Text(
                           'Error Occurred',
                           style: GoogleFonts.poppins(
-                            fontSize: 20,
+                            fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: theme.colorScheme.error,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Text(
                             widget.error!,
                             style: GoogleFonts.poppins(
+                              fontSize: 13,
                               color:
                                   theme.colorScheme.onSurface.withOpacity(0.7),
                             ),
                             textAlign: TextAlign.center,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: () =>
                               widget.onSearch(_searchController.text),
-                          icon: const Icon(Icons.refresh),
+                          icon: const Icon(Icons.refresh, size: 18),
                           label: Text(
                             'Retry',
-                            style: GoogleFonts.poppins(),
+                            style: GoogleFonts.poppins(fontSize: 13),
                           ),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 32,
-                              vertical: 12,
+                              horizontal: 24,
+                              vertical: 10,
                             ),
                             backgroundColor: theme.colorScheme.primary,
                             foregroundColor: theme.colorScheme.onPrimary,
@@ -676,32 +691,33 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.surfaceContainerHighest,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.search_off,
-                            size: 48,
+                            size: 36,
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         Text(
                           'No results found',
                           style: GoogleFonts.poppins(
-                            fontSize: 20,
+                            fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: theme.colorScheme.onSurface,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Text(
                             'Try different keywords or check the spelling',
                             style: GoogleFonts.poppins(
+                              fontSize: 13,
                               color:
                                   theme.colorScheme.onSurface.withOpacity(0.7),
                             ),
@@ -717,8 +733,8 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 120,
-                          height: 120,
+                          width: 100,
+                          height: 100,
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primaryContainer
                                 .withOpacity(0.7),
@@ -726,26 +742,26 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                           ),
                           child: Icon(
                             widget.emptyIcon,
-                            size: 60,
+                            size: 48,
                             color: theme.colorScheme.primary,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         Text(
                           widget.emptyMessage,
                           style: GoogleFonts.poppins(
-                            fontSize: 24,
+                            fontSize: 20,
                             fontWeight: FontWeight.w600,
                             color: theme.colorScheme.primary,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Text(
                             widget.emptySubMessage,
                             style: GoogleFonts.poppins(
-                              fontSize: 16,
+                              fontSize: 14,
                               color:
                                   theme.colorScheme.onSurface.withOpacity(0.7),
                             ),
@@ -757,31 +773,31 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                   )
                 else ...[
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.only(bottom: 12),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
+                            horizontal: 10,
+                            vertical: 4,
                           ),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primary,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 widget.searchIcon,
-                                size: 14,
+                                size: 12,
                                 color: theme.colorScheme.onPrimary,
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 4),
                               Text(
                                 '${widget.items.length} results',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 14,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                   color: theme.colorScheme.onPrimary,
                                 ),
@@ -801,7 +817,7 @@ class _CustomSearchScreenState extends State<CustomSearchScreen> {
                         verticalOffset: 50.0,
                         child: FadeInAnimation(
                           child: Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.only(bottom: 12),
                             child: widget.itemBuilder(widget.items[index]),
                           ),
                         ),

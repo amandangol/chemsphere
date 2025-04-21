@@ -53,6 +53,53 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
     }
   }
 
+  Future<Compound?> fetchCompoundByCid(int cid) async {
+    try {
+      setLoading(true);
+      clearError();
+      notifyListeners();
+
+      print('Directly fetching compound with CID: $cid');
+
+      // Fetch basic properties directly
+      final properties = await fetchBasicProperties([cid]);
+      if (properties.isEmpty) {
+        setError('Could not find compound with CID $cid');
+        return null;
+      }
+
+      // Create a basic compound object
+      Compound compound = Compound.fromJson(properties[0]);
+
+      // Set as selected compound
+      _selectedCompound = compound;
+      notifyListeners();
+
+      // Fetch complete details in the background
+      fetchCompoundDetails(cid).then((_) {
+        // Update cache with the fully detailed compound
+        if (_selectedCompound != null) {
+          _compoundCache[cid] = _selectedCompound!;
+        }
+      });
+
+      return compound;
+    } catch (e, stackTrace) {
+      print('Error fetching compound by CID: $e');
+      print('Stack trace: $stackTrace');
+
+      // Use ErrorHandler for a user-friendly error message
+      if (e is SocketException) {
+        setError(ErrorHandler.getErrorMessage(e));
+      } else {
+        setError(e.toString());
+      }
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }
+
   Future<Map<String, dynamic>> fetchPugViewData(int cid,
       {String? heading}) async {
     try {
@@ -74,7 +121,7 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
     }
   }
 
-  Future<void> fetchCompoundDetails(int cid) async {
+  Future<Compound?> fetchCompoundDetails(int cid) async {
     try {
       setLoading(true);
       clearError();
@@ -82,18 +129,29 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
 
       print('\n=== Starting fetchCompoundDetails for CID: $cid ===');
 
-      // Fetch basic compound data
-      print('Fetching detailed info...');
-      final data = await fetchDetailedInfo(cid);
-      print('Detailed info response: ${data.toString().substring(0, 200)}...');
+      // Parallel API requests for better performance
+      final detailedInfoFuture = fetchDetailedInfo(cid);
+      final descriptionFuture = http.get(Uri.parse(
+          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/description/XML'));
+      final pugViewFuture = fetchPugViewData(cid);
+      final propertiesFuture = http.get(Uri.parse(
+          'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/property/MeltingPoint,BoilingPoint,FlashPoint,Density,Solubility,LogP,VaporPressure/JSON'));
+      final synonymsFuture = fetchSynonyms(cid);
 
-      // Fetch description data from XML endpoint
-      print('Fetching description data...');
-      final descriptionResponse = await http.get(
-        Uri.parse(
-            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/description/XML'),
-      );
+      // Wait for all the parallel requests to complete
+      final results = await Future.wait([
+        detailedInfoFuture,
+        descriptionFuture,
+        pugViewFuture,
+        propertiesFuture,
+      ]);
 
+      final data = results[0] as Map<String, dynamic>;
+      final descriptionResponse = results[1] as http.Response;
+      final pugViewData = results[2] as Map<String, dynamic>;
+      final propertiesResponse = results[3] as http.Response;
+
+      // Process description data
       String description = '';
       String descriptionSource = '';
       String descriptionUrl = '';
@@ -110,25 +168,9 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
         description = descriptionElement?.text ?? '';
         descriptionSource = sourceElement?.text ?? '';
         descriptionUrl = urlElement?.text ?? '';
-
-        print('Description: $description');
-        print('Description Source: $descriptionSource');
-        print('Description URL: $descriptionUrl');
       }
 
-      // Fetch additional data from PUG View
-      print('Fetching PUG View data...');
-      final pugViewData = await fetchPugViewData(cid);
-      print(
-          'PUG View response: ${pugViewData.toString().substring(0, 200)}...');
-
-      // Fetch chemical properties
-      print('Fetching chemical properties...');
-      final propertiesResponse = await http.get(
-        Uri.parse(
-            'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/$cid/property/MeltingPoint,BoilingPoint,FlashPoint,Density,Solubility,LogP,VaporPressure/JSON'),
-      );
-
+      // Process properties data
       Map<String, dynamic> chemicalProperties = {};
       if (propertiesResponse.statusCode == 200) {
         final propertiesData = json.decode(propertiesResponse.body);
@@ -140,35 +182,27 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
       // Extract properties from compound data
       final compoundData = data['compound']['PC_Compounds']?[0];
       final propertiesData = compoundData?['props'] ?? [];
-      print('Properties data length: ${propertiesData.length}');
       final properties = _extractProperties(propertiesData);
-      print(
-          'Extracted properties: ${properties.toString().substring(0, 200)}...');
 
       // Extract title from PUG View data
       String title = pugViewData['Record']?['RecordTitle'] ?? '';
-      print('Title from PUG View: $title');
 
       // If no title found in PUG View, use properties title
       if (title.isEmpty) {
         title = properties['Title'] ?? properties['IUPACName'] ?? '';
-        print('Title from properties: $title');
       }
 
-      // Use base provider's method to fetch synonyms with proper error handling
-      print('Fetching synonyms...');
+      // Get synonyms with error handling (using the future we started earlier)
       List<String> synonyms = [];
       try {
-        synonyms = await fetchSynonyms(cid);
-        print('Synonyms fetched: ${synonyms.length}');
+        synonyms = await synonymsFuture;
       } catch (e) {
         // Log error but continue processing - synonyms aren't critical
         print('Warning: Error fetching synonyms: $e');
-        // Don't throw the error, just use an empty list
         synonyms = [];
       }
 
-      // Create the compound object with empty safety and biological data
+      // Create the compound object
       _selectedCompound = Compound(
         cid: cid,
         title: title,
@@ -251,15 +285,11 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
         inchiKey: properties['InChIKey'] ?? '',
       );
 
-      print('\n=== Created Compound Object ===');
-      print('Title: ${_selectedCompound?.title}');
-      print('Molecular Formula: ${_selectedCompound?.molecularFormula}');
-      print('Molecular Weight: ${_selectedCompound?.molecularWeight}');
-      print('Description: ${_selectedCompound?.description}');
-      print('Description Source: ${_selectedCompound?.descriptionSource}');
-      print('Description URL: ${_selectedCompound?.descriptionUrl}');
-      print('Synonyms: ${_selectedCompound?.synonyms}');
-      print('Chemical Properties: ${_selectedCompound?.physicalProperties}');
+      // Cache the compound for future use
+      _compoundCache[cid] = _selectedCompound!;
+
+      notifyListeners();
+      return _selectedCompound;
     } catch (e) {
       print('Error in fetchCompoundDetails: $e');
 
@@ -269,6 +299,45 @@ class CompoundProvider extends BasePubChemProvider with PubChemImplMixin {
       } else {
         setError(e.toString());
       }
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Add a caching mechanism for compound CIDs
+  final Map<int, Compound> _compoundCache = {};
+
+  // Improved method to get a compound, ensuring fresh data
+  Future<Compound?> getCompound(int cid) async {
+    try {
+      // Clear existing compound to avoid showing stale data
+      clearSelectedCompound();
+
+      // Set loading state
+      setLoading(true);
+      notifyListeners();
+
+      // If compound exists in cache and is not stale, use it
+      if (_compoundCache.containsKey(cid)) {
+        print("Using cached compound data for CID: $cid");
+        _selectedCompound = _compoundCache[cid];
+        notifyListeners();
+
+        // Return the cached compound immediately
+        return _selectedCompound;
+      }
+
+      // Otherwise fetch full details directly
+      return await fetchCompoundDetails(cid);
+    } catch (e) {
+      print('Error in getCompound: $e');
+      if (e is SocketException) {
+        setError(ErrorHandler.getErrorMessage(e));
+      } else {
+        setError(e.toString());
+      }
+      return null;
     } finally {
       setLoading(false);
     }

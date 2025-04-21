@@ -7,7 +7,9 @@ import 'provider/compound_provider.dart';
 import '../../services/search_history_service.dart';
 import '../../widgets/custom_search_screen.dart';
 import '../../utils/error_handler.dart'; // Import ErrorHandler
+import '../../widgets/chemistry_widgets.dart'; // Import for ChemistryLoadingWidget
 import 'compound_details_screen.dart';
+import 'model/compound.dart'; // Import Compound model
 
 class CompoundSearchScreen extends StatefulWidget {
   const CompoundSearchScreen({Key? key}) : super(key: key);
@@ -18,18 +20,26 @@ class CompoundSearchScreen extends StatefulWidget {
 
 class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
   final SearchHistoryService _searchHistoryService = SearchHistoryService();
-  final List<String> _quickSearchItems = [
-    'Glucose',
-    'Benzene',
-    'Ethanol',
-    'Methane',
-    'Water',
-    'Carbon dioxide',
-    'Sodium chloride',
-    'Acetic acid',
-    'Ammonia',
-    'Sulfuric acid'
+  final TextEditingController _searchController = TextEditingController();
+
+  // Add CID mapping for quick search items for direct navigation
+  final List<Map<String, dynamic>> _quickSearchItemsWithCids = [
+    {'name': 'Glucose', 'cid': 5793},
+    {'name': 'Benzene', 'cid': 241},
+    {'name': 'Ethanol', 'cid': 702},
+    {'name': 'Methane', 'cid': 297},
+    {'name': 'Water', 'cid': 962},
+    {'name': 'Carbon dioxide', 'cid': 280},
+    {'name': 'Sodium chloride', 'cid': 5234},
+    {'name': 'Acetic acid', 'cid': 176},
+    {'name': 'Ammonia', 'cid': 222},
+    {'name': 'Sulfuric acid', 'cid': 1118},
   ];
+
+  // Converted list for backward compatibility
+  List<String> get _quickSearchItems =>
+      _quickSearchItemsWithCids.map((item) => item['name'] as String).toList();
+
   List<String> _searchHistory = [];
   List<String> _availableHeadings = [];
   String? _selectedHeading;
@@ -80,11 +90,85 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
     });
   }
 
+  // Method to handle quick search item taps for direct navigation
+  void _handleQuickSearchTap(String compound) async {
+    // Find the corresponding CID for this compound name
+    final item = _quickSearchItemsWithCids.firstWhere(
+      (item) => item['name'] == compound,
+      orElse: () => {'name': compound, 'cid': 0},
+    );
+
+    final int cid = item['cid'] as int;
+    if (cid == 0) {
+      // If no CID found, fall back to regular search
+      _searchController.text = compound;
+      await context.read<CompoundProvider>().searchCompounds(compound);
+      return;
+    }
+
+    try {
+      // Clear any previous compound data
+      final provider = context.read<CompoundProvider>();
+      provider.clearSelectedCompound();
+
+      // Show loading dialog with a more visible loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: ChemistryLoadingWidget(
+            message: 'Loading compound details...',
+          ),
+        ),
+      );
+
+      // Use the new method to fetch by CID directly
+      final result = await provider.getCompound(cid);
+
+      // Close the loading dialog
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
+      if (result != null) {
+        // Navigate to compound details screen
+        if (context.mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CompoundDetailsScreen(),
+            ),
+          );
+        }
+      } else if (context.mounted) {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(provider.error ?? 'Failed to load compound details'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle errors
+      print('Error handling quick search tap: $e');
+      if (context.mounted) {
+        // Close loading dialog if it's still showing
+        Navigator.pop(context);
+
+        ErrorHandler.showErrorSnackBar(
+          context,
+          ErrorHandler.getErrorMessage(e),
+        );
+      }
+    }
+  }
+
   Widget _buildInfoCard() {
     if (!_showInfoCard) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -94,12 +178,12 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
             Theme.of(context).colorScheme.primaryContainer.withOpacity(0.6),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -108,7 +192,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
         title: Text(
           "What are Chemical Compounds?",
           style: GoogleFonts.poppins(
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: FontWeight.w600,
             color: Theme.of(context).colorScheme.onPrimaryContainer,
           ),
@@ -116,6 +200,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
         leading: Icon(
           Icons.science,
           color: Theme.of(context).colorScheme.onPrimaryContainer,
+          size: 20,
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -126,9 +211,9 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                   .colorScheme
                   .onPrimaryContainer
                   .withOpacity(0.7),
-              size: 20,
+              size: 18,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             IconButton(
               icon: Icon(
                 Icons.close,
@@ -136,48 +221,50 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                     .colorScheme
                     .onPrimaryContainer
                     .withOpacity(0.7),
-                size: 20,
+                size: 18,
               ),
               onPressed: () {
                 setState(() {
                   _showInfoCard = false;
                 });
               },
+              constraints: const BoxConstraints(maxHeight: 32, maxWidth: 32),
             ),
           ],
         ),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "A chemical compound is a substance composed of two or more different elements (atoms) that are chemically bonded together in fixed proportions.",
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: Theme.of(context)
                         .colorScheme
                         .onPrimaryContainer
                         .withOpacity(0.9),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   "For example, water (H₂O) is a compound of hydrogen and oxygen in a 2:1 ratio.",
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
+                    fontSize: 13,
                     color: Theme.of(context)
                         .colorScheme
                         .onPrimaryContainer
                         .withOpacity(0.9),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     _buildInfoPill("Inorganic Compounds", Icons.category),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     _buildInfoPill("Organic Compounds", Icons.emoji_nature),
                   ],
                 ),
@@ -192,7 +279,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
   Widget _buildInfoPill(String label, IconData icon) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
         decoration: BoxDecoration(
           color:
               Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.1),
@@ -209,18 +296,18 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
           children: [
             Icon(
               icon,
-              size: 16,
+              size: 14,
               color: Theme.of(context)
                   .colorScheme
                   .onPrimaryContainer
                   .withOpacity(0.8),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Flexible(
               child: Text(
                 label,
                 style: GoogleFonts.poppins(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w500,
                   color: Theme.of(context)
                       .colorScheme
@@ -240,18 +327,18 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
     if (!_showFilters) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
         ),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).shadowColor.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -262,11 +349,11 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
           Text(
             'Filter Compounds',
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           DropdownButtonFormField<String>(
             value: _selectedHeading,
             decoration: InputDecoration(
@@ -275,12 +362,12 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             ),
             items: _availableHeadings.map((heading) {
               return DropdownMenuItem(
                 value: heading,
-                child: Text(heading),
+                child: Text(heading, style: const TextStyle(fontSize: 13)),
               );
             }).toList(),
             onChanged: (value) {
@@ -289,7 +376,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
               });
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           TextField(
             decoration: InputDecoration(
               labelText: 'Value',
@@ -297,24 +384,25 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               helperText:
                   'Example: For "Molecular Weight", enter a number like 18 for water',
               helperStyle: GoogleFonts.poppins(
-                fontSize: 12,
+                fontSize: 11,
                 color: Theme.of(context)
                     .colorScheme
                     .onSurfaceVariant
                     .withOpacity(0.7),
               ),
             ),
+            style: const TextStyle(fontSize: 13),
             onChanged: (value) {
               setState(() {
                 _selectedValue = value;
               });
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -328,13 +416,13 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                       );
                     }
                   },
-                  icon: const Icon(Icons.filter_alt),
+                  icon: const Icon(Icons.filter_alt, size: 18),
                   label: Text(
                     'Apply Filter',
-                    style: GoogleFonts.poppins(),
+                    style: GoogleFonts.poppins(fontSize: 13),
                   ),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -351,14 +439,14 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                   });
                   context.read<CompoundProvider>().clearCompounds();
                 },
-                icon: const Icon(Icons.clear),
+                icon: const Icon(Icons.clear, size: 18),
                 label: Text(
                   'Clear',
-                  style: GoogleFonts.poppins(),
+                  style: GoogleFonts.poppins(fontSize: 13),
                 ),
                 style: TextButton.styleFrom(
                   padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
                 ),
               ),
             ],
@@ -370,10 +458,10 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
 
   Widget _buildCompoundGlossary() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: ExpansionTile(
         initiallyExpanded: false,
@@ -381,11 +469,12 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
           "Common Compound Terms",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
+            fontSize: 14,
           ),
         ),
-        leading: const Icon(Icons.menu_book),
+        leading: const Icon(Icons.menu_book, size: 20),
         expandedCrossAxisAlignment: CrossAxisAlignment.start,
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         children: [
           _buildGlossaryItem(
               "Molecular Formula",
@@ -410,7 +499,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
 
   Widget _buildGlossaryItem(String term, String definition, String example) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -418,15 +507,15 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
             term,
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.w600,
-              fontSize: 14,
+              fontSize: 13,
               color: Theme.of(context).colorScheme.primary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             definition,
             style: GoogleFonts.poppins(
-              fontSize: 13,
+              fontSize: 12,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
@@ -434,7 +523,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
           Text(
             example,
             style: GoogleFonts.poppins(
-              fontSize: 12,
+              fontSize: 11,
               fontStyle: FontStyle.italic,
               color: Theme.of(context)
                   .colorScheme
@@ -499,32 +588,64 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
               onItemTap: (item) async {
                 final compound = item;
                 try {
-                  await compoundProvider.fetchCompoundDetails(compound.cid);
-                  if (compoundProvider.error == null &&
-                      compoundProvider.selectedCompound != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CompoundDetailsScreen(),
+                  // Show loading dialog
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => const Center(
+                      child: ChemistryLoadingWidget(
+                        message: 'Loading compound details...',
                       ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(compoundProvider.error ??
-                            'Failed to load compound details'),
-                        backgroundColor: Theme.of(context).colorScheme.error,
-                      ),
-                    );
-                  }
+                    ),
+                  );
+
+                  // First clear any previously loaded compound data
+                  final provider = context.read<CompoundProvider>();
+                  provider.clearSelectedCompound();
+
+                  // Fetch details and then navigate
+                  provider.fetchCompoundDetails(compound.cid).then((result) {
+                    // Close loading dialog
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
+
+                    if (context.mounted && provider.error == null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CompoundDetailsScreen(),
+                        ),
+                      );
+                    } else if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(provider.error ??
+                              'Failed to load compound details'),
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                        ),
+                      );
+                    }
+                  }).catchError((e) {
+                    // Close loading dialog on error
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ErrorHandler.showErrorSnackBar(
+                        context,
+                        ErrorHandler.getErrorMessage(e),
+                      );
+                    }
+                  });
                 } catch (e) {
-                  print('Error tapping item: $e');
+                  print('Error navigating to details: $e');
                   ErrorHandler.showErrorSnackBar(
                     context,
                     ErrorHandler.getErrorMessage(e),
                   );
                 }
               },
+              onQuickSearchTap: (dynamic item) =>
+                  _handleQuickSearchTap(item.toString()),
               onAutoComplete: (query) async {
                 try {
                   return await compoundProvider
@@ -543,22 +664,67 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                 }
               },
               itemBuilder: (item) => Card(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                elevation: 2,
+                elevation: 1,
                 child: InkWell(
                   onTap: () {
                     final compound = item;
                     try {
-                      compoundProvider.fetchCompoundDetails(compound.cid);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CompoundDetailsScreen(),
+                      // Show loading dialog
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => const Center(
+                          child: ChemistryLoadingWidget(
+                            message: 'Loading compound details...',
+                          ),
                         ),
                       );
+
+                      // First clear any previously loaded compound data
+                      final provider = context.read<CompoundProvider>();
+                      provider.clearSelectedCompound();
+
+                      // Fetch details and then navigate
+                      provider
+                          .fetchCompoundDetails(compound.cid)
+                          .then((result) {
+                        // Close loading dialog
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                        }
+
+                        if (context.mounted && provider.error == null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const CompoundDetailsScreen(),
+                            ),
+                          );
+                        } else if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(provider.error ??
+                                  'Failed to load compound details'),
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.error,
+                            ),
+                          );
+                        }
+                      }).catchError((e) {
+                        // Close loading dialog on error
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ErrorHandler.showErrorSnackBar(
+                            context,
+                            ErrorHandler.getErrorMessage(e),
+                          );
+                        }
+                      });
                     } catch (e) {
                       print('Error navigating to details: $e');
                       ErrorHandler.showErrorSnackBar(
@@ -567,34 +733,34 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                       );
                     }
                   },
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     child: Row(
                       children: [
                         Container(
-                          width: 70,
-                          height: 70,
+                          width: 60,
+                          height: 60,
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                             boxShadow: const [
                               BoxShadow(
                                 color: Colors.black12,
-                                blurRadius: 4,
-                                offset: Offset(2, 2),
+                                blurRadius: 3,
+                                offset: Offset(1, 1),
                               )
                             ],
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                             child: CachedNetworkImage(
                               imageUrl:
                                   'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${item.cid}/PNG',
                               fit: BoxFit.contain,
                               placeholder: (context, url) => Container(
-                                width: 120,
-                                height: 120,
+                                width: 60,
+                                height: 60,
                                 color: Theme.of(context)
                                     .colorScheme
                                     .surfaceContainerHighest,
@@ -615,8 +781,8 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                                 }
 
                                 return Container(
-                                  width: 120,
-                                  height: 120,
+                                  width: 60,
+                                  height: 60,
                                   color: Theme.of(context)
                                       .colorScheme
                                       .surfaceContainerHighest,
@@ -625,6 +791,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                                     children: [
                                       Icon(
                                         Icons.image_not_supported,
+                                        size: 20,
                                         color: Theme.of(context)
                                             .colorScheme
                                             .onSurfaceVariant,
@@ -633,7 +800,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                                         Text(
                                           errorMessage,
                                           style: TextStyle(
-                                            fontSize: 10,
+                                            fontSize: 9,
                                             color: Theme.of(context)
                                                 .colorScheme
                                                 .onSurfaceVariant,
@@ -657,7 +824,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -665,17 +832,17 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                               Text(
                                 item.title,
                                 style: GoogleFonts.poppins(
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 3),
                               Row(
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
+                                      horizontal: 6,
+                                      vertical: 1,
                                     ),
                                     decoration: BoxDecoration(
                                       color: Theme.of(context)
@@ -686,7 +853,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                                     child: Text(
                                       item.molecularFormula,
                                       style: GoogleFonts.robotoMono(
-                                        fontSize: 12,
+                                        fontSize: 11,
                                         fontWeight: FontWeight.w500,
                                         color: Theme.of(context)
                                             .colorScheme
@@ -694,7 +861,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 6),
                                   Text(
                                     'CID: ${item.cid}',
                                     style: GoogleFonts.poppins(
@@ -702,19 +869,18 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                                           .colorScheme
                                           .onSurface
                                           .withOpacity(0.5),
-                                      fontSize: 12,
+                                      fontSize: 11,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
                               if (_compoundInfo.containsKey(item.title)) ...[
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 3),
                                 Text(
                                   _compoundInfo[item.title]!['description'] ??
                                       '',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onSurface
@@ -729,7 +895,7 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                         ),
                         Icon(
                           Icons.arrow_forward_ios,
-                          size: 16,
+                          size: 14,
                           color: Theme.of(context).colorScheme.primary,
                         ),
                       ],
@@ -746,23 +912,29 @@ class _CompoundSearchScreenState extends State<CompoundSearchScreen> {
                   icon: Icon(
                     Icons.filter_list,
                     color: Theme.of(context).colorScheme.primary,
+                    size: 22,
                   ),
                   onPressed: () {
                     setState(() {
                       _showFilters = !_showFilters;
                     });
                   },
+                  constraints:
+                      const BoxConstraints(maxHeight: 36, maxWidth: 36),
                 ),
                 IconButton(
                   icon: Icon(
                     _showInfoCard ? Icons.info : Icons.info_outline,
                     color: Theme.of(context).colorScheme.primary,
+                    size: 22,
                   ),
                   onPressed: () {
                     setState(() {
                       _showInfoCard = !_showInfoCard;
                     });
                   },
+                  constraints:
+                      const BoxConstraints(maxHeight: 36, maxWidth: 36),
                 ),
               ],
             ),

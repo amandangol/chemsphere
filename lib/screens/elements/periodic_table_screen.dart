@@ -844,17 +844,29 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
   }
 
   Widget _buildGridView(List<PeriodicElement> elements, BuildContext context) {
-    final crossAxisCount = MediaQuery.of(context).size.width < 600 ? 4 : 8;
+    final width = MediaQuery.of(context).size.width;
+    // Adjust crossAxisCount based on screen width to make it more responsive
+    final crossAxisCount = width < 360
+        ? 3
+        : width < 600
+            ? 4
+            : 8;
+
+    // Adjusted child aspect ratio to better fit the content
+    final childAspectRatio = width < 360 ? 0.82 : 0.95;
+    final crossAxisSpacing = width < 360 ? 8.0 : 10.0;
+    final mainAxisSpacing = width < 360 ? 8.0 : 10.0;
+    final padding = width < 360 ? 12.0 : 14.0;
 
     return AnimationLimiter(
       child: GridView.builder(
         key: const ValueKey('grid_view'),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(padding),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: crossAxisCount,
-          childAspectRatio: 0.9,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
+          childAspectRatio: childAspectRatio,
+          crossAxisSpacing: crossAxisSpacing,
+          mainAxisSpacing: mainAxisSpacing,
         ),
         itemCount: elements.length,
         itemBuilder: (context, index) {
@@ -878,11 +890,19 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
 
   Widget _buildListView(List<PeriodicElement> elements, BuildContext context) {
     final theme = Theme.of(context);
+    final width = MediaQuery.of(context).size.width;
+    // Adjust paddings and sizes for smaller screens
+    final horizontalPadding = width < 360 ? 12.0 : 16.0;
+    final itemBottomPadding = width < 360 ? 6.0 : 8.0;
+    final iconSize = width < 360 ? 14.0 : 16.0;
+    final circleSize = width < 360 ? 48.0 : 56.0;
+    final itemPadding = width < 360 ? 12.0 : 16.0;
 
     return AnimationLimiter(
       child: ListView.builder(
         key: const ValueKey('list_view'),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        padding:
+            EdgeInsets.symmetric(vertical: 8, horizontal: horizontalPadding),
         itemCount: elements.length,
         itemBuilder: (context, index) {
           final element = elements[index];
@@ -893,7 +913,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
               verticalOffset: 50.0,
               child: FadeInAnimation(
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: EdgeInsets.only(bottom: itemBottomPadding),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
@@ -907,12 +927,13 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                               .withOpacity(0.05),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius:
+                          BorderRadius.circular(12), // Reduced from 16
                       boxShadow: [
                         BoxShadow(
                           color: _getElementColor(element.groupBlock)
                               .withOpacity(0.1),
-                          blurRadius: 8,
+                          blurRadius: 6, // Reduced from 8
                           offset: const Offset(0, 2),
                         ),
                       ],
@@ -920,7 +941,8 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius:
+                            BorderRadius.circular(12), // Reduced from 16
                         onTap: () {
                           context
                               .read<ElementProvider>()
@@ -940,13 +962,13 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                           );
                         },
                         child: Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(itemPadding),
                           child: Row(
                             children: [
                               // Element symbol in circle
                               Container(
-                                width: 56,
-                                height: 56,
+                                width: circleSize,
+                                height: circleSize,
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     begin: Alignment.topLeft,
@@ -963,7 +985,7 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                       color:
                                           _getElementColor(element.groupBlock)
                                               .withOpacity(0.3),
-                                      blurRadius: 8,
+                                      blurRadius: 6, // Reduced from 8
                                       offset: const Offset(0, 2),
                                     ),
                                   ],
@@ -973,13 +995,18 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                     element.symbol,
                                     style: GoogleFonts.poppins(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 20,
+                                      fontSize: width < 360
+                                          ? 16
+                                          : 20, // Reduced size for small screens
                                       color: Colors.white,
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              SizedBox(
+                                  width: width < 360
+                                      ? 12
+                                      : 16), // Adjusted spacing for small screens
                               // Element info
                               Expanded(
                                 child: Column(
@@ -991,25 +1018,35 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                           element.name,
                                           style: GoogleFonts.poppins(
                                             fontWeight: FontWeight.w600,
-                                            fontSize: 16,
+                                            fontSize: width < 360
+                                                ? 14
+                                                : 16, // Reduced size for small screens
                                             color: theme.colorScheme.onSurface,
                                           ),
                                         ),
                                         const SizedBox(width: 8),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 2),
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: width < 360
+                                                ? 6
+                                                : 8, // Adjusted for small screens
+                                            vertical: width < 360
+                                                ? 1
+                                                : 2, // Adjusted for small screens
+                                          ),
                                           decoration: BoxDecoration(
                                             color: _getElementColor(
                                                     element.groupBlock)
                                                 .withOpacity(0.2),
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                                8), // Reduced from 12
                                           ),
                                           child: Text(
                                             '#${element.atomicNumber}',
                                             style: GoogleFonts.poppins(
-                                              fontSize: 12,
+                                              fontSize: width < 360
+                                                  ? 10
+                                                  : 12, // Reduced size for small screens
                                               fontWeight: FontWeight.w500,
                                               color: _getElementColor(
                                                   element.groupBlock),
@@ -1018,13 +1055,18 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(
+                                        height: width < 360
+                                            ? 2
+                                            : 4), // Adjusted for small screens
                                     Row(
                                       children: [
                                         Text(
                                           'Atomic Mass: ',
                                           style: GoogleFonts.poppins(
-                                            fontSize: 12,
+                                            fontSize: width < 360
+                                                ? 10
+                                                : 12, // Reduced size for small screens
                                             color: theme
                                                 .colorScheme.onSurfaceVariant,
                                           ),
@@ -1033,14 +1075,19 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                           _formatValue(
                                               element.formattedAtomicMass),
                                           style: GoogleFonts.poppins(
-                                            fontSize: 12,
+                                            fontSize: width < 360
+                                                ? 10
+                                                : 12, // Reduced size for small screens
                                             fontWeight: FontWeight.w500,
                                             color: theme.colorScheme.onSurface,
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(
+                                        height: width < 360
+                                            ? 2
+                                            : 4), // Adjusted for small screens
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
@@ -1048,7 +1095,9 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                         Text(
                                           element.groupBlock,
                                           style: GoogleFonts.poppins(
-                                            fontSize: 12,
+                                            fontSize: width < 360
+                                                ? 10
+                                                : 12, // Reduced size for small screens
                                             fontWeight: FontWeight.w500,
                                             color: _getElementColor(
                                                 element.groupBlock),
@@ -1057,7 +1106,9 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                         Text(
                                           'State: ${_formatValue(element.standardState)}',
                                           style: GoogleFonts.poppins(
-                                            fontSize: 12,
+                                            fontSize: width < 360
+                                                ? 10
+                                                : 12, // Reduced size for small screens
                                             color: theme
                                                 .colorScheme.onSurfaceVariant,
                                           ),
@@ -1073,10 +1124,12 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
                                   color: theme.colorScheme.primaryContainer,
                                   shape: BoxShape.circle,
                                 ),
-                                padding: const EdgeInsets.all(8),
+                                padding: EdgeInsets.all(width < 360
+                                    ? 6
+                                    : 8), // Adjusted for small screens
                                 child: Icon(
                                   Icons.arrow_forward_ios_rounded,
-                                  size: 16,
+                                  size: iconSize,
                                   color: theme.colorScheme.primary,
                                 ),
                               ),
@@ -1277,6 +1330,8 @@ class _ElementCardState extends State<ElementCard>
   Widget build(BuildContext context) {
     final color = _getElementColor();
     final emoji = _getCategoryEmoji();
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 360; // Check for smaller screens
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -1284,12 +1339,12 @@ class _ElementCardState extends State<ElementCard>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         child: Card(
-          elevation: _isHovered ? 8 : 2,
+          elevation: _isHovered ? 6 : 1,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             onTap: () {
               // Set selected element and navigate to details
               Provider.of<ElementProvider>(context, listen: false)
@@ -1304,7 +1359,7 @@ class _ElementCardState extends State<ElementCard>
             },
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -1318,21 +1373,21 @@ class _ElementCardState extends State<ElementCard>
                 children: [
                   // Atomic number in top-left
                   Positioned(
-                    top: 8,
-                    left: 10,
+                    top: 6,
+                    left: 8,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
+                        horizontal: 5,
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '${widget.element.atomicNumber}',
                         style: GoogleFonts.robotoMono(
-                          fontSize: 10,
+                          fontSize: isSmallScreen ? 9 : 11,
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1343,8 +1398,8 @@ class _ElementCardState extends State<ElementCard>
                   // Main content
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0,
-                      vertical: 12.0,
+                      horizontal: 6.0,
+                      vertical: 8.0,
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1353,29 +1408,29 @@ class _ElementCardState extends State<ElementCard>
                         Text(
                           widget.element.symbol,
                           style: GoogleFonts.poppins(
-                            fontSize: 28,
+                            fontSize: isSmallScreen ? 22 : 26,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         // Element name
                         Text(
                           widget.element.name,
                           style: GoogleFonts.poppins(
-                            fontSize: 12,
+                            fontSize: isSmallScreen ? 10 : 11,
                             color: Colors.white.withOpacity(0.9),
                           ),
                           textAlign: TextAlign.center,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         // Atomic mass
                         Text(
                           _formatValue(widget.element.formattedAtomicMass),
                           style: GoogleFonts.robotoMono(
-                            fontSize: 11,
+                            fontSize: isSmallScreen ? 9 : 10,
                             color: Colors.white.withOpacity(0.7),
                           ),
                         ),

@@ -19,6 +19,9 @@ class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
   String get lastQuery => _lastQuery;
   bool get hasSearched => _hasSearched;
 
+  // Add a caching mechanism for drug CIDs
+  final Map<int, Drug> _drugCache = {};
+
   Future<void> searchDrugs(String query) async {
     setLoading(true);
     clearError();
@@ -100,7 +103,50 @@ class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
     }
   }
 
-  Future<void> fetchDrugDetails(int cid) async {
+  // Method to get a drug, ensuring fresh data, like the compound version
+  Future<Drug?> getDrug(int cid) async {
+    try {
+      // Clear existing drug to avoid showing stale data
+      clearSelectedDrug();
+
+      // Set loading state
+      setLoading(true);
+      notifyListeners();
+
+      // If drug exists in cache and is not stale, use it
+      if (_drugCache.containsKey(cid)) {
+        print("Using cached drug data for CID: $cid");
+        _selectedDrug = _drugCache[cid];
+        notifyListeners();
+
+        // Return the cached drug immediately
+        return _selectedDrug;
+      }
+
+      // Otherwise fetch full details directly
+      await fetchDrugDetails(cid);
+
+      // Cache the drug for future use
+      if (_selectedDrug != null) {
+        _drugCache[cid] = _selectedDrug!;
+      }
+
+      return _selectedDrug;
+    } catch (e) {
+      print('Error in getDrug: $e');
+      if (e is SocketException) {
+        setError(ErrorHandler.getErrorMessage(e));
+      } else {
+        setError(e.toString());
+      }
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Update fetchDrugDetails to return a Drug object
+  Future<Drug?> fetchDrugDetails(int cid) async {
     setLoading(true);
     clearError();
     notifyListeners();
@@ -439,6 +485,12 @@ class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
       print('Route of Elimination: ${_selectedDrug?.routeOfElimination}');
       print('Volume of Distribution: ${_selectedDrug?.volumeOfDistribution}');
       print('Clearance: ${_selectedDrug?.clearance}');
+
+      // Cache the drug for future use
+      _drugCache[cid] = _selectedDrug!;
+
+      notifyListeners();
+      return _selectedDrug;
     } catch (e) {
       print('Error in fetchDrugDetails: $e');
 
@@ -448,6 +500,7 @@ class DrugProvider extends BasePubChemProvider with PubChemImplMixin {
       } else {
         setError(e.toString());
       }
+      return null;
     } finally {
       setLoading(false);
       notifyListeners();
