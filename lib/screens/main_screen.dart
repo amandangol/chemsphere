@@ -5,6 +5,7 @@ import '../screens/home/home_screen.dart';
 import '../screens/aqi/city_search_screen.dart';
 import '../screens/elements/periodic_table_screen.dart';
 import '../screens/compounds/compound_searhc_screen.dart';
+import '../screens/molecules/molecule_viewer_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final int initialIndex;
@@ -260,8 +261,8 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
         return Colors.blue;
       case 'Compounds':
         return Colors.teal;
-      case 'Learn':
-        return Colors.orange;
+      case '3D Viewer':
+        return Colors.purple;
       case 'Saved':
         return Colors.green;
       default:

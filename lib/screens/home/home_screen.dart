@@ -13,6 +13,7 @@ import '../onboarding/onboarding_screen.dart';
 import '../chemistryguide/chemistry_guide_screen.dart';
 import '../formula/formula_search_screen.dart';
 import '../aqi/city_search_screen.dart';
+import '../molecules/molecule_viewer_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -629,6 +630,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       context,
                       MaterialPageRoute(
                         builder: (context) => const ModernPeriodicTableScreen(),
+                      ),
+                    ),
+                  ),
+                  _buildSecondaryFeatureCard(
+                    context,
+                    title: '3D Molecule Viewer',
+                    icon: Icons.view_in_ar_rounded,
+                    color: Colors.purple,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MoleculeViewerScreen(),
                       ),
                     ),
                   ),
