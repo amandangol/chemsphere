@@ -11,10 +11,10 @@ ChemSphere is a comprehensive chemistry exploration app designed to make chemist
 <div align="center">
   <p><i>ChemSphere is currently only available for Android devices.</i></p>
   <a href="https://github.com/amandangol/chemsphere/releases">
-    <img src="https://github.com/user-attachments/assets/github-release-badge.png" alt="Download from GitHub Releases" width="200"/>
+    <img src="https://img.shields.io/badge/GitHub-Release-blue?style=for-the-badge&logo=github" alt="Download from GitHub Releases" width="200"/>
   </a>
-  <a href="https://drive.google.com/drive/folders/1gkcZD4pCsK6a9IDSXPbJaVQl7Kx4xLO1?usp=sharing">
-    <img src="https://github.com/user-attachments/assets/google-drive-badge.png" alt="Download from Google Drive" width="200"/>
+  <a href="https://drive.google.com/drive/folders/18ALyymXpdzNaqKNyOM_z7sxiE9vLCfy3?usp=sharing">
+    <img src="https://commons.wikimedia.org/wiki/File:Google_Drive_logo.png" alt="Download from Google Drive" width="200"/>
   </a>
 </div>
 
