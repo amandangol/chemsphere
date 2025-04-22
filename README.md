@@ -44,11 +44,6 @@ ChemSphere is a comprehensive chemistry exploration app designed to make chemist
   <img src="https://github.com/user-attachments/assets/a89c66b5-abc3-42a4-a043-bfb7596ea40b" alt="chemistryguide" width="200" height="400" />
 </div>
 
-## 🎥 Demo
-
-[![ChemSphere Demo](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID)
-
-*Note: Replace YOUTUBE_VIDEO_ID with your actual YouTube video ID*
 
 ## 🏆 Challenge Statements Addressed
 
