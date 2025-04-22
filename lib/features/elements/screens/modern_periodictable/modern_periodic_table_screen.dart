@@ -184,6 +184,9 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
     103: [9, 17], // Lr
   };
 
+  // Add a state variable for showing/hiding direction arrows
+  bool _showTableDirectionArrows = false;
+
   @override
   void initState() {
     super.initState();
@@ -204,6 +207,13 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
 
     // Set initial scale and position
     _transformationController.value = Matrix4.identity()..scale(0.8);
+
+    // Show the direction arrows after a short delay
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) {
+        setState(() => _showTableDirectionArrows = true);
+      }
+    });
 
     // Fetch elements if not already loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -385,13 +395,8 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
                                         );
                                       }
 
-                                      return Stack(
-                                        children: [
-                                          _buildPeriodicTable(
-                                              provider.elements),
-                                          _buildTableDirectionArrows(),
-                                        ],
-                                      );
+                                      return _buildPeriodicTable(
+                                          provider.elements);
                                     },
                                   ),
                                 ),
@@ -405,22 +410,49 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
                 ),
               ),
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) => _buildInfoDialog(),
-          );
-        },
-        tooltip: 'About the Periodic Table',
-        child: const Icon(Icons.science_outlined),
-      ),
+      floatingActionButton: _isLoading
+          ? null
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // About Periodic Table button
+                FloatingActionButton(
+                  heroTag: 'info_button',
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => _buildInfoDialog(),
+                    );
+                  },
+                  tooltip: 'About the Periodic Table',
+                  child: const Icon(Icons.science_outlined),
+                ),
+                const SizedBox(width: 16),
+                // Toggle arrows button
+                FloatingActionButton.extended(
+                  heroTag: 'arrows_button',
+                  onPressed: () {
+                    setState(() {
+                      _showTableDirectionArrows = !_showTableDirectionArrows;
+                    });
+                  },
+                  icon: Icon(
+                    _showTableDirectionArrows
+                        ? Icons.arrow_circle_down_outlined
+                        : Icons.arrow_circle_up_outlined,
+                  ),
+                  label: Text(
+                    _showTableDirectionArrows ? 'Hide Arrows' : 'Show Arrows',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  tooltip: 'Toggle Direction Arrows',
+                ),
+              ],
+            ),
     );
-  }
-
-  // Helper method to get period and group from atomic number
-  List<int>? _getElementPosition(int atomicNumber) {
-    return _elementPositions[atomicNumber];
   }
 
   Widget _buildLegend() {
@@ -550,6 +582,14 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
           ),
           children: _buildTableRows(elements),
         ),
+
+        // Table direction arrows overlay (conditionally shown)
+        if (_showTableDirectionArrows)
+          Positioned(
+            top: 0,
+            left: 0,
+            child: _buildTableDirectionArrows(),
+          ),
       ],
     );
   }
@@ -1005,16 +1045,72 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
 
   Widget _buildTableDirectionArrows() {
     return Container(
+      // Using a translucent background to make the overlay more visible
       width: 300,
       height: 400,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.8),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Stack(
-        // Add fit property to ensure children don't overflow
         fit: StackFit.loose,
         children: [
+          // Close button
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _showTableDirectionArrows = false;
+                  });
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    size: 16,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Title
+          Positioned(
+            top: 10,
+            left: 10,
+            child: Text(
+              'Periodic Table Organization',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+
           // Group (vertical) arrow with description
           Positioned(
-            top: 60,
-            left: 40,
+            top: 50,
+            left: 20,
             child: Column(
               children: [
                 Text(
@@ -1025,14 +1121,14 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
                     color: Colors.blue.shade800,
                   ),
                 ),
-                Container(
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
                   height: 160,
                   width: 100,
                   child: Column(
                     children: [
                       Expanded(
                         child: Stack(
-                          // Make sure this inner Stack has bounds
                           clipBehavior: Clip.none,
                           fit: StackFit.expand,
                           children: [
@@ -1047,7 +1143,7 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
                             ),
                             Positioned(
                               top: 55,
-                              left: 60,
+                              left: 54,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 4, vertical: 2),
@@ -1071,7 +1167,7 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
                         ),
                       ),
                       Container(
-                        width: 100,
+                        width: 110,
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: Colors.blue.shade50,
@@ -1096,8 +1192,8 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
 
           // Period (horizontal) arrow with description
           Positioned(
-            top: 260,
-            left: 40,
+            top: 230,
+            left: 20,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1109,11 +1205,11 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
                     color: Colors.red.shade800,
                   ),
                 ),
-                Container(
-                  width: 220,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
+                  width: 200,
                   height: 100,
                   child: Stack(
-                    // Add fit property to this inner Stack too
                     fit: StackFit.loose,
                     children: [
                       CustomPaint(
@@ -1128,7 +1224,7 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
                       ),
                       Positioned(
                         top: 5,
-                        left: 70,
+                        left: 60,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 4, vertical: 2),
@@ -1172,6 +1268,30 @@ class _ModernPeriodicTableScreenState extends State<ModernPeriodicTableScreen>
                   ),
                 ),
               ],
+            ),
+          ),
+
+          // Tap indicator at the bottom
+          Positioned(
+            bottom: 8,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Tap to close',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
