@@ -66,7 +66,7 @@ class _ChemistryFactWidgetState extends State<ChemistryFactWidget> {
                   end: Alignment.bottomRight,
                   colors: [
                     theme.colorScheme.primary.withOpacity(0.8),
-                    theme.colorScheme.tertiary ?? Colors.purple,
+                    theme.colorScheme.tertiary
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
