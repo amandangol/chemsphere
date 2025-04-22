@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../models/pollutant.dart';
-import '../../providers/pollutant_info_provider.dart';
+import 'provider/pollutant_info_provider.dart';
 
 class PollutantDetailScreen extends StatefulWidget {
   final Pollutant pollutant;

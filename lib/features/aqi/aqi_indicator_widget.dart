@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
-import '../../providers/aqi_provider.dart';
+import 'provider/aqi_provider.dart';
 import 'aqi_info_screen.dart';
 
 class AqiIndicatorWidget extends StatefulWidget {
@@ -221,7 +221,8 @@ class _AqiIndicatorWidgetState extends State<AqiIndicatorWidget>
                                             '${provider.aqiData!.name}, ${provider.aqiData!.country.name}',
                                             style: GoogleFonts.poppins(
                                               fontSize: 12,
-                                              color: textColor.withOpacity(0.9),
+                                              color:
+                                                  Colors.black.withOpacity(0.7),
                                               fontWeight: FontWeight.w500,
                                             ),
                                             overflow: TextOverflow.ellipsis,

@@ -24,17 +24,19 @@ ChemVerse successfully addresses two major challenge statements:
 
 ### Geolocation Challenge 🌍
 - Real-time air quality monitoring based on user location
-- OpenStreetMap integration for location-based services
+- Global air quality map showing AQI in major cities worldwide
+- OpenStreetMap integration with custom AQI markers
 - City search functionality with global coverage
-- Geocoding and reverse geocoding functionality
+- Geocoding and reverse geocoding using OpenStreetMap/Nominatim API
 
 ## ✨ Features
 
 ### 🏠 Home Dashboard
 - Quick access to all major features
 - Daily chemistry facts
-- Real-time air quality indicator
+- Real-time air quality indicator for current location
 - Beautifully designed chemistry-themed interface
+- Animated molecular patterns and visual elements
 
 ### ⚛️ Periodic Table
 - Interactive periodic table with detailed element information
@@ -73,12 +75,21 @@ ChemVerse successfully addresses two major challenge statements:
 - Auto-rotation for better visualization
 - Full-screen mode for detailed examination
 - Color-coded atoms for easy identification
+- Switch between 2D and 3D representations
+- Featured molecules organized by categories (Common, Organic, Biochemical, Drug, Complex)
+- Recent molecules history for quick access
+- Share functionality for molecules
 
 ### 💨 Air Quality Monitor
-- Real-time AQI data for your location
-- City search for global air quality
-- Detailed pollutant information
+- Real-time AQI data for your current location
+- Global air quality map showing AQI in major cities worldwide
+- Toggle between local view and global view
+- Detailed pollutant information for each location
+- Color-coded AQI indicators based on air quality levels
 - Health recommendations based on air quality
+- City search for specific location air quality data
+- Detailed breakdown of pollutants (PM2.5, PM10, Ozone, etc.)
+- Visual representation of dominant pollutants
 
 ### 📚 Chemistry Guide
 - Educational resources for chemistry learning
@@ -136,15 +147,21 @@ ChemVerse integrates with several reputable APIs to provide accurate and compreh
   - Related articles and topic examples
   - Media content for educational purposes
 
-### OpenStreetMap (via flutter_map)
-- **Service**: Map tiles and geolocation services
+### OpenStreetMap & Nominatim API
+- **Base URL**: https://nominatim.openstreetmap.org
+- **Service**: Maps, geocoding, and location services
 - **Implementation**: Integrated via flutter_map package
+- **Key Endpoints**:
+  - `/search` - Location search by name
+  - `/reverse` - Reverse geocoding (coordinates to location names)
 - **Features**:
-  - Interactive maps for location-based air quality data
-  - Custom map markers for displaying pollution sources
+  - Interactive maps for global air quality data visualization
+  - Custom map markers displaying AQI values for cities worldwide
+  - Color-coded markers based on air quality levels
   - Location visualization for city search results
+  - Reverse geocoding for current location identification
   - Zoom and pan functionality for map exploration
-  - User current location display
+  - Toggle between local and global air quality views
 
 ### Open-Meteo Air Quality API
 - **Base URL**: https://air-quality-api.open-meteo.com/v1/air-quality
@@ -155,17 +172,7 @@ ChemVerse integrates with several reputable APIs to provide accurate and compreh
   - US AQI calculations 
   - Current air quality measurements
   - No API key required (free access)
-
-### Open-Meteo Geocoding API
-- **Base URL**: https://geocoding-api.open-meteo.com/v1
-- **Service**: Location services for air quality monitoring
-- **Key Endpoints**:
-  - `/search` - City/location search
-  - `/reverse` - Convert coordinates to location names
-- **Features**:
-  - City search functionality
-  - Reverse geocoding for current location
-  - Location validation
+  - Data for multiple major cities simultaneously
 
 ### 3Dmol.js Integration
 - **Service**: Web-based molecular visualization
@@ -175,8 +182,10 @@ ChemVerse integrates with several reputable APIs to provide accurate and compreh
   - Multiple viewing styles (stick, line, ball)
   - Color-coded atoms by element
   - Rotation, zooming, and manipulation controls
+  - Toggle between 2D and 3D representations
   - Auto-rotation functionality
   - Full-screen viewing mode
+  - Featured and recent molecules library
 
 ## 🛠️ Technical Features
 
@@ -189,6 +198,7 @@ ChemVerse integrates with several reputable APIs to provide accurate and compreh
 - Comprehensive error handling
 - Cross-platform compatibility
 - WebView-based 3D molecular visualization
+- Concurrent API requests for efficient data loading
 
 ## 🚀 Installation
 
@@ -202,7 +212,7 @@ ChemVerse integrates with several reputable APIs to provide accurate and compreh
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/chem_explore.git
+git clone https://github.com/amandangol/chemiverse.git
 cd chem_explore
 ```
 
@@ -278,12 +288,14 @@ The bottom navigation bar provides access to the main sections of the app:
 
 ### Using the 3D Molecular Viewer
 
-1. Open any compound or drug detail page
-2. The 3D viewer is embedded in the details screen
-3. Use touch gestures to rotate and zoom the molecule
-4. Toggle between different viewing styles (stick, line, ball)
-5. Enable auto-rotation for a dynamic view
-6. Tap "Full Screen" for an immersive viewing experience
+1. Access from the Home screen or through compound details
+2. Search for molecules by name or browse featured categories
+3. View recent molecules in the "Recent" tab
+4. Use touch gestures to rotate and zoom the molecule
+5. Toggle between 2D and 3D viewing modes
+6. Switch between different viewing styles (stick, line, ball)
+7. Enter full-screen mode for an immersive experience
+8. Share molecule information with others
 
 ### Formula Search
 
@@ -293,10 +305,14 @@ The bottom navigation bar provides access to the main sections of the app:
 
 ### Air Quality
 
-1. Navigate to the "Air Quality" tab
+1. Access the air quality feature from the Home screen
 2. Allow location permissions for local air quality data
-3. Search for cities to view their air quality information
-4. Tap on pollutants to view detailed health information
+3. View your current location's air quality with color-coded indicators
+4. Tap "Show Global AQI" to see air quality in major cities worldwide
+5. Use the search bar to find specific cities
+6. Tap on any city marker to view detailed air quality information
+7. View health recommendations based on AQI levels
+8. Examine specific pollutant data for any location
 
 ## 🧪 Features in Development
 
@@ -310,6 +326,8 @@ The bottom navigation bar provides access to the main sections of the app:
 - Advanced quiz system
 - Laboratory safety guides
 - Integration with educational curricula
+- Air quality historical data and trends
+- Pollutant source mapping
 
 ## 🤝 Contributing
 
@@ -333,6 +351,7 @@ Project Link: [https://github.com/amandangol/chemiverse](https://github.com/aman
 
 - [PubChem](https://pubchem.ncbi.nlm.nih.gov/) for compound data
 - [Open-Meteo](https://open-meteo.com/) for air quality data
+- [OpenStreetMap & Nominatim](https://nominatim.openstreetmap.org/) for mapping and geocoding services
 - [Wikipedia API](https://www.mediawiki.org/wiki/API:Main_page) for educational content
 - [3Dmol.js](https://3dmol.csb.pitt.edu/) for molecular visualization
 - All icons and images used in this app are either created specifically for this project or are properly licensed

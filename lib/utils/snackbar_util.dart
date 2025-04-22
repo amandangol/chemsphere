@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Utility class for showing consistent snackbars across the app
 class SnackbarUtil {
   /// Shows a success snackbar with a green background
   static void showSuccessSnackBar(
@@ -77,28 +78,61 @@ class SnackbarUtil {
     );
   }
 
-  /// Shows a custom snackbar with the specified parameters
+  /// Shows a custom snackbar with the given [message] and optional [backgroundColor]
   static void showCustomSnackBar(
     BuildContext context, {
     required String message,
-    required Color backgroundColor,
+    Color? backgroundColor,
     Duration duration = const Duration(seconds: 3),
     SnackBarAction? action,
-    SnackBarBehavior behavior = SnackBarBehavior.floating,
-    EdgeInsetsGeometry? margin,
-    double? width,
   }) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-        behavior: behavior,
-        duration: duration,
-        action: action,
-        margin: margin,
-        width: width,
+    final snackBar = SnackBar(
+      content: Text(
+        message,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
       ),
+      backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.primary,
+      behavior: SnackBarBehavior.floating,
+      duration: duration,
+      action: action,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      margin: const EdgeInsets.all(16),
+    );
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  /// Shows a success snackbar
+  static void showSuccess(
+    BuildContext context, {
+    required String message,
+    Duration duration = const Duration(seconds: 3),
+  }) {
+    showCustomSnackBar(
+      context,
+      message: message,
+      backgroundColor: Colors.green.shade700,
+      duration: duration,
+    );
+  }
+
+  /// Shows an error snackbar
+  static void showError(
+    BuildContext context, {
+    required String message,
+    Duration duration = const Duration(seconds: 3),
+  }) {
+    showCustomSnackBar(
+      context,
+      message: message,
+      backgroundColor: Theme.of(context).colorScheme.error,
+      duration: duration,
     );
   }
 

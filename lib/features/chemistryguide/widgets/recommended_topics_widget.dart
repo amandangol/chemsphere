@@ -21,76 +21,148 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
   // List of recommended chemistry topics that are well-documented on Wikipedia
   static const List<Map<String, String>> _recommendedTopics = [
     {
-      'title': 'Chemical bond',
-      'description': 'Explore different types of chemical bonds',
-      'icon': 'link',
+      'title': 'Molecular Orbital Theory',
+      'description': 'How electrons distribute across molecules',
+      'icon': 'waves',
       'category': 'fundamentals',
     },
     {
-      'title': 'Periodic table',
-      'description': 'History and organization of the periodic table',
-      'icon': 'table_chart',
-      'category': 'fundamentals',
-    },
-    {
-      'title': 'Acid-base reaction',
-      'description': 'Understand acid-base reactions and their applications',
+      'title': 'Lanthanides & Actinides',
+      'description': 'The fascinating f-block elements',
       'icon': 'science',
-      'category': 'reactions',
+      'category': 'fundamentals',
     },
     {
-      'title': 'Redox',
-      'description': 'Reduction-oxidation reactions in chemistry',
-      'icon': 'swap_vert',
-      'category': 'reactions',
-    },
-    {
-      'title': 'Organic chemistry',
-      'description': 'Study of carbon-based compounds',
-      'icon': 'grass',
-      'category': 'organic',
-    },
-    {
-      'title': 'Electrochemistry',
-      'description': 'Chemical reactions involving electricity',
+      'title': 'Superconductivity',
+      'description': 'Materials with zero electrical resistance',
       'icon': 'bolt',
+      'category': 'matter',
+    },
+    {
+      'title': 'Electrochemical Cells',
+      'description': 'Converting chemical energy to electricity',
+      'icon': 'battery_full',
       'category': 'energy',
     },
     {
-      'title': 'Thermochemistry',
-      'description': 'Energy changes in chemical reactions',
-      'icon': 'thermostat',
-      'category': 'energy',
+      'title': 'Crystallography',
+      'description': 'Atomic arrangements in crystalline solids',
+      'icon': 'grid_3x3',
+      'category': 'matter',
     },
     {
-      'title': 'Biochemistry',
-      'description': 'Chemical processes in living organisms',
-      'icon': 'biotech',
-      'category': 'organic',
-    },
-    {
-      'title': 'Chemical equilibrium',
-      'description': 'Balanced state of opposing reactions',
-      'icon': 'balance',
+      'title': 'Photochemistry',
+      'description': 'Chemical reactions triggered by light',
+      'icon': 'wb_sunny',
       'category': 'reactions',
     },
     {
-      'title': 'Solutions',
-      'description': 'Homogeneous mixtures of substances',
+      'title': 'Radiochemistry',
+      'description': 'Chemistry of radioactive elements',
+      'icon': 'radio_button_checked',
+      'category': 'fundamentals',
+    },
+    {
+      'title': 'Coordination Compounds',
+      'description': 'Metal complexes with ligands',
+      'icon': 'hub',
+      'category': 'reactions',
+    },
+    {
+      'title': 'Nanomaterials',
+      'description': 'Materials engineered at nanoscale',
+      'icon': 'grain',
+      'category': 'matter',
+    },
+    {
+      'title': 'Chirality',
+      'description': 'Mirror-image molecules that don\'t superimpose',
+      'icon': 'flip',
+      'category': 'organic',
+    },
+    {
+      'title': 'Enzyme Kinetics',
+      'description': 'How biological catalysts accelerate reactions',
+      'icon': 'speed',
+      'category': 'biochemistry',
+    },
+    {
+      'title': 'Molecular Spectroscopy',
+      'description': 'Using light to identify molecular structures',
+      'icon': 'graphic_eq',
+      'category': 'analytical',
+    },
+    {
+      'title': 'Astrochemistry',
+      'description': 'Chemistry of celestial bodies and space',
+      'icon': 'star',
+      'category': 'environmental',
+    },
+    {
+      'title': 'Supramolecular Chemistry',
+      'description': 'Complexes of molecules held by weak forces',
+      'icon': 'link',
+      'category': 'organic',
+    },
+    {
+      'title': 'Computational Chemistry',
+      'description': 'Using computers to solve chemical problems',
+      'icon': 'computer',
+      'category': 'analytical',
+    },
+    {
+      'title': 'Medicinal Chemistry',
+      'description': 'Designing and developing pharmaceutical drugs',
+      'icon': 'medication',
+      'category': 'industrial',
+    },
+    {
+      'title': 'Chemical Oceanography',
+      'description': 'Chemical composition and processes in oceans',
+      'icon': 'water',
+      'category': 'environmental',
+    },
+    {
+      'title': 'Ionic Liquids',
+      'description': 'Salts in liquid state at room temperature',
       'icon': 'opacity',
       'category': 'matter',
     },
     {
-      'title': 'Nuclear chemistry',
-      'description': 'Study of radioactivity and nuclear processes',
-      'icon': 'radio_button_checked',
-      'category': 'energy',
+      'title': 'Bioinorganic Chemistry',
+      'description': 'Metal ions in biological systems',
+      'icon': 'biotech',
+      'category': 'biochemistry',
     },
     {
-      'title': 'Chemical kinetics',
-      'description': 'Rates and mechanisms of chemical reactions',
-      'icon': 'speed',
-      'category': 'reactions',
+      'title': 'Surface Chemistry',
+      'description': 'Phenomena occurring at interfaces',
+      'icon': 'layers',
+      'category': 'fundamentals',
+    },
+    {
+      'title': 'Food Chemistry',
+      'description': 'Chemical processes in food preparation',
+      'icon': 'restaurant',
+      'category': 'biochemistry',
+    },
+    {
+      'title': 'Organometallic Chemistry',
+      'description': 'Compounds with metal-carbon bonds',
+      'icon': 'category',
+      'category': 'organic',
+    },
+    {
+      'title': 'Forensic Chemistry',
+      'description': 'Chemical analysis in criminal investigations',
+      'icon': 'search',
+      'category': 'analytical',
+    },
+    {
+      'title': 'Atmospheric Chemistry',
+      'description': 'Chemical compositions and reactions in air',
+      'icon': 'air',
+      'category': 'environmental',
     },
   ];
 
@@ -640,6 +712,58 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
         return Icons.radio_button_checked;
       case 'speed':
         return Icons.speed;
+      case 'waves':
+        return Icons.waves;
+      case 'water_drop':
+        return Icons.water_drop;
+      case 'timeline':
+        return Icons.timeline;
+      case 'sync':
+        return Icons.sync;
+      case 'fast_forward':
+        return Icons.fast_forward;
+      case 'category':
+        return Icons.category;
+      case 'threed_rotation':
+        return Icons.threed_rotation;
+      case 'hub':
+        return Icons.hub;
+      case 'loop':
+        return Icons.loop;
+      case 'graphic_eq':
+        return Icons.graphic_eq;
+      case 'filter_alt':
+        return Icons.filter_alt;
+      case 'scale':
+        return Icons.scale;
+      case 'eco':
+        return Icons.eco;
+      case 'air':
+        return Icons.air;
+      case 'medication':
+        return Icons.medication;
+      case 'grain':
+        return Icons.grain;
+      case 'flip':
+        return Icons.flip;
+      case 'star':
+        return Icons.star;
+      case 'computer':
+        return Icons.computer;
+      case 'water':
+        return Icons.water;
+      case 'layers':
+        return Icons.layers;
+      case 'restaurant':
+        return Icons.restaurant;
+      case 'search':
+        return Icons.search;
+      case 'grid_3x3':
+        return Icons.grid_3x3;
+      case 'wb_sunny':
+        return Icons.wb_sunny;
+      case 'battery_full':
+        return Icons.battery_full;
       default:
         return Icons.science;
     }
@@ -649,16 +773,35 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
     title = title.toLowerCase();
     if (title.contains('bond')) return Icons.link;
     if (title.contains('periodic')) return Icons.table_chart;
-    if (title.contains('acid') || title.contains('base')) return Icons.science;
+    if (title.contains('atom') || title.contains('element'))
+      return Icons.science;
+    if (title.contains('quantum')) return Icons.waves;
+    if (title.contains('acid') || title.contains('base')) return Icons.balance;
     if (title.contains('redox')) return Icons.swap_vert;
     if (title.contains('organic')) return Icons.grass;
     if (title.contains('electro')) return Icons.bolt;
     if (title.contains('thermo')) return Icons.thermostat;
-    if (title.contains('biochem')) return Icons.biotech;
+    if (title.contains('biochem') || title.contains('protein'))
+      return Icons.biotech;
     if (title.contains('equilibrium')) return Icons.balance;
-    if (title.contains('solution')) return Icons.opacity;
+    if (title.contains('solution') || title.contains('mixture'))
+      return Icons.opacity;
     if (title.contains('nuclear')) return Icons.radio_button_checked;
     if (title.contains('kinetic') || title.contains('rate')) return Icons.speed;
+    if (title.contains('catalyst')) return Icons.fast_forward;
+    if (title.contains('function')) return Icons.category;
+    if (title.contains('stereo')) return Icons.threed_rotation;
+    if (title.contains('polymer')) return Icons.link;
+    if (title.contains('nucleic')) return Icons.hub;
+    if (title.contains('metabol')) return Icons.loop;
+    if (title.contains('spectro')) return Icons.graphic_eq;
+    if (title.contains('chroma')) return Icons.filter_alt;
+    if (title.contains('mass')) return Icons.scale;
+    if (title.contains('green') || title.contains('environment'))
+      return Icons.eco;
+    if (title.contains('pollut')) return Icons.air;
+    if (title.contains('pharma')) return Icons.medication;
+    if (title.contains('phase')) return Icons.timeline;
     return Icons.science;
   }
 
@@ -676,6 +819,14 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
         return const Color(0xFFB82E2E); // Themed red
       case 'matter':
         return theme.colorScheme.secondary;
+      case 'biochemistry':
+        return const Color(0xFF6200EA); // Deep purple
+      case 'analytical':
+        return const Color(0xFF0277BD); // Blue
+      case 'environmental':
+        return const Color(0xFF00695C); // Teal
+      case 'industrial':
+        return const Color(0xFF4E342E); // Brown
       default:
         return theme.colorScheme.tertiary;
     }
@@ -688,14 +839,20 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
         title.contains('element') ||
         title.contains('periodic') ||
         title.contains('bond') ||
+        title.contains('quantum') ||
         title.contains('molecule')) {
       return 'fundamentals';
     } else if (title.contains('matter') ||
         title.contains('solution') ||
         title.contains('mixture') ||
+        title.contains('colligative') ||
+        title.contains('phase') ||
         title.contains('concentration')) {
       return 'matter';
     } else if (title.contains('reaction') ||
+        title.contains('acid') ||
+        title.contains('base') ||
+        title.contains('redox') ||
         title.contains('equation') ||
         title.contains('equilibrium')) {
       return 'reactions';
@@ -706,8 +863,32 @@ class _RecommendedTopicsWidgetState extends State<RecommendedTopicsWidget>
       return 'energy';
     } else if (title.contains('organic') ||
         title.contains('carbon') ||
-        title.contains('functional')) {
+        title.contains('functional') ||
+        title.contains('stereo') ||
+        title.contains('polymer')) {
       return 'organic';
+    } else if (title.contains('protein') ||
+        title.contains('nucleic') ||
+        title.contains('acid') ||
+        title.contains('metabolism') ||
+        title.contains('bio')) {
+      return 'biochemistry';
+    } else if (title.contains('spectro') ||
+        title.contains('chroma') ||
+        title.contains('mass') ||
+        title.contains('analysis') ||
+        title.contains('analytic')) {
+      return 'analytical';
+    } else if (title.contains('green') ||
+        title.contains('environment') ||
+        title.contains('pollution') ||
+        title.contains('sustain')) {
+      return 'environmental';
+    } else if (title.contains('industrial') ||
+        title.contains('pharma') ||
+        title.contains('synthesis') ||
+        title.contains('manufacture')) {
+      return 'industrial';
     }
 
     return 'general';

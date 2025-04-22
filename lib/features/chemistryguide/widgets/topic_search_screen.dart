@@ -617,8 +617,8 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
                           _searchController.text = suggestion;
                           _search();
                         },
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 0),
                       ))
                   .toList(),
             ),
@@ -710,40 +710,137 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
   }
 
   String _getTopicDescription(String title) {
-    final Map<String, String> descriptions = {
-      'Atoms and Elements':
-          'Atoms are the basic units of matter and the defining structure of elements. An element is a pure substance consisting of atoms with the same number of protons.',
-      'Periodic Table':
-          'The periodic table is a tabular arrangement of chemical elements, organized by atomic number, electron configuration, and chemical properties.',
-      'Chemical Bonds':
-          'Chemical bonds are the forces that hold atoms together to form molecules and compounds. The main types include ionic, covalent, and metallic bonds.',
-      'States of Matter':
-          'Matter exists in various physical states: solid, liquid, gas, and plasma. Each state has unique properties and behaviors.',
-      'Solutions & Mixtures':
-          'Solutions are homogeneous mixtures where one substance dissolves in another. Mixtures contain two or more substances that are physically combined.',
-      'Concentration':
-          'Concentration measures the amount of solute dissolved in a specific amount of solution, expressed in various units like molarity or percent.',
-      'Chemical Equations':
-          'Chemical equations are symbolic representations of chemical reactions, showing reactants, products, and their proportions.',
-      'Reaction Types':
-          'Chemical reactions are classified into different types based on the reaction mechanism, including synthesis, decomposition, displacement, and redox reactions.',
-      'Equilibrium':
-          'Chemical equilibrium is the state where the forward and reverse reactions occur at equal rates, resulting in constant concentrations of reactants and products.',
-      'Thermochemistry':
-          'Thermochemistry studies the energy and heat associated with chemical reactions and physical changes.',
-      'Reaction Rates':
-          'Reaction rate measures how quickly reactants are consumed or products are formed in a chemical reaction.',
-      'Catalysts':
-          'Catalysts are substances that increase the rate of a chemical reaction without being consumed in the process.',
-      'Carbon Compounds':
-          'Carbon compounds are chemical substances containing carbon atoms, forming the basis of organic chemistry.',
-      'Functional Groups':
-          'Functional groups are specific groups of atoms within molecules that give the molecule characteristic chemical reactions.',
-      'Organic Reactions':
-          'Organic reactions are chemical reactions involving organic compounds, typically featuring carbon-based molecules.',
-    };
+    // Fundamentals category
+    if (title == 'Atoms and Elements') {
+      return 'Atoms are the basic units of matter and the defining structure of elements. An element is a pure substance consisting of atoms with the same number of protons. They are the building blocks for all materials on Earth and throughout the universe.';
+    } else if (title == 'Periodic Table') {
+      return 'The periodic table is a tabular arrangement of chemical elements, organized by atomic number, electron configuration, and chemical properties. It reflects periodic trends across the elements, providing a framework for understanding chemical behavior.';
+    } else if (title == 'Chemical Bonds') {
+      return 'Chemical bonds are the forces that hold atoms together to form molecules and compounds. The main types include ionic bonds (electron transfer), covalent bonds (electron sharing), metallic bonds (electron sea), and intermolecular forces like hydrogen bonding.';
+    } else if (title == 'Nuclear Chemistry') {
+      return 'Nuclear chemistry deals with radioactivity, nuclear processes, and nuclear properties. It includes the study of nuclear reactions, radiation, nuclear energy production, and applications like radiometric dating and medical treatments.';
+    } else if (title == 'Quantum Chemistry') {
+      return 'Quantum chemistry applies quantum mechanics to explain atomic structure, chemical bonding, and spectroscopic properties. It uses wave functions to describe electron behavior and explains phenomena like orbital hybridization and molecular orbital theory.';
+    } else if (title == 'Isotopes') {
+      return 'Isotopes are variants of an element that have the same number of protons but different numbers of neutrons. They play crucial roles in radiometric dating, medical diagnostics, cancer therapy, and as tracers in biological and environmental studies.';
 
-    return descriptions[title] ??
-        'A fundamental concept in chemistry that helps us understand the composition and behavior of matter.';
+      // Matter & Solutions category
+    } else if (title == 'States of Matter') {
+      return 'Matter exists in various physical states: solid, liquid, gas, and plasma. Each state has unique properties determined by the arrangement and energy of particles. Phase transitions occur when matter changes from one state to another.';
+    } else if (title == 'Solutions and Mixtures' ||
+        title == 'Solutions & Mixtures') {
+      return 'Solutions are homogeneous mixtures where one substance (solute) dissolves in another (solvent). Mixtures contain two or more substances that are physically combined without chemical bonding. They form the basis for many everyday materials and biological systems.';
+    } else if (title == 'Chemical Concentration' || title == 'Concentration') {
+      return 'Concentration measures the amount of solute dissolved in a specific amount of solution, expressed in various units like molarity, molality, normality, or percent concentration. It determines solution properties and reaction rates in chemical processes.';
+    } else if (title == 'Colligative Properties') {
+      return 'Colligative properties are solution characteristics that depend on the number of dissolved particles rather than their identity. They include vapor pressure lowering, boiling point elevation, freezing point depression, and osmotic pressure.';
+    } else if (title == 'Colloids and Suspensions') {
+      return 'Colloids are heterogeneous mixtures with particles ranging from 1 to 1000 nanometers that remain dispersed due to the Tyndall effect and Brownian motion. Suspensions contain larger particles that may eventually settle. Both have important applications in medicine, food science, and industry.';
+    } else if (title == 'Phase Diagrams') {
+      return 'Phase diagrams are graphical representations showing the relationships between temperature, pressure, and physical states of a substance. They illustrate phase transitions, critical points, triple points, and help predict material behavior under different conditions.';
+
+      // Reactions category
+    } else if (title == 'Chemical Equations') {
+      return 'Chemical equations are symbolic representations of chemical reactions, showing reactants, products, and their proportions. Balancing requires adjusting coefficients to ensure mass conservation according to the Law of Conservation of Mass.';
+    } else if (title == 'Chemical Reaction Types' ||
+        title == 'Reaction Types') {
+      return 'Chemical reactions are classified into different types based on the reaction mechanism, including synthesis (combination), decomposition, single and double displacement, combustion, acid-base reactions, and redox reactions. Each follows distinct patterns for predicting products.';
+    } else if (title == 'Chemical Equilibrium' || title == 'Equilibrium') {
+      return 'Chemical equilibrium is the state where the forward and reverse reactions occur at equal rates, resulting in constant concentrations of reactants and products. Le Chatelier\'s Principle explains how systems respond to disturbances to reestablish equilibrium.';
+    } else if (title == 'Redox Reactions') {
+      return 'Redox (reduction-oxidation) reactions involve the transfer of electrons between reactants. Oxidation is the loss of electrons, while reduction is the gain of electrons. These reactions power batteries, enable cellular respiration, and are fundamental to many industrial processes.';
+    } else if (title == 'Acid-Base Reactions') {
+      return 'Acid-base reactions involve proton (H+) transfer according to Brønsted-Lowry theory or electron pair sharing according to Lewis theory. They determine pH values, drive buffer systems, and are essential in biochemistry, environmental science, and industry.';
+    } else if (title == 'Precipitation Reactions') {
+      return 'Precipitation reactions occur when two soluble compounds react to form an insoluble solid (precipitate). They follow solubility rules and are used in water treatment, qualitative analysis, and synthesis of materials.';
+
+      // Energy & Kinetics category
+    } else if (title == 'Thermochemistry') {
+      return 'Thermochemistry studies the energy and heat associated with chemical reactions and physical changes. It includes concepts like enthalpy, calorimetry, Hess\'s Law, and bond energies that help predict the energy changes in reactions.';
+    } else if (title == 'Chemical Reaction Rates' ||
+        title == 'Reaction Rates') {
+      return 'Reaction rate measures how quickly reactants are consumed or products are formed in a chemical reaction. Factors affecting rates include concentration, temperature, surface area, catalysts, and activation energy as explained by collision theory.';
+    } else if (title == 'Chemical Catalysts' || title == 'Catalysts') {
+      return 'Catalysts are substances that increase the rate of a chemical reaction without being consumed in the process. They work by providing an alternative reaction pathway with lower activation energy. Examples include enzymes in biological systems and catalytic converters in vehicles.';
+    } else if (title == 'Gibbs Free Energy' || title == 'Free Energy') {
+      return 'Gibbs free energy (G) determines the spontaneity of chemical reactions. When ΔG is negative, a reaction is spontaneous. This thermodynamic potential combines enthalpy and entropy changes to predict reaction direction and equilibrium positions.';
+    } else if (title == 'Entropy in Chemistry' || title == 'Entropy') {
+      return 'Entropy (S) measures the disorder or randomness in a system. The Second Law of Thermodynamics states that the total entropy of an isolated system always increases. Entropy changes help explain why many processes are irreversible and proceed in a particular direction.';
+    } else if (title == 'Reaction Mechanisms') {
+      return 'Reaction mechanisms describe the step-by-step sequence of elementary reactions that occur during a chemical process. They include intermediates, transition states, rate-determining steps, and explain stereochemistry and regioselectivity of reactions.';
+
+      // Organic Chemistry category
+    } else if (title == 'Carbon Compounds') {
+      return 'Carbon compounds form the basis of organic chemistry due to carbon\'s ability to form four bonds and create long chains and rings. They include hydrocarbons, alcohols, carbonyls, carboxylic acids, and are essential for life and modern materials.';
+    } else if (title == 'Functional Groups') {
+      return 'Functional groups are specific groups of atoms within molecules that give the molecule characteristic chemical reactions. Examples include hydroxyl (-OH), carbonyl (C=O), carboxyl (-COOH), and amino (-NH₂) groups that determine chemical properties.';
+    } else if (title == 'Organic Reactions') {
+      return 'Organic reactions are chemical reactions involving organic compounds. Major types include addition, elimination, substitution, rearrangement, and redox reactions. They form the basis for synthesizing pharmaceuticals, polymers, and other valuable compounds.';
+    } else if (title == 'Stereochemistry') {
+      return 'Stereochemistry studies the three-dimensional arrangement of atoms in molecules and how this affects chemical properties. It includes concepts of chirality, enantiomers, diastereomers, and geometric isomers crucial in pharmaceutical development.';
+    } else if (title == 'Aromatic Compounds') {
+      return 'Aromatic compounds contain rings with delocalized electrons following Hückel\'s Rule (4n+2 π electrons). Benzene is the simplest example. They undergo electrophilic aromatic substitution rather than addition reactions and are prevalent in pharmaceuticals and materials.';
+    } else if (title == 'Polymer Chemistry' || title == 'Polymers') {
+      return 'Polymers are large molecules composed of repeating subunits called monomers. They form through addition or condensation polymerization and include natural polymers like proteins and synthetic materials like plastics, rubber, and fibers.';
+
+      // Biochemistry category
+    } else if (title == 'Protein Chemistry' || title == 'Proteins') {
+      return 'Proteins are large biomolecules composed of amino acid chains. Their structure is hierarchical (primary to quaternary) and determines their function. They act as enzymes, structural components, signaling molecules, and are essential for virtually all cellular processes.';
+    } else if (title == 'Carbohydrate Chemistry' || title == 'Carbohydrates') {
+      return 'Carbohydrates are organic compounds consisting of carbon, hydrogen, and oxygen atoms, typically with the formula (CH₂O)n. They include simple sugars (monosaccharides), disaccharides, and polysaccharides that serve as energy sources and structural components.';
+    } else if (title == 'Lipid Chemistry' || title == 'Lipids') {
+      return 'Lipids are hydrophobic biomolecules that include fats, oils, waxes, steroids, and phospholipids. They store energy, form cell membranes, serve as signaling molecules, and play crucial roles in metabolism and cellular structure.';
+    } else if (title == 'Nucleic Acids') {
+      return 'Nucleic acids (DNA and RNA) are polymers of nucleotides that store and transmit genetic information. DNA contains the genetic blueprint while RNA performs various functions including protein synthesis through transcription and translation processes.';
+    } else if (title == 'Enzyme Chemistry' || title == 'Enzymes') {
+      return 'Enzymes are biological catalysts that dramatically accelerate chemical reactions in living systems without being consumed. They have specific active sites, exhibit substrate specificity, and are regulated through inhibition, activation, and allosteric effects.';
+    } else if (title == 'Metabolic Chemistry' || title == 'Metabolism') {
+      return 'Metabolism encompasses all chemical reactions in organisms that maintain life. It includes catabolic pathways that break down molecules to release energy and anabolic pathways that build complex molecules using energy. Key pathways include glycolysis, citric acid cycle, and oxidative phosphorylation.';
+
+      // Analytical Chemistry category
+    } else if (title == 'Spectroscopy') {
+      return 'Spectroscopy studies the interaction between matter and electromagnetic radiation. Techniques include UV-visible, infrared, NMR, and mass spectroscopy that analyze molecular structure, functional groups, and chemical composition based on absorption, emission, or scattering of radiation.';
+    } else if (title == 'Chromatography') {
+      return 'Chromatography separates mixtures based on differential partitioning between a mobile and stationary phase. Techniques include thin-layer, column, gas, and high-performance liquid chromatography used for analysis, purification, and isolation of compounds.';
+    } else if (title == 'Titration Methods' || title == 'Titration') {
+      return 'Titration is a quantitative analytical method where a solution of known concentration is used to determine the concentration of an unknown solution. Types include acid-base, redox, complexometric, and precipitation titrations, each with characteristic indicators and endpoints.';
+    } else if (title == 'Mass Spectrometry') {
+      return 'Mass spectrometry identifies compounds by measuring the mass-to-charge ratio of ions. It involves ionization, acceleration, deflection, and detection of fragments. The resulting mass spectrum reveals molecular weight and structural information of compounds.';
+    } else if (title == 'Electrochemical Analysis') {
+      return 'Electrochemical analysis uses electrical properties for chemical analysis. Techniques include potentiometry, voltammetry, and electrochemical impedance spectroscopy to determine concentration, reaction kinetics, and material properties in solutions.';
+    } else if (title == 'Chemical Sensors') {
+      return 'Chemical sensors detect specific chemicals through physical or chemical responses translated into measurable signals. They utilize principles such as electrochemistry, optics, or chemical reactions and are used in environmental monitoring, diagnostics, and industrial control.';
+
+      // Environmental Chemistry category
+    } else if (title == 'Air Pollution Chemistry') {
+      return 'Air pollution chemistry studies chemical compositions and reactions of atmospheric pollutants including particulate matter, ozone, nitrogen oxides, sulfur dioxide, and volatile organic compounds. It addresses formation mechanisms, transport, and environmental impacts.';
+    } else if (title == 'Water Chemistry') {
+      return 'Water chemistry examines the chemical composition and reactions of water in natural and engineered systems. It includes pH, alkalinity, hardness, dissolved oxygen, and contaminants affecting water quality, treatment processes, and aquatic ecosystems.';
+    } else if (title == 'Soil Chemistry') {
+      return 'Soil chemistry studies the chemical constituents and reactions in soil. It examines mineral composition, organic matter, acidity, cation exchange capacity, and nutrient cycling critical for agriculture, environmental management, and geochemical processes.';
+    } else if (title == 'Green Chemistry') {
+      return 'Green chemistry focuses on designing chemical products and processes that reduce or eliminate hazardous substances. It follows principles such as atom economy, energy efficiency, renewable feedstocks, and biodegradability to minimize environmental impact.';
+    } else if (title == 'Climate Chemistry') {
+      return 'Climate chemistry explores chemical processes in Earth\'s atmosphere affecting climate, including greenhouse gas dynamics, aerosol effects, stratospheric ozone depletion, and feedback mechanisms that influence global temperature and precipitation patterns.';
+    } else if (title == 'Chemical Toxicology') {
+      return 'Chemical toxicology studies harmful effects of chemicals on living organisms. It investigates mechanisms of toxicity, dose-response relationships, bioaccumulation, and risk assessment for industrial chemicals, pharmaceuticals, pesticides, and natural toxins.';
+
+      // Industrial Chemistry category
+    } else if (title == 'Chemical Engineering') {
+      return 'Chemical engineering applies physics, chemistry, biology, and mathematics to design and operate chemical processes at industrial scale. It encompasses reaction engineering, separation techniques, process control, and plant design for manufacturing chemicals, fuels, and materials.';
+    } else if (title == 'Industrial Polymer Production') {
+      return 'Industrial polymer production involves large-scale synthesis of polymeric materials through polymerization processes. It includes reactor design, catalysis, process optimization, and product formulation for plastics, fibers, elastomers, and specialty polymers.';
+    } else if (title == 'Petroleum Chemistry') {
+      return 'Petroleum chemistry focuses on the composition and processing of crude oil and natural gas. It includes refining, catalytic cracking, reforming, and hydroprocessing to produce fuels, lubricants, and feedstocks for the petrochemical industry.';
+    } else if (title == 'Pharmaceutical Synthesis') {
+      return 'Pharmaceutical synthesis creates medicinal compounds through organic chemistry routes. It employs retrosynthetic analysis, protecting groups, stereoselective synthesis, and green chemistry principles to develop efficient and sustainable drug manufacturing processes.';
+    } else if (title == 'Food Chemistry') {
+      return 'Food chemistry studies the composition and properties of food materials and changes they undergo during processing, storage, and cooking. It examines proteins, carbohydrates, lipids, additives, and their roles in nutrition, flavor, texture, and preservation.';
+    } else if (title == 'Materials Chemistry') {
+      return 'Materials chemistry investigates the design, synthesis, and properties of functional materials. It encompasses metals, ceramics, semiconductors, polymers, composites, and nanomaterials used in electronics, energy storage, catalysis, and biomedical applications.';
+    }
+
+    // Default description if no specific topic matches
+    return 'A fundamental concept in chemistry that helps us understand the composition and behavior of matter through experimental and theoretical approaches.';
   }
 }

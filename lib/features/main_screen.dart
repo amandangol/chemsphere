@@ -1,3 +1,4 @@
+import 'package:chem_explore/utils/snackbar_util.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home/home_screen.dart';
@@ -35,6 +36,10 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   int _currentFactIndex = 0;
   late PageController _pageController;
   late int _currentIndex;
+
+  // Add variables for back button handling
+  DateTime? _lastBackPressTime;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -109,6 +114,23 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
+  // Add function to handle back button press
+  Future<bool> _onWillPop() async {
+    final now = DateTime.now();
+    if (_lastBackPressTime == null ||
+        now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+      _lastBackPressTime = now;
+      SnackbarUtil.showCustomSnackBar(
+        context,
+        message: 'Press back again to exit',
+        backgroundColor: Theme.of(context).colorScheme.inverseSurface,
+        duration: const Duration(seconds: 2),
+      );
+      return false;
+    }
+    return true;
+  }
+
   @override
   void dispose() {
     _headerAnimationController.dispose();
@@ -121,99 +143,103 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: const [
-          // Home Screen - Dashboard with quick access to popular features
-          HomeScreen(),
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        key: _scaffoldKey,
+        body: IndexedStack(
+          index: _currentIndex,
+          children: const [
+            // Home Screen - Dashboard with quick access to popular features
+            HomeScreen(),
 
-          // Explore Screen - Direct access to periodic table
-          PeriodicTableScreen(),
+            // Explore Screen - Direct access to periodic table
+            PeriodicTableScreen(),
 
-          // City Search Screen - Air Quality Map
-          CitySearchScreen(),
+            // City Search Screen - Air Quality Map
+            CitySearchScreen(),
 
-          // Compounds Screen - Search and explore chemical compounds
-          CompoundSearchScreen(),
+            // Compounds Screen - Search and explore chemical compounds
+            CompoundSearchScreen(),
 
-          // Learn content
-          ChemistryGuideScreen(),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              offset: const Offset(0, -3),
-              blurRadius: 10,
-            ),
+            // Learn content
+            ChemistryGuideScreen(),
           ],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
         ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Background elements - subtle molecule patterns
-              Positioned(
-                left: 40,
-                bottom: 8,
-                child: Opacity(
-                  opacity: 0.1,
-                  child: Icon(
-                    Icons.science,
-                    size: 24,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 60,
-                bottom: 12,
-                child: Opacity(
-                  opacity: 0.1,
-                  child: Icon(
-                    Icons.hub,
-                    size: 24,
-                    color: theme.colorScheme.secondary,
-                  ),
-                ),
-              ),
-              // Actual bottom navigation bar
-              BottomNavigationBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                selectedItemColor: theme.colorScheme.primary,
-                unselectedItemColor:
-                    theme.colorScheme.onSurface.withOpacity(0.6),
-                showSelectedLabels: true,
-                showUnselectedLabels: true,
-                type: BottomNavigationBarType.fixed,
-                items: [
-                  _buildNavItem(Icons.home_rounded, 'Home'),
-                  _buildNavItem(Icons.table_chart_rounded, 'Elements'),
-                  _buildNavItem(Icons.air_rounded, 'Air Quality'),
-                  _buildNavItem(Icons.science_rounded, 'Compounds'),
-                  _buildNavItem(Icons.school_rounded, 'Learn'),
-                ],
-                currentIndex: _currentIndex,
-                onTap: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                offset: const Offset(0, -3),
+                blurRadius: 10,
               ),
             ],
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Background elements - subtle molecule patterns
+                Positioned(
+                  left: 40,
+                  bottom: 8,
+                  child: Opacity(
+                    opacity: 0.1,
+                    child: Icon(
+                      Icons.science,
+                      size: 24,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 60,
+                  bottom: 12,
+                  child: Opacity(
+                    opacity: 0.1,
+                    child: Icon(
+                      Icons.hub,
+                      size: 24,
+                      color: theme.colorScheme.secondary,
+                    ),
+                  ),
+                ),
+                // Actual bottom navigation bar
+                BottomNavigationBar(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  selectedItemColor: theme.colorScheme.primary,
+                  unselectedItemColor:
+                      theme.colorScheme.onSurface.withOpacity(0.6),
+                  showSelectedLabels: true,
+                  showUnselectedLabels: true,
+                  type: BottomNavigationBarType.fixed,
+                  items: [
+                    _buildNavItem(Icons.home_rounded, 'Home'),
+                    _buildNavItem(Icons.table_chart_rounded, 'Elements'),
+                    _buildNavItem(Icons.air_rounded, 'Air Quality'),
+                    _buildNavItem(Icons.science_rounded, 'Compounds'),
+                    _buildNavItem(Icons.school_rounded, 'Learn'),
+                  ],
+                  currentIndex: _currentIndex,
+                  onTap: (index) {
+                    setState(() {
+                      _currentIndex = index;
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

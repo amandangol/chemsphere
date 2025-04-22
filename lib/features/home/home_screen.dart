@@ -9,6 +9,7 @@ import '../chemistryguide/chemistry_guide_screen.dart';
 import '../formula/screen/formula_search_screen.dart';
 import '../aqi/city_search_screen.dart';
 import '../molecules_viewer/screen/molecule_viewer_screen.dart';
+import '../molecular_weight/screens/molecular_weight_screen.dart';
 
 // Import the widgets
 import 'widgets/home_header_widget.dart';
@@ -205,6 +206,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
+                  // Add Molecular Weight Calculator card at the beginning
+                  SecondaryFeatureCard(
+                    title: 'Molecular Weight',
+                    icon: Icons.calculate_rounded,
+                    color: Colors.deepPurple,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MolecularWeightScreen(),
+                      ),
+                    ),
+                  ),
                   SecondaryFeatureCard(
                     title: 'Drug Explorer',
                     icon: Icons.medical_services_rounded,

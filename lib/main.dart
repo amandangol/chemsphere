@@ -8,9 +8,11 @@ import 'features/drugs/provider/drug_provider.dart';
 import 'features/reactions/provider/reaction_provider.dart';
 import 'features/bookmarks/provider/bookmark_provider.dart';
 import 'features/chemistryguide/provider/chemistry_guide_provider.dart';
+import 'features/molecular_weight/provider/molecular_weight_provider.dart';
+import 'features/molecular_weight/screens/molecular_weight_screen.dart';
 import 'features/main_screen.dart';
-import 'providers/aqi_provider.dart';
-import 'providers/pollutant_info_provider.dart';
+import 'features/aqi/provider/aqi_provider.dart';
+import 'features/aqi/provider/pollutant_info_provider.dart';
 import 'features/splash_screen.dart';
 import 'features/onboarding/screen/onboarding_screen.dart';
 import 'features/onboarding/provider/onboarding_provider.dart';
@@ -63,6 +65,13 @@ class ChemistryExplorerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AqiProvider()),
         ChangeNotifierProvider(create: (_) => PollutantInfoProvider()),
         ChangeNotifierProvider(create: (_) => OnboardingProvider()),
+        // MolecularWeightProvider depends on ElementProvider
+        ChangeNotifierProxyProvider<ElementProvider, MolecularWeightProvider>(
+          create: (context) => MolecularWeightProvider(
+              Provider.of<ElementProvider>(context, listen: false)),
+          update: (context, elementProvider, previous) =>
+              previous ?? MolecularWeightProvider(elementProvider),
+        ),
       ],
       child: MaterialApp(
         title: 'ChemVerse',
@@ -73,6 +82,17 @@ class ChemistryExplorerApp extends StatelessWidget {
         routes: {
           '/main': (context) => const MainScreen(initialIndex: 0),
           '/city-search': (context) => const MainScreen(initialIndex: 2),
+          '/molecular-weight': (context) => const MolecularWeightScreen(),
+        },
+        //  global back button handling for Android
+        builder: (context, child) {
+          return WillPopScope(
+            onWillPop: () async {
+              // Let the app-specific screens handle back button themselves
+              return true;
+            },
+            child: child!,
+          );
         },
       ),
     );

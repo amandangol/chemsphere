@@ -178,22 +178,25 @@ class WikipediaService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['items'] != null) {
-          // Filter for image types
-          final images = data['items'].where((item) {
+          // Filter for image types - make sure the test function returns a boolean
+          final List<dynamic> allItems = data['items'];
+          final List<dynamic> images = allItems.where((dynamic item) {
             final mime = item['mime'] ?? '';
-            return mime.startsWith('image/');
+            return mime.toString().startsWith('image/');
           }).toList();
 
           // Extract image URLs
-          final imageUrls = images.map((item) {
-            if (item['srcset'] != null && item['srcset'].isNotEmpty) {
+          final List<String> imageUrls = [];
+          for (var item in images) {
+            if (item['srcset'] != null && (item['srcset'] as List).isNotEmpty) {
               // Get the smallest image from srcset for thumbnails
-              return item['srcset'][0]['src'];
+              imageUrls.add(item['srcset'][0]['src']);
+            } else if (item['src'] != null) {
+              imageUrls.add(item['src']);
             }
-            return item['src'];
-          }).toList();
+          }
 
-          return List<String>.from(imageUrls);
+          return imageUrls;
         }
       }
 

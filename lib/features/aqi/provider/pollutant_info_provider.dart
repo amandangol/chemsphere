@@ -1,14 +1,12 @@
 import 'package:flutter/foundation.dart';
-import '../models/pollutant.dart';
+import '../../../models/pollutant.dart';
 
 class PollutantInfoProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
-  // Track loaded pollutants
   final Set<int> _loadedPollutants = {};
 
-  // Add disposed flag to track if provider has been disposed
   bool _disposed = false;
 
   PollutantInfoProvider();
@@ -16,12 +14,10 @@ class PollutantInfoProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // Check if a pollutant is loaded
   bool isDetailLoaded(int cid) => _loadedPollutants.contains(cid);
   bool isSectionLoading(int cid) =>
       _isLoading && !_loadedPollutants.contains(cid);
 
-  // Override dispose method to set disposed flag
   @override
   void dispose() {
     _disposed = true;
@@ -60,7 +56,6 @@ class PollutantInfoProvider with ChangeNotifier {
       // Check if data is already loaded for this pollutant
       if (_loadedPollutants.contains(pollutant.cid)) {
         print('Data already loaded for pollutant CID: ${pollutant.cid}');
-        // Even if data is loaded, make sure properties are not empty
         _ensurePropertiesNotEmpty(pollutant);
         return;
       }
