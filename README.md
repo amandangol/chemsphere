@@ -78,7 +78,7 @@ ChemSphere successfully addresses two major challenge statements:
 - Visual explanations of periodic trends
 - Interactive zooming and panning
   
-    <img src="https://github.com/user-attachments/assets/456674cf-6809-4563-90b8-574f69effb8b" alt="moleculeviewer" width="200" height="400" />
+    https://github.com/user-attachments/assets/d9916817-5eca-4113-8ad6-0c72b45cf3e3
 
 ### 🔍 Compound Search
 - Search chemical compounds by name
@@ -143,6 +143,8 @@ ChemSphere successfully addresses two major challenge statements:
 - Visual representation of dominant pollutants
 
   https://github.com/user-attachments/assets/f86bc030-3862-4d7b-a039-1246d67e3d9d
+  
+  https://github.com/user-attachments/assets/9c50e175-a70c-4346-91d0-7d488aea2821
 
 ### 📚 Chemistry Guide
 - Educational resources for chemistry learning
@@ -157,6 +159,8 @@ ChemSphere successfully addresses two major challenge statements:
 - Front side shows key information
 - Back side reveals detailed properties
 - Shuffle option for randomized study
+
+  https://github.com/user-attachments/assets/45239b1c-c571-4a78-8ff0-4e37a5162d49
 
 ### 📌 Bookmarks
 - Save favorite elements, compounds, and educational content
