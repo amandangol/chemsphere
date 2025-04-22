@@ -475,32 +475,6 @@ class ResultsCard extends StatelessWidget {
                       ),
                       onPressed: () => onAnalysisTap(context, provider),
                     ),
-                    const SizedBox(height: 16),
-                    ActionChip(
-                      avatar: const Icon(
-                        Icons.save_alt,
-                        size: 18,
-                        color: Colors.white70,
-                      ),
-                      label: Text(
-                        'Save to History',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                      backgroundColor: Colors.black26,
-                      onPressed: () {
-                        // Recalculate to save to history
-                        provider.calculateFormula(formula);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Saved to history'),
-                            duration: Duration(seconds: 1),
-                          ),
-                        );
-                      },
-                    ),
                   ],
                 ],
               ),

@@ -12,6 +12,7 @@ import '../../elements/model/periodic_element.dart';
 import '../../../utils/snackbar_util.dart';
 import '../model/unit_conversion.dart';
 import '../widgets/molecular_weight_cards.dart';
+import '../widgets/molecular_weight_cards.dart' as card_helpers;
 
 class MolecularWeightHeaderWidget extends StatefulWidget {
   const MolecularWeightHeaderWidget({Key? key}) : super(key: key);
@@ -80,51 +81,6 @@ class _MolecularWeightHeaderWidgetState
   }
 }
 
-class MoleculePainter extends CustomPainter {
-  final Color color;
-
-  MoleculePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width * 0.35;
-
-    // Draw circles representing electron orbits
-    canvas.drawCircle(center, radius, paint);
-    canvas.drawCircle(center, radius * 0.6, paint);
-
-    // Draw dots representing electrons
-    final electronPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    // Electrons on outer orbit
-    for (var i = 0; i < 3; i++) {
-      final angle = i * (2 * 3.14159 / 3);
-      final x = center.dx + radius * cos(angle);
-      final y = center.dy + radius * sin(angle);
-      canvas.drawCircle(Offset(x, y), 2, electronPaint);
-    }
-
-    // Electrons on inner orbit
-    for (var i = 0; i < 2; i++) {
-      final angle = i * (2 * 3.14159 / 2) + 0.5;
-      final x = center.dx + radius * 0.6 * cos(angle);
-      final y = center.dy + radius * 0.6 * sin(angle);
-      canvas.drawCircle(Offset(x, y), 1.5, electronPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 class MolecularWeightScreen extends StatefulWidget {
   const MolecularWeightScreen({Key? key}) : super(key: key);
 
@@ -188,18 +144,23 @@ class _MolecularWeightScreenState extends State<MolecularWeightScreen>
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: theme.colorScheme.primary.withOpacity(0.7),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          color: theme.colorScheme.primary,
           onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Molecular Weight Calculator',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           IconButton(
             icon: Icon(
               _showHistory ? Icons.calculate : Icons.history,
-              color: theme.colorScheme.primary,
             ),
             onPressed: () {
               setState(() {
@@ -214,33 +175,10 @@ class _MolecularWeightScreenState extends State<MolecularWeightScreen>
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          // Gradient background
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              theme.colorScheme.primary.withOpacity(0.1),
-              theme.colorScheme.primaryContainer.withOpacity(0.2),
-            ],
-          ),
-          // Optional pattern overlay
-          image: DecorationImage(
-            image: const AssetImage('assets/images/chemistry_bg.png'),
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(
-              Colors.white.withOpacity(0.9),
-              BlendMode.lighten,
-            ),
-          ),
-        ),
-        child: SafeArea(
-          child: _showHistory
-              ? _buildHistoryView(context)
-              : _buildCalculatorView(context),
-        ),
+      body: SafeArea(
+        child: _showHistory
+            ? _buildHistoryView(context)
+            : _buildCalculatorView(context),
       ),
     );
   }
@@ -624,15 +562,16 @@ class _MolecularWeightScreenState extends State<MolecularWeightScreen>
                         child: FadeInAnimation(
                           child: RadioListTile<MassUnit>(
                             title: Text(
-                              ResultsCard.getUnitText(unit),
+                              card_helpers.ResultsCard.getUnitText(unit),
                               style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             subtitle: Text(
-                              ResultsCard.formatWeight(weight, unit) +
+                              card_helpers.ResultsCard.formatWeight(
+                                      weight, unit) +
                                   ' ' +
-                                  ResultsCard.getUnitText(unit),
+                                  card_helpers.ResultsCard.getUnitText(unit),
                               style: GoogleFonts.poppins(fontSize: 13),
                             ),
                             value: unit,
@@ -798,9 +737,10 @@ class _MolecularWeightScreenState extends State<MolecularWeightScreen>
                                             Row(
                                               children: [
                                                 CircleAvatar(
-                                                  backgroundColor: ResultsCard
-                                                      .getElementColor(
-                                                          entry.key),
+                                                  backgroundColor:
+                                                      card_helpers.ResultsCard
+                                                          .getElementColor(
+                                                              entry.key),
                                                   radius: 12,
                                                   child: Text(
                                                     entry.key.length > 2
@@ -842,8 +782,8 @@ class _MolecularWeightScreenState extends State<MolecularWeightScreen>
                                                   Colors.grey.shade200,
                                               valueColor:
                                                   AlwaysStoppedAnimation<Color>(
-                                                ResultsCard.getElementColor(
-                                                    entry.key),
+                                                card_helpers.ResultsCard
+                                                    .getElementColor(entry.key),
                                               ),
                                               minHeight: 8,
                                               borderRadius:
@@ -914,7 +854,8 @@ class _MolecularWeightScreenState extends State<MolecularWeightScreen>
                                                 borderRadius:
                                                     BorderRadius.circular(8),
                                                 side: BorderSide(
-                                                  color: ResultsCard
+                                                  color: card_helpers
+                                                              .ResultsCard
                                                           .getElementColor(
                                                               element.symbol)
                                                       .withOpacity(0.5),
@@ -930,7 +871,8 @@ class _MolecularWeightScreenState extends State<MolecularWeightScreen>
                                                       width: 48,
                                                       height: 48,
                                                       decoration: BoxDecoration(
-                                                        color: ResultsCard
+                                                        color: card_helpers
+                                                                .ResultsCard
                                                             .getElementColor(
                                                                 element.symbol),
                                                         borderRadius:
@@ -1059,7 +1001,8 @@ class _MolecularWeightScreenState extends State<MolecularWeightScreen>
           title: Row(
             children: [
               CircleAvatar(
-                backgroundColor: ResultsCard.getElementColor(symbol),
+                backgroundColor:
+                    card_helpers.ResultsCard.getElementColor(symbol),
                 child: Text(
                   symbol.length > 2 ? symbol.substring(0, 1) : symbol,
                   style: GoogleFonts.sourceCodePro(

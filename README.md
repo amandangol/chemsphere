@@ -80,6 +80,19 @@ ChemVerse successfully addresses two major challenge statements:
 - Recent molecules history for quick access
 - Share functionality for molecules
 
+### ⚖️ Molecular Weight Calculator
+- Calculate exact molecular weight for any chemical formula
+- Beautiful and intuitive user interface with animated transitions
+- Supports complex formulas including parentheses, hydrates, and multiple elements
+- Detailed composition analysis showing mass percentage of each element
+- Interactive formula parsing with color-coded elements
+- Unit conversion between g/mol, kg/mol, amu, and Daltons
+- View element details directly from the formula breakdown
+- Calculation history with filtering options (All, Today, This Week)
+- Element information cards with atomic details
+- Formula entry guidelines with helpful tips
+- Example formulas for quick access
+
 ### 💨 Air Quality Monitor
 - Real-time AQI data for your current location
 - Global air quality map showing AQI in major cities worldwide
@@ -212,7 +225,7 @@ ChemVerse integrates with several reputable APIs to provide accurate and compreh
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/amandangol/chemiverse.git
+git clone https://github.com/amandangol/chemsphere.git
 cd chem_explore
 ```
 
@@ -345,7 +358,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 📞 Contact
 
-Project Link: [https://github.com/amandangol/chemiverse](https://github.com/amandangol/chemiverse)
+Project Link: [https://github.com/amandangol/chemsphere](https://github.com/amandangol/chemsphere)
 
 ## 🙏 Acknowledgements
 

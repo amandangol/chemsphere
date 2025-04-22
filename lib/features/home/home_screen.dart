@@ -152,7 +152,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
 
-                // Learn
+                // Modern Periodic Table - Moved from "More Features" to "Explore Chemistry" for better categorization
+                MainFeatureCard(
+                  title: 'Modern Periodic Table',
+                  description: 'Interactive periodic table',
+                  icon: Icons.auto_awesome_rounded,
+                  color: Colors.purple,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ModernPeriodicTableScreen(),
+                    ),
+                  ),
+                ),
+
+                // Learning Resources
                 MainFeatureCard(
                   title: 'Learn',
                   description: 'Flashcards & tutorials',
@@ -165,30 +179,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-
-                // Air Quality
-                MainFeatureCard(
-                  title: 'Air Quality',
-                  description: 'Check pollutants & AQI',
-                  icon: Icons.air_rounded,
-                  color: Colors.blue,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CitySearchScreen(),
-                    ),
-                  ),
-                ),
               ]),
             ),
           ),
 
-          // Additional Features Section Header
+          // Chemistry Tools Section Header
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
-                'More Features',
+                'Chemistry Tools',
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -197,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
 
-          // Additional Features in a horizontal scrollable row
+          // Chemistry Tools in a horizontal scrollable row
           SliverToBoxAdapter(
             child: SizedBox(
               height: 120,
@@ -206,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  // Add Molecular Weight Calculator card at the beginning
+                  // Molecular Weight Calculator
                   SecondaryFeatureCard(
                     title: 'Molecular Weight',
                     icon: Icons.calculate_rounded,
@@ -218,17 +218,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  SecondaryFeatureCard(
-                    title: 'Drug Explorer',
-                    icon: Icons.medical_services_rounded,
-                    color: Colors.pink,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DrugSearchScreen(),
-                      ),
-                    ),
-                  ),
+                  // Formula Search
                   SecondaryFeatureCard(
                     title: 'Formula Search',
                     icon: Icons.format_shapes_rounded,
@@ -240,21 +230,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  SecondaryFeatureCard(
-                    title: 'Modern Periodic Table',
-                    icon: Icons.book_rounded,
-                    color: Colors.purple,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ModernPeriodicTableScreen(),
-                      ),
-                    ),
-                  ),
+                  // 3D Molecule Viewer
                   SecondaryFeatureCard(
                     title: '3D Molecule Viewer',
                     icon: Icons.view_in_ar_rounded,
-                    color: Colors.purple,
+                    color: Colors.blue,
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -262,6 +242,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
+                  // Chemical Reactions
                   SecondaryFeatureCard(
                     title: 'Chemical Reactions',
                     icon: Icons.bolt_rounded,
@@ -277,7 +258,59 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
 
-          // Animated Lottie Chemistry Animation - moved to bottom
+          // Health & Environment Section Header
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'Health & Environment',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          // Health & Environment Features
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 120,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  // Air Quality
+                  SecondaryFeatureCard(
+                    title: 'Air Quality',
+                    icon: Icons.air_rounded,
+                    color: Colors.blue,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CitySearchScreen(),
+                      ),
+                    ),
+                  ),
+                  // Drug Explorer
+                  SecondaryFeatureCard(
+                    title: 'Drug Explorer',
+                    icon: Icons.medical_services_rounded,
+                    color: Colors.pink,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DrugSearchScreen(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Animated Lottie Chemistry Animation
           SliverToBoxAdapter(
             child: ChemistryAnimationWidget(
               animation: _greetingAnimationController,

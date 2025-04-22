@@ -39,8 +39,16 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
     super.initState();
 
     // Initialize the map with user's current location or any existing AQI data
-    Future.microtask(() {
+    Future.microtask(() async {
       _initializeMap();
+
+      // Fetch major cities AQI data in the background for a better user experience
+      final provider = Provider.of<AqiProvider>(context, listen: false);
+
+      // If we already have AQI data but no city data, fetch cities
+      if (provider.aqiData != null && provider.citiesAqiData.isEmpty) {
+        provider.fetchMajorCitiesAqi();
+      }
     });
 
     // Handle focus changes for the search field
@@ -58,9 +66,6 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       if (provider.aqiData != null) {
         _addAqiMarker(provider);
       }
-
-      // Fetch AQI data for major cities in the background
-      provider.fetchMajorCitiesAqi();
     });
   }
 
@@ -81,8 +86,17 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       _mapController.move(LatLng(lat, lng), 10);
       _addAqiMarker(provider);
     } else {
-      // Otherwise try to get current location
-      await _moveToCurrentLocation();
+      // Otherwise try to get current location and fetch AQI data
+      bool success = await _moveToCurrentLocation();
+
+      // If we couldn't get current location, fetch major cities at least
+      if (!success && mounted) {
+        provider.fetchMajorCitiesAqi();
+        setState(() {
+          _showMajorCities = true;
+          _updateMajorCitiesMarkers(provider);
+        });
+      }
     }
 
     setState(() {
@@ -92,17 +106,6 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
 
   // Add all major cities markers to the map
   void _updateMajorCitiesMarkers(AqiProvider provider) {
-    if (!_showMajorCities) {
-      // If not showing major cities, only keep current location marker
-      _markers = _markers
-          .where((marker) =>
-              marker.point.latitude == provider.aqiData?.coordinates.latitude &&
-              marker.point.longitude == provider.aqiData?.coordinates.longitude)
-          .toList();
-      return;
-    }
-
-    // Get all major cities with AQI data
     List<Marker> cityMarkers = [];
 
     // Add marker for current location if available
@@ -120,34 +123,36 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       );
     }
 
-    // Add markers for all major cities
-    provider.citiesAqiData.forEach((cityName, aqiData) {
-      // Skip if coordinates are too close to current location
-      if (provider.aqiData != null) {
-        final currentLat = provider.aqiData!.coordinates.latitude;
-        final currentLng = provider.aqiData!.coordinates.longitude;
-        final cityLat = aqiData.coordinates.latitude;
-        final cityLng = aqiData.coordinates.longitude;
+    // Add markers for all major cities if enabled
+    if (_showMajorCities) {
+      provider.citiesAqiData.forEach((cityName, aqiData) {
+        // Skip if coordinates are too close to current location
+        if (provider.aqiData != null) {
+          final currentLat = provider.aqiData!.coordinates.latitude;
+          final currentLng = provider.aqiData!.coordinates.longitude;
+          final cityLat = aqiData.coordinates.latitude;
+          final cityLng = aqiData.coordinates.longitude;
 
-        // Calculate rough distance
-        final distance =
-            sqrt(pow(cityLat - currentLat, 2) + pow(cityLng - currentLng, 2));
-        if (distance < 0.5) {
-          // Approximate 50km at equator
-          return; // Skip this city as it's too close to current location
+          // Calculate rough distance
+          final distance =
+              sqrt(pow(cityLat - currentLat, 2) + pow(cityLng - currentLng, 2));
+          if (distance < 0.5) {
+            // Approximate 50km at equator
+            return; // Skip this city as it's too close to current location
+          }
         }
-      }
 
-      cityMarkers.add(
-        Marker(
-          width: 80.0,
-          height: 80.0,
-          point: LatLng(
-              aqiData.coordinates.latitude, aqiData.coordinates.longitude),
-          child: _buildMarkerWidget(provider, aqiData),
-        ),
-      );
-    });
+        cityMarkers.add(
+          Marker(
+            width: 80.0,
+            height: 80.0,
+            point: LatLng(
+                aqiData.coordinates.latitude, aqiData.coordinates.longitude),
+            child: _buildMarkerWidget(provider, aqiData),
+          ),
+        );
+      });
+    }
 
     setState(() {
       _markers = cityMarkers;
@@ -178,6 +183,11 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       // Always fetch fresh AQI data for the current location
       final provider = Provider.of<AqiProvider>(context, listen: false);
       await provider.fetchAqiData();
+
+      // Always fetch major cities data in background for a better user experience
+      if (!provider.citiesAqiData.containsKey('New York')) {
+        provider.fetchMajorCitiesAqi();
+      }
 
       if (provider.aqiData != null) {
         _updateMajorCitiesMarkers(provider);
@@ -545,7 +555,14 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
         final lat = provider.aqiData!.coordinates.latitude;
         final lng = provider.aqiData!.coordinates.longitude;
         _mapController.move(LatLng(lat, lng), 10);
-        _addAqiMarker(provider);
+
+        // Always update the markers regardless of _showMajorCities setting
+        _updateMajorCitiesMarkers(provider);
+
+        // If we don't have major cities data yet, fetch it in the background
+        if (provider.citiesAqiData.isEmpty) {
+          provider.fetchMajorCitiesAqi();
+        }
 
         // Show the AQI info bottom sheet
         _showAqiInfoBottomSheet(provider, provider.aqiData!, true);
@@ -580,7 +597,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       final provider = Provider.of<AqiProvider>(context, listen: false);
       if (e.toString().contains('timed out') && provider.aqiData != null) {
         if (!mounted) return;
-        _addAqiMarker(provider);
+        _updateMajorCitiesMarkers(provider);
         _showAqiInfoBottomSheet(provider, provider.aqiData!, true);
       }
     } finally {

@@ -166,7 +166,7 @@ class _HomeHeaderWidgetState extends State<HomeHeaderWidget>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'ChemiVerse',
+                              'ChemSphere',
                               style: GoogleFonts.poppins(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
