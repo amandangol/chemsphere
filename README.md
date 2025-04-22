@@ -6,6 +6,16 @@
 
 ChemSphere is a comprehensive chemistry exploration app designed to make chemistry accessible, engaging, and educational. Addressing both Chemistry and Geolocation challenge statements, ChemSphere combines rich chemical data with location-based services to deliver a unique educational experience. Whether you're a student, educator, or chemistry enthusiast, ChemSphere provides a suite of tools to explore elements, compounds, formulas, and geolocation-based air quality data in an intuitive and visually appealing interface.
 
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/d5978952-23f0-4cf0-a7b8-dc85e0a313db" alt="homescreen" width="250" height="500" /> <img src="https://github.com/user-attachments/assets/01e3fdef-a5c1-4a8a-8d91-386303b355c2" alt="homescreen2" width="250" height="500" />
+  <img src="https://github.com/user-attachments/assets/d93c1939-9ff9-44aa-a892-bec0b21c9eee" alt="periodicelement" width="250" height="500" /> <img src="https://github.com/user-attachments/assets/0f4e4f6e-741d-4b6b-a09e-8b259cf11e39" alt="elementdetails" width="250" height="500" /> <img src="https://github.com/user-attachments/assets/433698bf-fc72-4ff3-a364-04f412e51bda" alt="moleculeviewer" width="250" height="500" />
+  <img src="https://github.com/user-attachments/assets/86e7ff68-affd-40b7-a87d-f69037d30199" alt="compounddetails" width="250" height="500" />
+  <img src="https://github.com/user-attachments/assets/5638067a-78df-4dad-8ff3-94fdd416e5ae" alt="molecularweight" width="250" height="500" />
+  <img src="https://github.com/user-attachments/assets/c92a5f55-4aaf-40f4-818c-6f7fcd24cfdb" alt="aqimap" width="250" height="500" />
+  <img src="https://github.com/user-attachments/assets/f3902602-664f-4979-bd3f-58b75100f8dd" alt="aqidetails" width="250" height="500" />
+  <img src="https://github.com/user-attachments/assets/a89c66b5-abc3-42a4-a043-bfb7596ea40b" alt="chemistryguide" width="250" height="500" />
+</p>
+
 ## 🎥 Demo
 
 [![ChemSphere Demo](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID)
