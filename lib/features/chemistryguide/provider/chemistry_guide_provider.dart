@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../model/chemistry_guide.dart';
 import '../service/wikipedia_service.dart';
+import '../constants/chemistry_guide_topics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ChemistryGuideProvider with ChangeNotifier {
@@ -229,7 +230,36 @@ class ChemistryGuideProvider with ChangeNotifier {
 
     try {
       _setLoading();
-      _searchResults = await _wikipediaService.searchArticles(query);
+
+      // First check if query matches any of our predefined topics
+      final lowerQuery = query.toLowerCase();
+      List<String> suggestedTopics = [];
+
+      // Check if query is in our topic lists (check various formats)
+      for (final topicMap in [
+        ChemistryTopics.basicTopics,
+        ChemistryTopics.energyTopics,
+        ChemistryTopics.organicTopics,
+        ChemistryTopics.biochemistryTopics,
+        ChemistryTopics.analyticalTopics,
+        ChemistryTopics.advancedTopics,
+      ]) {
+        for (final entry in topicMap.entries) {
+          if (entry.key.contains(lowerQuery) ||
+              entry.value.toLowerCase().contains(lowerQuery)) {
+            suggestedTopics.add(entry.value);
+          }
+        }
+      }
+
+      // If we found suggested topics, use those first
+      if (suggestedTopics.isNotEmpty) {
+        debugPrint('Using suggested topics for: $query');
+        _searchResults = suggestedTopics;
+      } else {
+        // If no suggestions, fall back to regular Wikipedia search
+        _searchResults = await _wikipediaService.searchArticles(query);
+      }
 
       // Cache the search results
       _searchCache[cacheKey] = _searchResults;
@@ -238,6 +268,28 @@ class ChemistryGuideProvider with ChangeNotifier {
       _setLoaded();
     } catch (e) {
       _setError('Failed to search Wikipedia: $e');
+
+      // Even on error, try to return some suggestions if possible
+      final lowerQuery = query.toLowerCase();
+      List<String> fallbackSuggestions = [];
+
+      // Look for any matches in our predefined topics
+      for (final topicMap in [
+        ChemistryTopics.basicTopics,
+        ChemistryTopics.energyTopics,
+      ]) {
+        for (final entry in topicMap.entries) {
+          if (entry.key.contains(lowerQuery) ||
+              entry.value.toLowerCase().contains(lowerQuery)) {
+            fallbackSuggestions.add(entry.value);
+          }
+        }
+      }
+
+      if (fallbackSuggestions.isNotEmpty) {
+        _searchResults = fallbackSuggestions;
+        _setLoaded(); // Set loaded since we have results
+      }
     }
   }
 
@@ -396,8 +448,23 @@ class ChemistryGuideProvider with ChangeNotifier {
 
     try {
       _setLoading();
-      final relatedTopics =
-          await _wikipediaService.getRelatedArticles(topicName);
+
+      // Use our curated list of reliable topics first
+      final relatedTopics = ChemistryTopics.getRelatedTopics(topicName);
+
+      // If we have less than 3 related topics from our curated list,
+      // try to fetch more from Wikipedia
+      if (relatedTopics.length < 3) {
+        final wikiRelated =
+            await _wikipediaService.getRelatedArticles(topicName);
+
+        // Merge the lists, avoiding duplicates
+        for (final topic in wikiRelated) {
+          if (!relatedTopics.contains(topic)) {
+            relatedTopics.add(topic);
+          }
+        }
+      }
 
       // Cache the related topics
       _searchCache[cacheKey] = relatedTopics;
@@ -407,7 +474,10 @@ class ChemistryGuideProvider with ChangeNotifier {
       return relatedTopics;
     } catch (e) {
       _setError('Failed to load related topics: $e');
-      return [];
+
+      // Return curated list even on error
+      final fallbackTopics = ChemistryTopics.getRelatedTopics(topicName);
+      return fallbackTopics;
     }
   }
 

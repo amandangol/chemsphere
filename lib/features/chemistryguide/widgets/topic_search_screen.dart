@@ -655,35 +655,275 @@ class _TopicSearchScreenState extends State<TopicSearchScreen> {
 
   // Helper to get suggestions based on topic
   List<String> _getSuggestionsForTopic(String title) {
-    // Existing code to get suggestions based on topic...
-    if (title == 'Atoms and Elements') {
+    // Categories of reliable Wikipedia chemistry topics
+    if (title == 'Atom' || title == 'Atoms and Elements') {
       return [
         'Atom',
-        'Element',
+        'Element (chemistry)',
+        'Atomic theory',
+        'Electron',
         'Proton',
         'Neutron',
-        'Electron',
-        'Atomic Number',
-        'Atomic Mass',
-        'Isotope',
+        'Atomic mass',
+        'Atomic number',
+        'Atomic orbital',
         'Subatomic particle',
-        'Quantum model',
       ];
     }
-    // ... other topic checks
 
-    // Default suggestions if no specific category matches
+    if (title == 'Periodic table' || title == 'Periodic Table') {
+      return [
+        'Periodic table',
+        'Dmitri Mendeleev',
+        'Chemical element',
+        'Group (periodic table)',
+        'Period (periodic table)',
+        'Block (periodic table)',
+        'Transition metal',
+        'Alkali metal',
+        'Noble gas',
+        'Rare-earth element',
+      ];
+    }
+
+    if (title == 'Chemical bond' || title == 'Chemical Bonds') {
+      return [
+        'Chemical bond',
+        'Covalent bond',
+        'Ionic bond',
+        'Hydrogen bond',
+        'Metallic bond',
+        'Bond length',
+        'Bond energy',
+        'Valence bond theory',
+        'Molecular orbital theory',
+        'Lewis structure',
+      ];
+    }
+
+    if (title == 'Nuclear chemistry') {
+      return [
+        'Nuclear chemistry',
+        'Radioactivity',
+        'Nuclear reaction',
+        'Half-life',
+        'Radioisotope',
+        'Fission',
+        'Fusion',
+        'Decay chain',
+        'Alpha decay',
+        'Beta decay',
+      ];
+    }
+
+    if (title == 'Quantum chemistry') {
+      return [
+        'Quantum chemistry',
+        'Wave function',
+        'Schrödinger equation',
+        'Orbital',
+        'Quantum mechanics',
+        'Pauli exclusion principle',
+        'Heisenberg uncertainty principle',
+        'Quantum number',
+        'Spin (physics)',
+        'Density functional theory',
+      ];
+    }
+
+    if (title == 'States of matter' || title.contains('Matter')) {
+      return [
+        'States of matter',
+        'Solid',
+        'Liquid',
+        'Gas',
+        'Plasma (physics)',
+        'Phase transition',
+        'Evaporation',
+        'Condensation',
+        'Melting',
+        'Freezing',
+        'Sublimation (phase transition)',
+      ];
+    }
+
+    if (title.contains('Solution') || title.contains('Mixture')) {
+      return [
+        'Solution (chemistry)',
+        'Solute',
+        'Solvent',
+        'Miscibility',
+        'Homogeneous and heterogeneous mixtures',
+        'Concentration',
+        'Solubility',
+        'Dissolution (chemistry)',
+        'Mixture',
+        'Henry\'s law',
+      ];
+    }
+
+    if (title == 'Chemical reaction' || title.contains('Reaction Type')) {
+      return [
+        'Chemical reaction',
+        'Synthesis reaction',
+        'Decomposition reaction',
+        'Single displacement reaction',
+        'Double displacement reaction',
+        'Precipitation (chemistry)',
+        'Combustion',
+        'Redox',
+        'Neutralization (chemistry)',
+        'Chemical kinetics',
+      ];
+    }
+
+    if (title.contains('Equilibrium')) {
+      return [
+        'Chemical equilibrium',
+        'Le Chatelier\'s principle',
+        'Equilibrium constant',
+        'Dynamic equilibrium',
+        'Reaction quotient',
+        'Reversible reaction',
+        'Law of mass action',
+        'Gibbs free energy',
+        'Exergonic reaction',
+        'Endergonic reaction',
+      ];
+    }
+
+    if (title.contains('Acid') || title.contains('Base')) {
+      return [
+        'Acid–base reaction',
+        'Acid',
+        'Base (chemistry)',
+        'PH',
+        'Buffer solution',
+        'Arrhenius acids and bases',
+        'Brønsted–Lowry acid–base theory',
+        'Lewis acids and bases',
+        'Neutralization (chemistry)',
+        'Titration',
+      ];
+    }
+
+    if (title.contains('Thermo')) {
+      return [
+        'Thermochemistry',
+        'Chemical thermodynamics',
+        'Enthalpy',
+        'Entropy',
+        'Gibbs free energy',
+        'Heat of formation',
+        'Hess\'s law',
+        'Calorimetry',
+        'First law of thermodynamics',
+        'Second law of thermodynamics',
+      ];
+    }
+
+    if (title.contains('Kinetic') || title.contains('Rate')) {
+      return [
+        'Chemical kinetics',
+        'Reaction rate',
+        'Rate law',
+        'Activation energy',
+        'Arrhenius equation',
+        'Collision theory',
+        'Transition state theory',
+        'Rate constant',
+        'Order of reaction',
+        'Rate-determining step',
+      ];
+    }
+
+    if (title.contains('Catalyst') || title == 'Catalysis') {
+      return [
+        'Catalysis',
+        'Catalyst',
+        'Enzyme',
+        'Homogeneous catalysis',
+        'Heterogeneous catalysis',
+        'Biocatalysis',
+        'Activation energy',
+        'Catalytic converter',
+        'Inhibitor (chemistry)',
+        'Active site',
+      ];
+    }
+
+    if (title.contains('Organic')) {
+      return [
+        'Organic chemistry',
+        'Organic compound',
+        'Carbon',
+        'Hydrocarbon',
+        'Alkane',
+        'Alkene',
+        'Alkyne',
+        'Functional group',
+        'Isomer',
+        'Organic reaction',
+      ];
+    }
+
+    if (title.contains('Functional group')) {
+      return [
+        'Functional group',
+        'Alcohol (chemistry)',
+        'Aldehyde',
+        'Ketone',
+        'Carboxylic acid',
+        'Ester',
+        'Amine',
+        'Amide',
+        'Ether',
+        'Alkyl halide',
+      ];
+    }
+
+    if (title.contains('Protein')) {
+      return [
+        'Protein',
+        'Amino acid',
+        'Peptide bond',
+        'Protein structure',
+        'Protein folding',
+        'Enzymes',
+        'Hemoglobin',
+        'Collagen',
+        'Protein biosynthesis',
+        'Protein denaturation',
+      ];
+    }
+
+    if (title.contains('Spectroscopy')) {
+      return [
+        'Spectroscopy',
+        'Electromagnetic spectrum',
+        'Infrared spectroscopy',
+        'Nuclear magnetic resonance',
+        'Mass spectrometry',
+        'Ultraviolet–visible spectroscopy',
+        'Atomic absorption spectroscopy',
+        'Raman spectroscopy',
+        'Fluorescence spectroscopy',
+        'X-ray crystallography',
+      ];
+    }
+
+    // Default suggestions for any other chemistry topic
     return [
       title,
       'Chemistry',
       'Chemical compound',
+      'Chemical element',
       'Molecule',
-      'Scientific method',
-      'Chemical property',
-      'Physical property',
-      'Experiment',
-      'Laboratory technique',
-      'Chemical analysis',
+      'Atom',
+      'Chemical reaction',
+      'Periodic table',
+      'Organic chemistry',
+      'Inorganic chemistry',
     ];
   }
 

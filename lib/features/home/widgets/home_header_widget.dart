@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 import '../../bookmarks/bookmark_screen.dart';
+import '../../onboarding/screen/onboarding_screen.dart';
 
 class HomeHeaderWidget extends StatefulWidget {
   const HomeHeaderWidget({Key? key}) : super(key: key);
@@ -161,7 +162,6 @@ class _HomeHeaderWidgetState extends State<HomeHeaderWidget>
                           ],
                         ),
                         const SizedBox(width: 10),
-                        // App name with chemistry-inspired style
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -227,7 +227,7 @@ class _HomeHeaderWidgetState extends State<HomeHeaderWidget>
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const BookmarkScreen(),
+                                builder: (context) => const OnboardingScreen(),
                               ),
                             );
                           },

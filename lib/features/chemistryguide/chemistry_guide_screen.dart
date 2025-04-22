@@ -40,43 +40,41 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
           title: 'Atoms and Elements',
           description: 'The basic building blocks of matter',
           icon: Icons.circle_outlined,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Atoms and Elements'),
+          screenBuilder: (context) => const TopicSearchScreen(title: 'Atom'),
         ),
         GuideTopic(
           title: 'Periodic Table',
           description: 'Organization and trends of elements',
           icon: Icons.grid_on,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Periodic Table'),
+              const TopicSearchScreen(title: 'Periodic table'),
         ),
         GuideTopic(
           title: 'Chemical Bonds',
           description: 'How atoms connect to form molecules',
           icon: Icons.link,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Chemical Bonds'),
+              const TopicSearchScreen(title: 'Chemical bond'),
         ),
         GuideTopic(
           title: 'Nuclear Chemistry',
           description: 'Study of radioactive decay and nuclear processes',
           icon: Icons.radio_button_checked,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Nuclear Chemistry'),
+              const TopicSearchScreen(title: 'Nuclear chemistry'),
         ),
         GuideTopic(
           title: 'Quantum Chemistry',
           description: 'Quantum mechanics applied to atomic structure',
           icon: Icons.waves,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Quantum Chemistry'),
+              const TopicSearchScreen(title: 'Quantum chemistry'),
         ),
         GuideTopic(
           title: 'Isotopes',
           description: 'Atoms with different neutron numbers',
           icon: Icons.change_circle_outlined,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Isotopes in Chemistry'),
+          screenBuilder: (context) => const TopicSearchScreen(title: 'Isotope'),
         ),
       ],
     ),
@@ -90,42 +88,41 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
           description: 'Solids, liquids, gases, and phase transitions',
           icon: Icons.change_history,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'States of Matter'),
+              const TopicSearchScreen(title: 'States of matter'),
         ),
         GuideTopic(
           title: 'Solutions & Mixtures',
           description: 'How substances dissolve and mix',
           icon: Icons.bubble_chart,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Solutions and Mixtures'),
+              const TopicSearchScreen(title: 'Solution (chemistry)'),
         ),
         GuideTopic(
           title: 'Concentration',
           description: 'Measuring amounts in solutions',
           icon: Icons.science,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Chemical Concentration'),
+              const TopicSearchScreen(title: 'Concentration'),
         ),
         GuideTopic(
           title: 'Colligative Properties',
-          description: 'Properties that depend on concentration of particles',
+          description: 'Properties dependent on concentration',
           icon: Icons.multiline_chart,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Colligative Properties'),
+              const TopicSearchScreen(title: 'Colligative properties'),
         ),
         GuideTopic(
-          title: 'Colloids & Suspensions',
-          description: 'Heterogeneous mixtures and their properties',
+          title: 'Colloids',
+          description: 'Mixtures with particles in suspension',
           icon: Icons.blur_on,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Colloids and Suspensions'),
+          screenBuilder: (context) => const TopicSearchScreen(title: 'Colloid'),
         ),
         GuideTopic(
           title: 'Phase Diagrams',
           description: 'Graphical representations of phase transitions',
           icon: Icons.show_chart,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Phase Diagrams'),
+              const TopicSearchScreen(title: 'Phase diagram'),
         ),
       ],
     ),
@@ -139,42 +136,41 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
           description: 'Balancing and interpreting reactions',
           icon: Icons.sync_alt,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Chemical Equations'),
+              const TopicSearchScreen(title: 'Chemical equation'),
         ),
         GuideTopic(
           title: 'Reaction Types',
           description: 'Categories of chemical reactions',
           icon: Icons.category,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Chemical Reaction Types'),
+              const TopicSearchScreen(title: 'Chemical reaction'),
         ),
         GuideTopic(
           title: 'Equilibrium',
           description: 'When reactions reach balance',
           icon: Icons.balance,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Chemical Equilibrium'),
+              const TopicSearchScreen(title: 'Chemical equilibrium'),
         ),
         GuideTopic(
           title: 'Redox Reactions',
           description: 'Electron transfer in chemical processes',
           icon: Icons.swap_horiz,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Redox Reactions'),
+          screenBuilder: (context) => const TopicSearchScreen(title: 'Redox'),
         ),
         GuideTopic(
           title: 'Acid-Base Reactions',
           description: 'Proton transfer and pH effects',
           icon: Icons.science,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Acid-Base Reactions'),
+              const TopicSearchScreen(title: 'Acid–base reaction'),
         ),
         GuideTopic(
-          title: 'Precipitation Reactions',
+          title: 'Precipitation',
           description: 'Formation of insoluble products',
           icon: Icons.filter_alt,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Precipitation Reactions'),
+              const TopicSearchScreen(title: 'Precipitation (chemistry)'),
         ),
       ],
     ),
@@ -191,39 +187,38 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
               const TopicSearchScreen(title: 'Thermochemistry'),
         ),
         GuideTopic(
-          title: 'Reaction Rates',
+          title: 'Chemical Kinetics',
           description: 'How fast reactions occur',
           icon: Icons.speed,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Chemical Reaction Rates'),
+              const TopicSearchScreen(title: 'Chemical kinetics'),
         ),
         GuideTopic(
-          title: 'Catalysts',
+          title: 'Catalysis',
           description: 'Substances that speed up reactions',
           icon: Icons.fast_forward,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Chemical Catalysts'),
+              const TopicSearchScreen(title: 'Catalysis'),
         ),
         GuideTopic(
-          title: 'Free Energy',
-          description: 'Gibbs free energy and spontaneity',
+          title: 'Thermodynamics',
+          description: 'Energy transformations in chemistry',
           icon: Icons.air,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Gibbs Free Energy'),
+              const TopicSearchScreen(title: 'Chemical thermodynamics'),
         ),
         GuideTopic(
           title: 'Entropy',
           description: 'Disorder and randomness in systems',
           icon: Icons.shuffle,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Entropy in Chemistry'),
+          screenBuilder: (context) => const TopicSearchScreen(title: 'Entropy'),
         ),
         GuideTopic(
-          title: 'Reaction Mechanisms',
-          description: 'Step-by-step processes in reactions',
-          icon: Icons.account_tree,
+          title: 'Electrochemistry',
+          description: 'Chemical reactions producing electricity',
+          icon: Icons.electrical_services,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Reaction Mechanisms'),
+              const TopicSearchScreen(title: 'Electrochemistry'),
         ),
       ],
     ),
@@ -237,21 +232,21 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
           description: 'The foundation of organic chemistry',
           icon: Icons.hexagon,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Carbon Compounds'),
+              const TopicSearchScreen(title: 'Organic compound'),
         ),
         GuideTopic(
           title: 'Functional Groups',
           description: 'Important molecular structures',
           icon: Icons.category,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Functional Groups'),
+              const TopicSearchScreen(title: 'Functional group'),
         ),
         GuideTopic(
           title: 'Organic Reactions',
           description: 'How organic molecules transform',
           icon: Icons.transform,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Organic Reactions'),
+              const TopicSearchScreen(title: 'Organic reaction'),
         ),
         GuideTopic(
           title: 'Stereochemistry',
@@ -265,14 +260,13 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
           description: 'Benzene and other aromatic structures',
           icon: Icons.radio_button_unchecked,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Aromatic Compounds'),
+              const TopicSearchScreen(title: 'Aromatic compound'),
         ),
         GuideTopic(
           title: 'Polymers',
           description: 'Large molecules made of repeating units',
           icon: Icons.link,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Polymer Chemistry'),
+          screenBuilder: (context) => const TopicSearchScreen(title: 'Polymer'),
         ),
       ],
     ),
@@ -285,43 +279,40 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
           title: 'Proteins',
           description: 'Structure and function of proteins',
           icon: Icons.architecture,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Protein Chemistry'),
+          screenBuilder: (context) => const TopicSearchScreen(title: 'Protein'),
         ),
         GuideTopic(
           title: 'Carbohydrates',
           description: 'Sugars, starches, and their chemistry',
           icon: Icons.grain,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Carbohydrate Chemistry'),
+              const TopicSearchScreen(title: 'Carbohydrate'),
         ),
         GuideTopic(
           title: 'Lipids',
           description: 'Fats, oils, and related compounds',
           icon: Icons.water_drop,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Lipid Chemistry'),
+          screenBuilder: (context) => const TopicSearchScreen(title: 'Lipid'),
         ),
         GuideTopic(
           title: 'Nucleic Acids',
           description: 'DNA, RNA, and genetic information',
           icon: Icons.hub,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Nucleic Acids'),
+              const TopicSearchScreen(title: 'Nucleic acid'),
         ),
         GuideTopic(
           title: 'Enzymes',
           description: 'Biological catalysts and their mechanisms',
           icon: Icons.psychology,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Enzyme Chemistry'),
+          screenBuilder: (context) => const TopicSearchScreen(title: 'Enzyme'),
         ),
         GuideTopic(
           title: 'Metabolism',
-          description: 'Chemical processes that occur in living organisms',
+          description: 'Chemical processes in living organisms',
           icon: Icons.loop,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Metabolic Chemistry'),
+              const TopicSearchScreen(title: 'Metabolism'),
         ),
       ],
     ),
@@ -346,129 +337,79 @@ class _ChemistryGuideScreenState extends State<ChemistryGuideScreen> {
         ),
         GuideTopic(
           title: 'Titration',
-          description: 'Quantitative analysis through controlled reactions',
+          description: 'Quantitative chemical analysis',
           icon: Icons.colorize,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Titration Methods'),
+              const TopicSearchScreen(title: 'Titration'),
         ),
         GuideTopic(
           title: 'Mass Spectrometry',
           description: 'Identifying molecules by mass-to-charge ratio',
           icon: Icons.scale,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Mass Spectrometry'),
+              const TopicSearchScreen(title: 'Mass spectrometry'),
         ),
         GuideTopic(
-          title: 'Electrochemical Analysis',
-          description: 'Using electrical properties for chemical analysis',
-          icon: Icons.electrical_services,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Electrochemical Analysis'),
+          title: 'pH Measurement',
+          description: 'Measuring acidity and alkalinity',
+          icon: Icons.show_chart,
+          screenBuilder: (context) => const TopicSearchScreen(title: 'PH'),
         ),
         GuideTopic(
-          title: 'Chemical Sensors',
-          description: 'Devices that detect specific chemicals',
-          icon: Icons.sensors,
+          title: 'Laboratory Techniques',
+          description: 'Standard methods used in chemical analysis',
+          icon: Icons.science,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Chemical Sensors'),
+              const TopicSearchScreen(title: 'Laboratory techniques'),
         ),
       ],
     ),
     GuideCategory(
-      title: 'Environmental Chemistry',
-      icon: Icons.eco,
-      color: Colors.lightGreen,
+      title: 'Advanced Topics',
+      icon: Icons.stars,
+      color: Colors.indigo,
       topics: [
         GuideTopic(
-          title: 'Air Pollution',
-          description: 'Chemical contaminants in the atmosphere',
-          icon: Icons.air,
+          title: 'Coordination Chemistry',
+          description: 'Metal complexes with ligands',
+          icon: Icons.hub,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Air Pollution Chemistry'),
+              const TopicSearchScreen(title: 'Coordination complex'),
         ),
         GuideTopic(
-          title: 'Water Chemistry',
-          description: 'Chemical processes in aquatic systems',
-          icon: Icons.water,
+          title: 'Nanochemistry',
+          description: 'Chemical phenomena at nanoscale',
+          icon: Icons.grain,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Water Chemistry'),
+              const TopicSearchScreen(title: 'Nanochemistry'),
         ),
         GuideTopic(
-          title: 'Soil Chemistry',
-          description: 'Chemical components and reactions in soil',
-          icon: Icons.landscape,
+          title: 'Photochemistry',
+          description: 'Chemical effects of light',
+          icon: Icons.wb_sunny,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Soil Chemistry'),
+              const TopicSearchScreen(title: 'Photochemistry'),
+        ),
+        GuideTopic(
+          title: 'Computational Chemistry',
+          description: 'Computer-based chemical analysis',
+          icon: Icons.computer,
+          screenBuilder: (context) =>
+              const TopicSearchScreen(title: 'Computational chemistry'),
         ),
         GuideTopic(
           title: 'Green Chemistry',
-          description: 'Designing sustainable chemical processes',
-          icon: Icons.recycling,
+          description: 'Environmentally friendly chemistry',
+          icon: Icons.eco,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Green Chemistry'),
+              const TopicSearchScreen(title: 'Green chemistry'),
         ),
         GuideTopic(
-          title: 'Climate Chemistry',
-          description: 'Chemical aspects of climate change',
-          icon: Icons.wb_sunny,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Climate Chemistry'),
-        ),
-        GuideTopic(
-          title: 'Toxicology',
-          description: 'Study of chemical hazards to organisms',
-          icon: Icons.warning,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Chemical Toxicology'),
-        ),
-      ],
-    ),
-    GuideCategory(
-      title: 'Industrial Chemistry',
-      icon: Icons.factory,
-      color: Colors.blueGrey,
-      topics: [
-        GuideTopic(
-          title: 'Chemical Engineering',
-          description: 'Designing and operating chemical processes',
-          icon: Icons.precision_manufacturing,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Chemical Engineering'),
-        ),
-        GuideTopic(
-          title: 'Polymer Production',
-          description: 'Manufacturing plastics and other polymers',
-          icon: Icons.category,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Industrial Polymer Production'),
-        ),
-        GuideTopic(
-          title: 'Petroleum Chemistry',
-          description: 'Refining and processing fossil fuels',
-          icon: Icons.local_gas_station,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Petroleum Chemistry'),
-        ),
-        GuideTopic(
-          title: 'Pharmaceutical Synthesis',
-          description: 'Creating medicinal compounds at scale',
+          title: 'Medicinal Chemistry',
+          description: 'Chemistry of pharmaceutical drugs',
           icon: Icons.medication,
           screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Pharmaceutical Synthesis'),
-        ),
-        GuideTopic(
-          title: 'Food Chemistry',
-          description: 'Chemical aspects of food production',
-          icon: Icons.restaurant,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Food Chemistry'),
-        ),
-        GuideTopic(
-          title: 'Materials Science',
-          description: 'Developing and analyzing new materials',
-          icon: Icons.grain,
-          screenBuilder: (context) =>
-              const TopicSearchScreen(title: 'Materials Chemistry'),
+              const TopicSearchScreen(title: 'Medicinal chemistry'),
         ),
       ],
     ),

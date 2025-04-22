@@ -1,20 +1,20 @@
-# ChemVerse: Your Chemistry Exploration Companion
+# ChemSphere: Your Chemistry Exploration Companion
 
-![ChemVerse Logo](assets/images/chemlogo.png)
+![ChemSphere Logo](assets/images/chemlogo.png)
 
 ## 📱 Overview
 
-ChemVerse is a comprehensive chemistry exploration app designed to make chemistry accessible, engaging, and educational. Addressing both Chemistry and Geolocation challenge statements, ChemVerse combines rich chemical data with location-based services to deliver a unique educational experience. Whether you're a student, educator, or chemistry enthusiast, ChemVerse provides a suite of tools to explore elements, compounds, formulas, and geolocation-based air quality data in an intuitive and visually appealing interface.
+ChemSphere is a comprehensive chemistry exploration app designed to make chemistry accessible, engaging, and educational. Addressing both Chemistry and Geolocation challenge statements, ChemSphere combines rich chemical data with location-based services to deliver a unique educational experience. Whether you're a student, educator, or chemistry enthusiast, ChemSphere provides a suite of tools to explore elements, compounds, formulas, and geolocation-based air quality data in an intuitive and visually appealing interface.
 
 ## 🎥 Demo
 
-[![ChemVerse Demo](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID)
+[![ChemSphere Demo](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID)
 
 *Note: Replace YOUTUBE_VIDEO_ID with your actual YouTube video ID*
 
 ## 🏆 Challenge Statements Addressed
 
-ChemVerse successfully addresses two major challenge statements:
+ChemSphere successfully addresses two major challenge statements:
 
 ### Chemistry Challenge ⚛️
 - Comprehensive chemistry data integration via PubChem API
@@ -124,7 +124,7 @@ ChemVerse successfully addresses two major challenge statements:
 
 ## 🌐 APIs and Data Sources
 
-ChemVerse integrates with several reputable APIs to provide accurate and comprehensive chemistry information:
+ChemSphere integrates with several reputable APIs to provide accurate and comprehensive chemistry information:
 
 ### PubChem API
 - **Base URL**: https://pubchem.ncbi.nlm.nih.gov/rest/pug
@@ -274,7 +274,7 @@ open ios/Runner.xcworkspace
 
 ### First Launch
 
-On first launch, you'll be presented with an onboarding sequence introducing the key features of ChemVerse. You can swipe through each screen or tap "Skip" to proceed directly to the main app.
+On first launch, you'll be presented with an onboarding sequence introducing the key features of ChemSphere. You can swipe through each screen or tap "Skip" to proceed directly to the main app.
 
 ### Navigation
 

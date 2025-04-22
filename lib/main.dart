@@ -19,10 +19,8 @@ import 'features/onboarding/provider/onboarding_provider.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
-  // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Check if it's the first time launch using the provider's static method
   final bool isFirstTime = await OnboardingProvider.isFirstTime();
 
   runApp(ChemistryExplorerApp(isFirstTime: isFirstTime));
@@ -34,7 +32,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ChemVerse',
+      title: 'ChemSphere',
       theme: AppTheme.lightTheme,
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
@@ -74,7 +72,7 @@ class ChemistryExplorerApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'ChemVerse',
+        title: 'ChemSphere',
         theme: AppTheme.lightTheme,
         // Show onboarding if it's first time, otherwise show splash screen
         home: isFirstTime ? const OnboardingScreen() : const SplashScreen(),
@@ -88,7 +86,6 @@ class ChemistryExplorerApp extends StatelessWidget {
         builder: (context, child) {
           return WillPopScope(
             onWillPop: () async {
-              // Let the app-specific screens handle back button themselves
               return true;
             },
             child: child!,

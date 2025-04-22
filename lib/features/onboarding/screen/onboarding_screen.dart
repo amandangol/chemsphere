@@ -16,7 +16,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<OnboardingPage> _pages = [
     OnboardingPage(
-      title: 'Welcome to ChemVerse',
+      title: 'Welcome to ChemSphere',
       description: 'Your ultimate chemistry exploration companion',
       imagePath: 'assets/svgs/welcometochem.svg',
       backgroundColor: const Color(0xFFE3F2FD),
@@ -25,35 +25,42 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Explore Elements',
       description:
           'Discover all elements in the periodic table with detailed information',
-      imagePath: 'assets/svgs/atoms.svg',
+      imagePath: 'assets/svgs/periodictable.svg',
       backgroundColor: const Color(0xFFE8F5E9),
     ),
     OnboardingPage(
       title: 'Learn About Compounds',
       description:
           'Search and view detailed information about chemical compounds',
-      imagePath: 'assets/svgs/molecules.svg',
+      imagePath: 'assets/svgs/compound.svg',
       backgroundColor: const Color(0xFFFFF8E1),
+    ),
+    OnboardingPage(
+      title: 'Calculate Molecular Weight',
+      description:
+          'Easily compute molecular weights of any chemical compound with our advanced calculator',
+      imagePath: 'assets/svgs/molecules.svg',
+      backgroundColor: const Color(0xFFFFE0B2),
     ),
     OnboardingPage(
       title: 'Track Air Quality',
       description:
           'Search cities or use your location to monitor real-time air quality data and pollutant levels',
-      imagePath: 'assets/svgs/air_quality.svg',
+      imagePath: 'assets/svgs/aqi.svg',
       backgroundColor: const Color(0xFFE1F5FE),
     ),
     OnboardingPage(
       title: 'Educational Resources',
       description:
           'Study from flashcards, chemistry guides, and interactive lessons',
-      imagePath: 'assets/svgs/education.svg',
+      imagePath: 'assets/svgs/chemistry-guide.svg',
       backgroundColor: const Color(0xFFF3E5F5),
     ),
     OnboardingPage(
       title: 'Bookmarks & Formulas',
       description:
           'Save your favorite elements, compounds, and reactions for quick access',
-      imagePath: 'assets/svgs/reaction.svg',
+      imagePath: 'assets/svgs/bookmark.svg',
       backgroundColor: const Color(0xFFE8EAF6),
     ),
   ];
@@ -96,13 +103,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 child: Center(
                                   child: SvgPicture.asset(
                                     _pages[index].imagePath,
-                                    height: 260,
+                                    height: 180,
                                     placeholderBuilder: (context) => Icon(
                                       _getIconForPage(index),
                                       size: 150,
-                                      color: Theme.of(context)
-                                          .primaryColor
-                                          .withOpacity(0.7),
+                                      // color: Theme.of(context)
+                                      //     .primaryColor
+                                      //     .withOpacity(0.7),
                                     ),
                                   ),
                                 ),
@@ -299,10 +306,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       case 2:
         return Icons.bubble_chart;
       case 3:
-        return Icons.air_rounded;
+        return Icons.calculate_rounded;
       case 4:
-        return Icons.school_rounded;
+        return Icons.air_rounded;
       case 5:
+        return Icons.school_rounded;
+      case 6:
         return Icons.bookmark_rounded;
       default:
         return Icons.science;
