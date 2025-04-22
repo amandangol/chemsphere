@@ -6,6 +6,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'provider/aqi_provider.dart';
 import 'pollutant_detail_screen.dart';
 import 'dart:math';
+import 'package:geolocator/geolocator.dart';
 
 class AqiInfoScreen extends StatefulWidget {
   const AqiInfoScreen({Key? key}) : super(key: key);
@@ -19,17 +20,16 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
   late TabController _tabController;
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
-  bool _refreshing = false;
+  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // Initialize animation controller separately
     _animController = AnimationController(
       duration: const Duration(milliseconds: 600),
-      vsync: this, // This is the correct usage with TickerProviderStateMixin
+      vsync: this,
     );
 
     _fadeAnimation = CurvedAnimation(
@@ -42,27 +42,81 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
 
   @override
   void dispose() {
-    // Important to dispose both controllers
     _tabController.dispose();
     _animController.dispose();
     super.dispose();
   }
 
   Future<void> _refreshData() async {
+    if (_isRefreshing) return;
+
     setState(() {
-      _refreshing = true;
+      _isRefreshing = true;
     });
 
     try {
+      // Check location permission before attempting to fetch data
+      bool hasPermission = await _checkLocationPermission();
+      if (!hasPermission) {
+        throw Exception(
+            'Location permission denied. Please enable it in app settings.');
+      }
+
       final provider = Provider.of<AqiProvider>(context, listen: false);
       await provider.fetchAqiData();
-    } finally {
+
       if (mounted) {
         setState(() {
-          _refreshing = false;
+          _isRefreshing = false;
         });
       }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+
+        // Only show error message if user explicitly tried to refresh
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.toString().replaceAll('Exception: ', ''),
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'SETTINGS',
+              textColor: Colors.white,
+              onPressed: () {
+                Geolocator.openAppSettings();
+              },
+            ),
+          ),
+        );
+      }
     }
+  }
+
+  Future<bool> _checkLocationPermission() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return false;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return false;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return false;
+    }
+
+    return true;
   }
 
   @override
@@ -85,7 +139,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
         ),
         actions: [
           IconButton(
-            icon: _refreshing
+            icon: _isRefreshing
                 ? const SizedBox(
                     width: 16,
                     height: 16,
@@ -94,7 +148,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                       strokeWidth: 2,
                     ))
                 : const Icon(Icons.refresh_rounded, size: 18),
-            onPressed: _refreshing ? null : _refreshData,
+            onPressed: _isRefreshing ? null : _refreshData,
             tooltip: 'Refresh Data',
           ),
           IconButton(
@@ -136,7 +190,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
       ),
       body: Consumer<AqiProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoading && !_refreshing) {
+          if (provider.isLoading && !_isRefreshing) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -213,8 +267,8 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
-                          onPressed: _refreshing ? null : _refreshData,
-                          icon: _refreshing
+                          onPressed: _isRefreshing ? null : _refreshData,
+                          icon: _isRefreshing
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
@@ -304,7 +358,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
-                      icon: _refreshing
+                      icon: _isRefreshing
                           ? const SizedBox(
                               width: 16,
                               height: 16,
@@ -315,7 +369,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
                           : const Icon(Icons.refresh, size: 16),
                       label:
                           const Text('Refresh', style: TextStyle(fontSize: 12)),
-                      onPressed: _refreshing ? null : _refreshData,
+                      onPressed: _isRefreshing ? null : _refreshData,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -733,7 +787,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
 
             const SizedBox(height: 16),
 
-            // Air Purifier Recommendation with modern design
+            // Air Purifier Recommendation
             Container(
               width: double.infinity,
               margin: const EdgeInsets.only(bottom: 16),
@@ -755,7 +809,7 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header with gradient background
+                  // Header
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -1161,22 +1215,6 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
     );
   }
 
-  String _getAqiDescription(int aqi) {
-    if (aqi <= 50) {
-      return 'Air quality is considered satisfactory, and air pollution poses little or no risk.';
-    } else if (aqi <= 100) {
-      return 'Air quality is acceptable; however, some pollutants may be a concern for a small number of sensitive individuals.';
-    } else if (aqi <= 150) {
-      return 'Members of sensitive groups may experience health effects, but the general public is not likely to be affected.';
-    } else if (aqi <= 200) {
-      return 'Everyone may begin to experience health effects; members of sensitive groups may experience more serious health effects.';
-    } else if (aqi <= 300) {
-      return 'Health warnings of emergency conditions. The entire population is more likely to be affected.';
-    } else {
-      return 'Health alert: everyone may experience more serious health effects.';
-    }
-  }
-
   List<String> _getHealthRecommendations(int aqi) {
     if (aqi <= 50) {
       return [
@@ -1243,8 +1281,6 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
   }
 
   Color _getPollutantColor(String pollutantName, double value) {
-    // This is a simplified color selection based on pollutant type
-    // In a real app, you'd base this on the actual concentration levels
     switch (pollutantName) {
       case 'PM2.5':
         if (value <= 12) return Colors.green;
@@ -1286,22 +1322,6 @@ class _AqiInfoScreenState extends State<AqiInfoScreen>
         return Colors.purple;
       default:
         return Colors.blue;
-    }
-  }
-
-  String _getAirPurifierRecommendation(int aqi) {
-    if (aqi <= 50) {
-      return 'No recommendation';
-    } else if (aqi <= 100) {
-      return 'Consider using an air purifier';
-    } else if (aqi <= 150) {
-      return 'Consider using an air purifier';
-    } else if (aqi <= 200) {
-      return 'Consider using an air purifier';
-    } else if (aqi <= 300) {
-      return 'Consider using an air purifier';
-    } else {
-      return 'Consider using an air purifier';
     }
   }
 
@@ -1374,7 +1394,7 @@ class MolecularBackgroundPainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.fill;
 
-    final random = Random(42); // Fixed seed for consistent pattern
+    final random = Random(42);
 
     // Draw hexagons and bonds
     for (int i = 0; i < 3; i++) {

@@ -53,15 +53,52 @@ class _PeriodicTableScreenState extends State<PeriodicTableScreen>
 
     // Fetch elements when the screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ElementProvider>().fetchFlashcardElements();
+      context.read<ElementProvider>().fetchFlashcardElements().then((_) {
+        // Log element categories for debugging
+        final elements =
+            Provider.of<ElementProvider>(context, listen: false).elements;
+        final categories = elements.map((e) => e.groupBlock).toSet().toList();
+        print('Available element categories: $categories');
+      });
     });
   }
 
   void _updateFilteredElements(List<PeriodicElement> elements) {
     setState(() {
       _filteredElements = elements.where((element) {
-        final matchesCategory = _filterCategory == 'All' ||
-            element.groupBlock.toLowerCase() == _filterCategory.toLowerCase();
+        // For 'All' category, match everything
+        if (_filterCategory == 'All') {
+          final matchesSearch = _searchQuery.isEmpty ||
+              element.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              element.symbol
+                  .toLowerCase()
+                  .contains(_searchQuery.toLowerCase()) ||
+              element.atomicNumber.toString().contains(_searchQuery);
+          return matchesSearch;
+        }
+
+        // For other categories, do a smarter match
+        bool matchesCategory = false;
+
+        // Convert both strings to lowercase for case-insensitive comparison
+        final categoryLower = _filterCategory.toLowerCase();
+        final groupBlockLower = element.groupBlock.toLowerCase();
+
+        // Handle specific category matches based on the selected filter
+        switch (categoryLower) {
+          case "polyatomic nonmetal":
+            matchesCategory = groupBlockLower.contains("polyatomic") ||
+                (groupBlockLower == "nonmetal" &&
+                    !groupBlockLower.contains("diatomic"));
+            break;
+          case "diatomic nonmetal":
+            matchesCategory = groupBlockLower.contains("diatomic");
+            break;
+          default:
+            // Standard comparison for all other categories
+            matchesCategory = groupBlockLower == categoryLower;
+        }
+
         final matchesSearch = _searchQuery.isEmpty ||
             element.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
             element.symbol.toLowerCase().contains(_searchQuery.toLowerCase()) ||

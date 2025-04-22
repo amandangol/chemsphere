@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../../utils/url_launcher_util.dart';
 import '../../compounds/provider/compound_provider.dart';
 import '../../../utils/error_handler.dart';
@@ -159,22 +161,34 @@ class _MoleculeViewerScreenState extends State<MoleculeViewerScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
 
-    if (widget.initialCid != null) {
-      _loadMolecule(widget.initialCid!);
-    }
-
-    // Load recent molecules from shared preferences or other storage
-    _loadRecentMolecules();
+    // Load recent molecules first
+    _loadRecentMolecules().then((_) {
+      // If initialCid is provided, load that molecule
+      if (widget.initialCid != null) {
+        _loadMolecule(widget.initialCid!);
+      }
+    });
   }
 
   Future<void> _loadRecentMolecules() async {
-    // This would be implemented to load from storage
-    // For now, we'll use a placeholder with a single example
-    setState(() {
-      _recentMolecules = [
-        {'name': 'Water', 'cid': 962, 'formula': 'H₂O'},
-      ];
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final recentMoleculesJson = prefs.getString('recent_molecules');
+
+      if (recentMoleculesJson != null) {
+        final List<dynamic> decodedList = jsonDecode(recentMoleculesJson);
+        setState(() {
+          _recentMolecules = List<Map<String, dynamic>>.from(
+              decodedList.map((item) => Map<String, dynamic>.from(item)));
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading recent molecules: $e');
+      // If there's an error, initialize with an empty list
+      setState(() {
+        _recentMolecules = [];
+      });
+    }
   }
 
   Future<void> _searchMolecule(String query) async {
@@ -205,11 +219,6 @@ class _MoleculeViewerScreenState extends State<MoleculeViewerScreen>
 
       // The formula will be fetched by _loadMolecule and then will be available
       // We'll add to recent molecules after formula is fetched
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _addToRecentMolecules(query, cids.first);
-        }
-      });
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -229,12 +238,19 @@ class _MoleculeViewerScreenState extends State<MoleculeViewerScreen>
           _currentFormula = info.first['molecular_formula'] ?? '';
           _isLoading = false;
         });
+
+        // Add to recent molecules after fetching details
+        _addToRecentMolecules(_currentMoleculeName, cid,
+            formula: _currentFormula);
       } else {
         setState(() {
           _currentMoleculeName = 'Molecule $cid';
           _currentFormula = '';
           _isLoading = false;
         });
+
+        // Still add to recents even with limited info
+        _addToRecentMolecules(_currentMoleculeName, cid);
       }
     } catch (e) {
       setState(() {
@@ -242,6 +258,9 @@ class _MoleculeViewerScreenState extends State<MoleculeViewerScreen>
         _currentFormula = '';
         _isLoading = false;
       });
+
+      // Still add to recents even with limited info
+      _addToRecentMolecules(_currentMoleculeName, cid);
     }
   }
 
@@ -267,6 +286,9 @@ class _MoleculeViewerScreenState extends State<MoleculeViewerScreen>
       setState(() {
         _isLoading = false;
       });
+
+      // Add to recent molecules if both name and formula are provided
+      _addToRecentMolecules(name, cid, formula: formula);
     }
   }
 
@@ -291,27 +313,78 @@ class _MoleculeViewerScreenState extends State<MoleculeViewerScreen>
   }
 
   void _addToRecentMolecules(String name, int cid, {String formula = ''}) {
+    // Create new list to trigger state rebuild
+    List<Map<String, dynamic>> updatedList = List.from(_recentMolecules);
+
     // Remove if already exists
-    _recentMolecules.removeWhere((molecule) => molecule['cid'] == cid);
+    updatedList.removeWhere((molecule) => molecule['cid'] == cid);
 
     // Add to the beginning
-    _recentMolecules.insert(0, {
+    updatedList.insert(0, {
       'name': name,
       'cid': cid,
       'formula': formula.isNotEmpty ? formula : _currentFormula,
+      'timestamp': DateTime.now().millisecondsSinceEpoch
     });
 
     // Limit to 10 recent molecules
-    if (_recentMolecules.length > 10) {
-      _recentMolecules = _recentMolecules.sublist(0, 10);
+    if (updatedList.length > 10) {
+      updatedList = updatedList.sublist(0, 10);
     }
 
-    // Save to storage (would be implemented)
+    // Update state and save to storage
+    setState(() {
+      _recentMolecules = updatedList;
+    });
+
+    // Save to storage
     _saveRecentMolecules();
   }
 
-  void _saveRecentMolecules() {
-    // Would save to SharedPreferences or other storage
+  Future<void> _saveRecentMolecules() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final recentMoleculesJson = jsonEncode(_recentMolecules);
+      await prefs.setString('recent_molecules', recentMoleculesJson);
+    } catch (e) {
+      debugPrint('Error saving recent molecules: $e');
+    }
+  }
+
+  // Add methods for clearing history items
+
+  Future<void> _clearAllRecentMolecules() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear History'),
+        content: const Text(
+            'Are you sure you want to clear all molecule viewing history?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              setState(() {
+                _recentMolecules = [];
+              });
+              await _saveRecentMolecules();
+            },
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _removeRecentMolecule(int cid) async {
+    setState(() {
+      _recentMolecules.removeWhere((molecule) => molecule['cid'] == cid);
+    });
+    await _saveRecentMolecules();
   }
 
   @override
@@ -466,6 +539,8 @@ class _MoleculeViewerScreenState extends State<MoleculeViewerScreen>
                     _loadMolecule(cid, name: name, formula: formula);
                     _tabController.animateTo(0); // Switch to viewer tab
                   },
+                  onClearAll: _clearAllRecentMolecules,
+                  onRemoveItem: _removeRecentMolecule,
                 ),
               ],
             ),

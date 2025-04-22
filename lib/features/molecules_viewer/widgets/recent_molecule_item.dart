@@ -4,6 +4,7 @@ class RecentMoleculeItem extends StatelessWidget {
   final String name;
   final int cid;
   final String formula;
+  final String timeAgo;
   final VoidCallback onTap;
 
   const RecentMoleculeItem({
@@ -11,6 +12,7 @@ class RecentMoleculeItem extends StatelessWidget {
     required this.name,
     required this.cid,
     this.formula = '',
+    this.timeAgo = '',
     required this.onTap,
   }) : super(key: key);
 
@@ -52,14 +54,36 @@ class RecentMoleculeItem extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
                   color: theme.colorScheme.secondary,
+                  fontFamily: 'Poppins',
                 ),
               ),
-            Text(
-              'CID: $cid',
-              style: TextStyle(
-                fontSize: 12,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
-              ),
+            Row(
+              children: [
+                Text(
+                  'CID: $cid',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+                if (timeAgo.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.access_time,
+                    size: 12,
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    timeAgo,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),

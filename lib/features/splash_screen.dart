@@ -257,11 +257,11 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons
-                                .science_outlined, // Flask icon for chemistry theme
+                          child: Image.asset(
+                            'assets/images/chemlogo.png',
                             color: Colors.white,
-                            size: 24,
+                            width: 24,
+                            height: 24,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -277,7 +277,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 ),
                               ),
                               TextSpan(
-                                text: 'Verse',
+                                text: 'Sphere',
                                 style: GoogleFonts.poppins(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,

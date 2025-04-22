@@ -38,20 +38,6 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
   void initState() {
     super.initState();
 
-    // Initialize the map with user's current location or any existing AQI data
-    Future.microtask(() async {
-      _initializeMap();
-
-      // Fetch major cities AQI data in the background for a better user experience
-      final provider = Provider.of<AqiProvider>(context, listen: false);
-
-      // If we already have AQI data but no city data, fetch cities
-      if (provider.aqiData != null && provider.citiesAqiData.isEmpty) {
-        provider.fetchMajorCitiesAqi();
-      }
-    });
-
-    // Handle focus changes for the search field
     _searchFocusNode.addListener(() {
       setState(() {
         _showSearchResults = _searchFocusNode.hasFocus &&
@@ -60,11 +46,25 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       });
     });
 
+    // Initialize the map with a default world view
+    Future.microtask(() async {
+      _initializeMap();
+
+      // This will trigger permission request through MainScreen
+      // but we won't try to get location automatically on startup
+    });
+
     // Check if we already have AQI data and initialize marker
     Future.microtask(() {
       final provider = Provider.of<AqiProvider>(context, listen: false);
       if (provider.aqiData != null) {
         _addAqiMarker(provider);
+      } else {
+        // If we don't have AQI data, fetch major cities in the background
+        provider.fetchMajorCitiesAqi();
+        setState(() {
+          _showMajorCities = true;
+        });
       }
     });
   }
@@ -86,11 +86,10 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       _mapController.move(LatLng(lat, lng), 10);
       _addAqiMarker(provider);
     } else {
-      // Otherwise try to get current location and fetch AQI data
-      bool success = await _moveToCurrentLocation();
-
-      // If we couldn't get current location, fetch major cities at least
-      if (!success && mounted) {
+      // Don't try to get current location on initial load
+      // Just center the map on a default location and fetch major cities
+      _mapController.move(const LatLng(20, 0), 2); // Default to world view
+      if (mounted) {
         provider.fetchMajorCitiesAqi();
         setState(() {
           _showMajorCities = true;
@@ -165,7 +164,68 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
     });
 
     try {
-      // Get device location
+      // First check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Show error to user and return false
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Location services are disabled. Please enable location in your device settings.',
+                style: GoogleFonts.poppins(),
+              ),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return false;
+      }
+
+      // Check location permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        // Request permission
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Location permission denied. Please allow access to your location to use this feature.',
+                  style: GoogleFonts.poppins(),
+                ),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return false;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        // Show error to user with instructions to enable in settings
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Location permission permanently denied. Please enable in app settings.',
+                style: GoogleFonts.poppins(),
+              ),
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'SETTINGS',
+                onPressed: () {
+                  Geolocator.openAppSettings();
+                },
+              ),
+            ),
+          );
+        }
+        return false;
+      }
+
+      // Now that we have permission, get device location
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -201,7 +261,7 @@ class _CitySearchScreenState extends State<CitySearchScreen> {
       print("Error getting current location: $e");
 
       // Default to a generic location if we can't get the user's
-      _mapController.move(const LatLng(40.7128, -74.0060), 4); // Default to NYC
+      _mapController.move(const LatLng(20, 0), 2); // Default to world view
       setState(() {
         _isSearching = false;
       });

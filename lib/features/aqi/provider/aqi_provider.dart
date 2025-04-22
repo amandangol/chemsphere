@@ -79,6 +79,14 @@ class AqiProvider with ChangeNotifier {
         await _fetchCityGeocoding(cityName);
       } else {
         print("Fetching AQI data for current location");
+        // First check if we can access location
+        bool locationAccessible = await _checkLocationPermission();
+        if (!locationAccessible) {
+          // Don't show error when app first loads, just return silently
+          setLoading(false);
+          return;
+        }
+
         // Get current location and fetch AQI data
         await _getCurrentLocation();
 
@@ -270,7 +278,6 @@ class AqiProvider with ChangeNotifier {
         final reverseGeocodingUrl = Uri.parse(
             'https://nominatim.openstreetmap.org/reverse?lat=$latitude&lon=$longitude&format=json');
 
-        // Add a user-agent header as required by Nominatim's usage policy
         final geocodingResponse = await http.get(
           reverseGeocodingUrl,
           headers: {'User-Agent': 'ChemExplore App'},
@@ -290,7 +297,6 @@ class AqiProvider with ChangeNotifier {
           if (geocodingData['display_name'] != null) {
             cityName = geocodingData['display_name'];
 
-            // For a more structured approach, we can extract specific parts
             if (geocodingData['address'] != null) {
               List<String> locationParts = [];
 
@@ -336,8 +342,8 @@ class AqiProvider with ChangeNotifier {
 
       print("API URL: $url");
 
-      // Now we make the AQI API call
-      // Add timeout to request to handle network issues
+      //   make the AQI API call
+      //  timeout to request to handle network issues
       final response = await http.get(url).timeout(
         const Duration(seconds: 20), // Increased to 20 seconds
         onTimeout: () {
@@ -583,7 +589,7 @@ class AqiProvider with ChangeNotifier {
           "Position obtained: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}");
     } catch (e) {
       print("Error in _getCurrentLocation: $e");
-      setError('Error getting location: $e');
+      throw Exception('Error getting location: $e');
     }
   }
 
@@ -763,13 +769,13 @@ class AqiProvider with ChangeNotifier {
       case 'pm10':
         return value / 45.0; // WHO standard for PM10 is 45 μg/m³
       case 'o3':
-        return value / 100.0; // Example threshold for ozone
+        return value / 100.0;
       case 'no2':
-        return value / 40.0; // Example threshold for nitrogen dioxide
+        return value / 40.0;
       case 'so2':
-        return value / 20.0; // Example threshold for sulfur dioxide
+        return value / 20.0;
       case 'co':
-        return value / 4000.0; // Example threshold for carbon monoxide
+        return value / 4000.0;
       default:
         return 1.0;
     }
@@ -814,7 +820,7 @@ class AqiProvider with ChangeNotifier {
         '&timezone=auto',
       );
 
-      // Add shorter timeout for background city fetching
+      //  shorter timeout for background city fetching
       final response = await http.get(url).timeout(
         const Duration(seconds: 10),
         onTimeout: () {
@@ -864,6 +870,62 @@ class AqiProvider with ChangeNotifier {
     } catch (e) {
       print("Error fetching AQI for $cityName: $e");
       // We don't rethrow to allow other city requests to continue
+    }
+  }
+
+  //  a method to check location permissions before attempting to access location
+  Future<bool> _checkLocationPermission() async {
+    try {
+      print("Checking location permission");
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        print("Location services disabled");
+        return false;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        // Don't request permission automatically on app start
+        print("Location permission denied");
+        return false;
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        print("Location permission permanently denied");
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      print("Error checking location permission: $e");
+      return false;
+    }
+  }
+
+  // Add a method to request location permission explicitly
+  Future<bool> requestLocationPermission() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        return false;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return false;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint("Error requesting location permission: $e");
+      return false;
     }
   }
 }

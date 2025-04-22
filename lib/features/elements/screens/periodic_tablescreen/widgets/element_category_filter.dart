@@ -23,7 +23,6 @@ class ElementCategoryFilter extends StatelessWidget {
       {'name': 'Transition Metal', 'emoji': '⚙️'},
       {'name': 'Metalloid', 'emoji': '🔋'},
       {'name': 'Polyatomic Nonmetal', 'emoji': '💨'},
-      {'name': 'Diatomic Nonmetal', 'emoji': '💫'},
       {'name': 'Noble Gas', 'emoji': '✨'},
       {'name': 'Lanthanide', 'emoji': '🌟'},
       {'name': 'Actinide', 'emoji': '☢️'},

@@ -1,8 +1,11 @@
 import 'package:chem_explore/utils/snackbar_util.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import 'home/home_screen.dart';
 import 'aqi/city_search_screen.dart';
+import 'aqi/provider/aqi_provider.dart';
 import 'elements/screens/periodic_tablescreen/periodic_table_screen.dart';
 import 'compounds/compound_searhc_screen.dart';
 import 'chemistryguide/chemistry_guide_screen.dart';
@@ -40,6 +43,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   // Add variables for back button handling
   DateTime? _lastBackPressTime;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _locationPermissionChecked = false;
 
   @override
   void initState() {
@@ -85,6 +89,124 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
 
     // Cycle through facts
     Future.delayed(const Duration(seconds: 15), _cycleToNextFact);
+
+    // If the initial index is the Air Quality tab, check location permissions
+    if (_currentIndex == 2) {
+      _checkLocationPermission();
+    }
+  }
+
+  // Add a function to check and request location permissions
+  Future<void> _checkLocationPermission() async {
+    if (_locationPermissionChecked) return;
+
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Show dialog to enable location services
+        if (mounted) {
+          _showLocationServiceDisabledDialog();
+        }
+        return;
+      }
+
+      // Check permission status
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        // Request permission
+        permission = await Geolocator.requestPermission();
+
+        if (permission == LocationPermission.denied) {
+          // User denied the permission, show a snackbar
+          if (mounted) {
+            SnackbarUtil.showCustomSnackBar(
+              context,
+              message: 'Location permission is needed for air quality data',
+              backgroundColor: Colors.orange,
+            );
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        // User denied permission forever, show a dialog with app settings option
+        if (mounted) {
+          _showPermissionDeniedForeverDialog();
+        }
+        return;
+      }
+
+      // If we get here, we have permission - initialize AQI data if we're on the AQI tab
+      if (_currentIndex == 2 && mounted) {
+        final provider = Provider.of<AqiProvider>(context, listen: false);
+        await provider.fetchAqiData();
+      }
+
+      setState(() {
+        _locationPermissionChecked = true;
+      });
+    } catch (e) {
+      debugPrint('Error checking location permission: $e');
+    }
+  }
+
+  void _showLocationServiceDisabledDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Location Services Disabled'),
+          content: const Text(
+              'Please enable location services to get air quality data for your area.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Open Settings'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Geolocator.openLocationSettings();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPermissionDeniedForeverDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Location Permission Required'),
+          content: const Text(
+              'Location permission is required for air quality data. Please enable it in app settings.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Open Settings'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Geolocator.openAppSettings();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _cycleToNextFact() {
@@ -236,6 +358,11 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
                     setState(() {
                       _currentIndex = index;
                     });
+
+                    // Check location permission when navigating to Air Quality tab
+                    if (index == 2) {
+                      _checkLocationPermission();
+                    }
                   },
                 ),
               ],
