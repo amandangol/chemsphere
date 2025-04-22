@@ -61,23 +61,32 @@ ChemSphere successfully addresses two major challenge statements:
 - Beautifully designed chemistry-themed interface
 - Animated molecular patterns and visual elements
 
+  https://github.com/user-attachments/assets/a8fcdf06-5255-4552-894c-97a5153ce9ad
+
 ### ⚛️ Periodic Table
 - Interactive periodic table with detailed element information
 - Color-coded element categories
 - Tap elements to view comprehensive details
 - Search elements by name, symbol, or properties
 
+  https://github.com/user-attachments/assets/f0e023e8-5591-446c-a23d-fcd53e6e07aa
+
+
 ### 🧪 Modern Periodic Table
 - Educational version with group and period indicators
 - Detailed comparison between modern and Mendeleev's tables
 - Visual explanations of periodic trends
 - Interactive zooming and panning
+  
+    <img src="https://github.com/user-attachments/assets/456674cf-6809-4563-90b8-574f69effb8b" alt="moleculeviewer" width="200" height="400" />
 
 ### 🔍 Compound Search
 - Search chemical compounds by name
 - View molecular structures
 - Detailed property information
 - Quick access to common compounds
+
+  https://github.com/user-attachments/assets/6d419821-9f7c-4b1a-afcb-134d55cf92d4
 
 ### 📋 Formula Search
 - Find compounds by molecular formula
@@ -91,6 +100,8 @@ ChemSphere successfully addresses two major challenge statements:
 - Molecular structures and properties
 - Educational information on drug classifications
 
+  https://github.com/user-attachments/assets/cb4d65bb-1e74-49ea-8f9f-682b7819731d
+
 ### 🔬 Interactive 3D Molecular Viewer
 - View compounds and drugs in 3D structure
 - Interactive rotation, zooming, and panning
@@ -102,6 +113,8 @@ ChemSphere successfully addresses two major challenge statements:
 - Featured molecules organized by categories (Common, Organic, Biochemical, Drug, Complex)
 - Recent molecules history for quick access
 - Share functionality for molecules
+
+  https://github.com/user-attachments/assets/c20abe3f-76fe-442b-a328-a130fbda633b
 
 ### ⚖️ Molecular Weight Calculator
 - Calculate exact molecular weight for any chemical formula
@@ -116,6 +129,8 @@ ChemSphere successfully addresses two major challenge statements:
 - Formula entry guidelines with helpful tips
 - Example formulas for quick access
 
+  https://github.com/user-attachments/assets/3c3c4af0-6426-4f01-84c8-9541a0208346
+
 ### 💨 Air Quality Monitor
 - Real-time AQI data for your current location
 - Global air quality map showing AQI in major cities worldwide
@@ -127,11 +142,15 @@ ChemSphere successfully addresses two major challenge statements:
 - Detailed breakdown of pollutants (PM2.5, PM10, Ozone, etc.)
 - Visual representation of dominant pollutants
 
+  https://github.com/user-attachments/assets/f86bc030-3862-4d7b-a039-1246d67e3d9d
+
 ### 📚 Chemistry Guide
 - Educational resources for chemistry learning
 - Interactive guides and tutorials
 - Organized by chemistry topics
 - Visual explanations of complex concepts
+
+  https://github.com/user-attachments/assets/c7fa00f6-27e8-4532-8a8b-c5416b6dd261
 
 ### 🔄 Element Flashcards
 - Study element properties with interactive flashcards
@@ -144,6 +163,8 @@ ChemSphere successfully addresses two major challenge statements:
 - Organize saved items by category
 - Quick access to frequently referenced information
 - Seamless integration with other app features
+
+  https://github.com/user-attachments/assets/9cc329eb-b0ec-4651-b9ff-d7f24e318768
 
 ## 🌐 APIs and Data Sources
 
