@@ -8,7 +8,7 @@ class UrlLauncherUtil {
   static Future<void> launchURL(BuildContext context, String url) async {
     final Uri uri = Uri.parse(url);
     try {
-      if (await canLaunchUrl(uri)) {
+      if (await launchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         SnackbarUtil.showErrorSnackBar(
@@ -29,7 +29,7 @@ class UrlLauncherUtil {
       BuildContext context, String phoneNumber) async {
     final Uri uri = Uri(scheme: 'tel', path: phoneNumber);
     try {
-      if (await canLaunchUrl(uri)) {
+      if (await launchUrl(uri)) {
         await launchUrl(uri);
       } else {
         SnackbarUtil.showErrorSnackBar(
@@ -61,7 +61,7 @@ class UrlLauncherUtil {
       },
     );
     try {
-      if (await canLaunchUrl(uri)) {
+      if (await launchUrl(uri)) {
         await launchUrl(uri);
       } else {
         SnackbarUtil.showErrorSnackBar(
@@ -90,7 +90,7 @@ class UrlLauncherUtil {
         Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
 
     try {
-      if (await canLaunchUrl(uri)) {
+      if (await launchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         SnackbarUtil.showErrorSnackBar(
