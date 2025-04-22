@@ -5,6 +5,21 @@
 ## 📱 Overview
 
 ChemSphere is a comprehensive chemistry exploration app designed to make chemistry accessible, engaging, and educational. Addressing both Chemistry and Geolocation challenge statements, ChemSphere combines rich chemical data with location-based services to deliver a unique educational experience. Whether you're a student, educator, or chemistry enthusiast, ChemSphere provides a suite of tools to explore elements, compounds, formulas, and geolocation-based air quality data in an intuitive and visually appealing interface.
+
+## ⬇️ Download Now on **Android**
+
+<div align="center">
+  <p><i>ChemSphere is currently only available for Android devices.</i></p>
+  <a href="https://github.com/amandangol/chemsphere/releases">
+    <img src="https://github.com/user-attachments/assets/github-release-badge.png" alt="Download from GitHub Releases" width="200"/>
+  </a>
+  <a href="https://drive.google.com/drive/folders/1gkcZD4pCsK6a9IDSXPbJaVQl7Kx4xLO1?usp=sharing">
+    <img src="https://github.com/user-attachments/assets/google-drive-badge.png" alt="Download from Google Drive" width="200"/>
+  </a>
+</div>
+
+> **Note**: If you encounter any installation issues, enable "Install from Unknown Sources" in your device settings before installation.
+
 <div align="center">
   <img src="https://github.com/user-attachments/assets/d5978952-23f0-4cf0-a7b8-dc85e0a313db" alt="homescreen" width="200" height="400" />
   <img src="https://github.com/user-attachments/assets/01e3fdef-a5c1-4a8a-8d91-386303b355c2" alt="homescreen2" width="200" height="400" />
@@ -37,20 +52,24 @@ ChemSphere is a comprehensive chemistry exploration app designed to make chemist
 
 ## 🏆 Challenge Statements Addressed
 
-ChemSphere successfully addresses two major challenge statements:
+ChemSphere primarily focuses on the Chemistry challenge statement, while strategically incorporating geolocation services to enhance the chemical analysis of air quality:
 
-### Chemistry Challenge ⚛️
+### Chemistry Challenge ⚛️ (Primary Focus)
 - Comprehensive chemistry data integration via PubChem API
 - Interactive periodic table with detailed element information
 - Molecular visualization in 3D for compounds and drugs
 - Educational content on chemical properties and reactions
+- Chemical analysis of air quality components (PM2.5, PM10, O3, NO2, SO2, CO)
+- Detailed molecular composition of atmospheric pollutants
+- Exploration of chemical properties of airborne particles and gases
+- Molecular Weight Calculator
 
-### Geolocation Challenge 🌍
-- Real-time air quality monitoring based on user location
-- Global air quality map showing AQI in major cities worldwide
-- OpenStreetMap integration with custom AQI markers
-- City search functionality with global coverage
-- Geocoding and reverse geocoding using OpenStreetMap/Nominatim API
+### Geolocation Challenge 🌍 (Supporting Feature)
+- Real-time air quality monitoring based on user location to support chemical analysis
+- Global air quality map showing distribution of chemical compounds in the atmosphere
+- Location-based chemical composition tracking of ambient air
+- City search functionality for exploring regional atmospheric chemistry
+- Spatial analysis of air pollutant distribution and concentration
 
 ## ✨ Features
 
@@ -306,17 +325,7 @@ flutter build apk --release
 
 The APK file will be available at `build/app/outputs/flutter-apk/app-release.apk`
 
-#### iOS
 
-```bash
-flutter build ios --release
-```
-
-Then open the iOS project in Xcode to archive and distribute:
-
-```bash
-open ios/Runner.xcworkspace
-```
 
 ## 📋 Usage Guide
 
@@ -415,4 +424,3 @@ Project Link: [https://github.com/amandangol/chemsphere](https://github.com/aman
 - [OpenStreetMap & Nominatim](https://nominatim.openstreetmap.org/) for mapping and geocoding services
 - [Wikipedia API](https://www.mediawiki.org/wiki/API:Main_page) for educational content
 - [3Dmol.js](https://3dmol.csb.pitt.edu/) for molecular visualization
-- All icons and images used in this app are either created specifically for this project or are properly licensed
