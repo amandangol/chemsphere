@@ -8,7 +8,7 @@ class AqiData {
   final List<Sensor> sensors;
   final DateTime lastUpdated;
   final Map<String, Measurement> measurements;
-  final int aqi; // Calculated AQI value
+  final int aqi;
   final String dominantPollutant;
 
   AqiData({

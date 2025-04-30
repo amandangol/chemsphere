@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'provider/aqi_provider.dart';
+import '../provider/aqi_provider.dart';
 import 'pollutant_detail_screen.dart';
 import 'dart:math';
 import 'package:geolocator/geolocator.dart';

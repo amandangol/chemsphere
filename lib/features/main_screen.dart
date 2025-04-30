@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+import 'aqi/screen/city_search_screen.dart';
 import 'home/home_screen.dart';
-import 'aqi/city_search_screen.dart';
 import 'aqi/provider/aqi_provider.dart';
 import 'elements/screens/periodic_tablescreen/periodic_table_screen.dart';
 import 'compounds/compound_searhc_screen.dart';
@@ -40,7 +40,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   late PageController _pageController;
   late int _currentIndex;
 
-  // Add variables for back button handling
   DateTime? _lastBackPressTime;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _locationPermissionChecked = false;
@@ -96,7 +95,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-  // Add a function to check and request location permissions
   Future<void> _checkLocationPermission() async {
     if (_locationPermissionChecked) return;
 
@@ -236,7 +234,6 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     }
   }
 
-  // Add function to handle back button press
   Future<bool> _onWillPop() async {
     final now = DateTime.now();
     if (_lastBackPressTime == null ||

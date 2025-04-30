@@ -3,11 +3,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
-import '../../../models/aqi_data.dart';
-import '../../../models/pollutant.dart';
+
+import '../model/aqi_data.dart';
+import '../model/pollutant.dart';
 
 class AqiProvider with ChangeNotifier {
-  // Open-Meteo doesn't require API key - free for all
   final String _baseUrl =
       'https://air-quality-api.open-meteo.com/v1/air-quality';
 

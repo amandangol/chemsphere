@@ -11,7 +11,7 @@ class Pollutant {
   String? safetyInfo;
   String? sources;
   Map<String, dynamic>? chemicalProperties;
-  String? detailedDescription; // Add a new field for detailed description
+  String? detailedDescription;
 
   Pollutant({
     required this.name,

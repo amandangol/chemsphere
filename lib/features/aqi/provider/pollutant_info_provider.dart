@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
-import '../../../models/pollutant.dart';
+
+import '../model/pollutant.dart';
 
 class PollutantInfoProvider with ChangeNotifier {
   bool _isLoading = false;

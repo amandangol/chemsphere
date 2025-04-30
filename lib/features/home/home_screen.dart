@@ -1,13 +1,13 @@
 import 'package:chem_explore/features/elements/screens/modern_periodictable/modern_periodic_table_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../aqi/aqi_indicator_widget.dart';
+import '../aqi/screen/city_search_screen.dart';
+import '../aqi/widgets/aqi_indicator_widget.dart';
 import '../elements/screens/periodic_tablescreen/periodic_table_screen.dart';
 import '../compounds/compound_searhc_screen.dart';
 import '../drugs/drug_search_screen.dart';
 import '../chemistryguide/chemistry_guide_screen.dart';
 import '../formula/screen/formula_search_screen.dart';
-import '../aqi/city_search_screen.dart';
 import '../molecules_viewer/screen/molecule_viewer_screen.dart';
 import '../molecular_weight/screens/molecular_weight_screen.dart';
 
@@ -77,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         physics: const BouncingScrollPhysics(),
         slivers: [
           // Header with Wave Animation and Molecular Design
-          SliverToBoxAdapter(
+          const SliverToBoxAdapter(
             child: HomeHeaderWidget(),
           ),
 

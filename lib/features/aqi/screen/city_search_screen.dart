@@ -7,8 +7,8 @@ import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import 'provider/aqi_provider.dart';
-import '../../models/aqi_data.dart';
+import '../model/aqi_data.dart';
+import '../provider/aqi_provider.dart';
 import 'aqi_info_screen.dart';
 
 class CitySearchScreen extends StatefulWidget {

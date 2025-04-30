@@ -1,9 +1,9 @@
+import 'package:chem_explore/features/aqi/screen/aqi_info_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
-import 'provider/aqi_provider.dart';
-import 'aqi_info_screen.dart';
+import '../provider/aqi_provider.dart';
 
 class AqiIndicatorWidget extends StatefulWidget {
   const AqiIndicatorWidget({Key? key}) : super(key: key);

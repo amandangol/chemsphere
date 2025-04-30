@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 /// Base provider class for PubChem API interactions.
 /// This abstract class defines the interface for all PubChem-related providers.
-/// Subclasses should implement specific methods for their particular use cases.
 abstract class BasePubChemProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
