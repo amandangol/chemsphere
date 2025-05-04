@@ -1,6 +1,6 @@
 # ChemSphere: Your Chemistry Exploration Companion
 
-![ChemSphere Logo](assets/images/chemlogo.png)
+![ChemSphere Logo](assets/icon/icon.png)
 
 ## 📱 Overview
 
