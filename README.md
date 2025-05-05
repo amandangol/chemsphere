@@ -1,6 +1,7 @@
 # ChemSphere: Your Chemistry Exploration Companion
 
 ![ChemSphere Logo](assets/icon/icon.png)
+(Winning App of the April Hackathon Challenge)
 
 ## 📱 Overview
 
