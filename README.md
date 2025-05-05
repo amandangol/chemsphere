@@ -1,6 +1,6 @@
 # ChemSphere: Your Chemistry Exploration Companion
 
-![ChemSphere Logo](assets/icon/icon.png)
+<img src="assets/icon/icon.png" alt="ChemSphere Logo" width="200" height="200">
 
 (Winning App of the April Hackathon Challenge)
 
